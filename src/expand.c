@@ -85,7 +85,7 @@
 #define RMESCAPE_HEAP	0x10	/* Malloc strings instead of stalloc */
 
 /* Add CTLESC when necessary. */
-#define QUOTES_ESC	(EXP_FULL | EXP_CASE | EXP_QPAT)
+#define QUOTES_ESC	(EXP_FULL | EXP_CASE)
 /* Do not skip NUL characters. */
 #define QUOTES_KEEPNUL	EXP_TILDE
 
@@ -335,16 +335,6 @@ addquote:
 		case CTLESC:
 			startloc++;
 			length++;
-
-			/*
-			 * Quoted parameter expansion pattern: remove quote
-			 * unless inside inner quotes or we have a literal
-			 * backslash.
-			 */
-			if (((flag | inquotes) & (EXP_QPAT | EXP_QUOTED)) ==
-			    EXP_QPAT && *p != '\\')
-				break;
-
 			goto addquote;
 		case CTLVAR:
 			p = evalvar(p, flag | inquotes);
@@ -652,8 +642,7 @@ subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varfla
 	char *(*scan)(char *, char *, char *, char *, int , int);
 
 	argstr(p, EXP_TILDE | (subtype != VSASSIGN && subtype != VSQUESTION ?
-			       (flag & (EXP_QUOTED | EXP_QPAT) ?
-			        EXP_QPAT : EXP_CASE) : 0));
+			       EXP_CASE : 0));
 	STPUTC('\0', expdest);
 	argbackq = saveargbackq;
 	startp = stackblock() + startloc;

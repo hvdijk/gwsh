@@ -1190,6 +1190,7 @@ readtoken1_parsesub(char *out, char *eofmark, int flags)
 	int subtype;
 	int typeloc;
 	char *p;
+	int vsflags = flags;
 	static const char types[] = "}-+?=";
 
 	c = pgetc_eatbnl();
@@ -1280,6 +1281,7 @@ varname:
 						subtype++;
 					else
 						pungetc();
+					vsflags &= ~RT_DQSYNTAX;
 					break;
 				}
 			}
@@ -1290,7 +1292,7 @@ badsub:
 		*((char *)stackblock() + typeloc) = subtype;
 		STPUTC('=', out);
 		if (subtype != VSNORMAL) {
-			out = readtoken1_loop(out, pgetc(), eofmark, (flags & (RT_STRIPTABS | RT_DQSYNTAX)) | RT_VARNEST);
+			out = readtoken1_loop(out, pgetc(), eofmark, (vsflags & (RT_STRIPTABS | RT_DQSYNTAX)) | RT_VARNEST);
 		}
 	}
 	return out;
