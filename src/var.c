@@ -152,6 +152,7 @@ INIT {
 		}
 	}
 
+	setvareq(defifsvar, VTEXTFIXED);
 	setvareq(defoptindvar, VTEXTFIXED);
 
 	fmtstr(ppid + 5, sizeof(ppid) - 5, "%ld", (long) getppid());
@@ -259,7 +260,7 @@ intmax_t setvarint(const char *name, intmax_t val, int flags)
  * Called with interrupts off.
  */
 
-struct var *setvareq(char *s, int flags)
+struct var *setvareq(const char *s, int flags)
 {
 	struct var *vp, **vpp;
 
@@ -272,7 +273,7 @@ struct var *setvareq(char *s, int flags)
 			const char *n;
 
 			if (flags & VNOSAVE)
-				free(s);
+				ckfree(s);
 			n = vp->text;
 			sh_error("%.*s: is read only", strchrnul(n, '=') - n,
 				 n);
