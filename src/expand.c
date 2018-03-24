@@ -119,7 +119,7 @@ STATIC const char *subevalvar(char *, char *, int, int, int, int, int);
 STATIC char *evalvar(char *, int);
 STATIC size_t strtodest(const char *, int);
 STATIC void memtodest(const char *, size_t, int);
-STATIC ssize_t varvalue(char *, int, int, int *);
+STATIC ssize_t varvalue(char *, int, int);
 STATIC void expandmeta(struct strlist *, int);
 #ifdef HAVE_GLOB
 STATIC void addglob(const glob_t *);
@@ -249,7 +249,7 @@ argstr(char *p, int flag)
 		0
 	};
 	const char *reject = spclchars;
-	int c;
+	int prev, c = 0;
 	int breakall = (flag & (EXP_WORD | EXP_QUOTED)) == EXP_WORD;
 	size_t length;
 	int startloc;
@@ -273,6 +273,7 @@ start:
 	startloc = expdest - (char *)stackblock();
 	for (;;) {
 		length += strcspn(p + length, reject);
+		prev = c;
 		c = (signed char)p[length];
 		if (c && (!(c & 0x80) || c == CTLENDARI)) {
 			/* c == '=' || c == ':' || c == CTLENDARI */
@@ -313,16 +314,11 @@ start:
 		}
 
 		switch (c) {
+			int dolatstrhack;
 		case CTLENDVAR: /* ??? */
 			goto breakloop;
 		case CTLQUOTEMARK:
 			flag ^= EXP_QUOTED;
-			/* "$@" syntax adherence hack */
-			if (flag & EXP_QUOTED && !memcmp(p, dolatstr + 1,
-							 DOLATSTRLEN - 1)) {
-				p = evalvar(p + 1, flag) + 1;
-				goto start;
-			}
 addquote:
 			if (flag & QUOTES_ESC) {
 				p--;
@@ -335,7 +331,14 @@ addquote:
 			length++;
 			goto addquote;
 		case CTLVAR:
+			/* "$@" syntax adherence hack */
+			dolatstrhack = p[1] == '@' && (*p & VSTYPE) != VSMINUS && (*p & VSTYPE) != VSLENGTH && !shellparam.nparam && flag & QUOTES_ESC;
 			p = evalvar(p, flag);
+			if (dolatstrhack && prev == (char)CTLQUOTEMARK && *p == (char)CTLQUOTEMARK) {
+				expdest--;
+				flag ^= EXP_QUOTED;
+				p++;
+			}
 			goto start;
 		case CTLBACKQ:
 			expbackq(argbackq->n, flag);
@@ -725,7 +728,7 @@ evalvar(char *p, int flag)
 	p = strchr(p, '=') + 1;
 
 again:
-	varlen = varvalue(var, varflags, flag, &quoted);
+	varlen = varvalue(var, varflags, flag);
 	if (varflags & VSNUL)
 		varlen--;
 
@@ -878,7 +881,7 @@ strtodest(const char *p, int quotes)
  */
 
 STATIC ssize_t
-varvalue(char *name, int varflags, int flags, int *quotedp)
+varvalue(char *name, int varflags, int flags)
 {
 	int num;
 	char *p;
@@ -886,13 +889,12 @@ varvalue(char *name, int varflags, int flags, int *quotedp)
 	int sep;
 	char sepc;
 	char **ap;
-	int quoted = *quotedp;
 	int subtype = varflags & VSTYPE;
 	int discard = subtype == VSPLUS || subtype == VSLENGTH;
-	int quotes = quoted | (discard ? 0 : (flags & QUOTES_ESC)) | QUOTES_KEEPNUL;
+	int quotes = (flags & (EXP_QUOTED | (discard ? 0 : QUOTES_ESC))) | QUOTES_KEEPNUL;
 	ssize_t len = 0;
 
-	sep = (flags & EXP_FULL) << CHAR_BIT;
+	flags &= EXP_QUOTED | EXP_FULL;
 
 	switch (*name) {
 	case '$':
@@ -922,16 +924,14 @@ numvar:
 		expdest = p;
 		break;
 	case '@':
-		if (quoted && sep)
-			goto param;
+		flags &= EXP_FULL;
 		/* fall through */
 	case '*':
-		if (quoted)
-			sep = 0;
-		sep |= ifsset() ? ifsval()[0] : ' ';
-param:
+		if (flags == EXP_FULL)
+			sep = 1 << CHAR_BIT;
+		else
+			sep = ifsset() ? ifsval()[0] : ' ';
 		sepc = sep;
-		*quotedp = !sepc;
 		if (!(ap = shellparam.p))
 			return -1;
 		while ((p = *ap++)) {
