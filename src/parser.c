@@ -1280,7 +1280,10 @@ varname:
 			case '%':
 			case '#':
 				{
-					int cc = c;
+					int cc = *((char *)stackblock() + typeloc + 1);
+					if (cc == '@' || cc == '*')
+						goto badsub;
+					cc = c;
 					subtype = c == '#' ? VSTRIMLEFT :
 							     VSTRIMRIGHT;
 					c = pgetc_eatbnl();
