@@ -73,9 +73,12 @@
 
 /* Flags for readtoken1(). */
 #define RT_STRIPTABS 0x01
-#define RT_DBLQUOTE  0x02
-#define RT_VARNEST   0x04
-#define RT_DQVARNEST 0x08
+#define RT_HEREDOC   0x02
+#define RT_STRING    0x04
+#define RT_SQSYNTAX  0x08
+#define RT_DQSYNTAX  0x10
+#define RT_VARNEST   0x20
+#define RT_DQVARNEST 0x40
 
 
 
@@ -663,7 +666,7 @@ parseheredoc(void)
 			setprompt(2);
 		}
 		readtoken1(pgetc(), here->here->type == NHERE? SQSYNTAX : DQSYNTAX,
-				here->eofmark, here->striptabs | (here->here->type == NHERE ? 0 : RT_DBLQUOTE));
+				here->eofmark, here->striptabs | RT_HEREDOC | (here->here->type == NHERE ? RT_SQSYNTAX : RT_DQSYNTAX));
 		n = (union node *)stalloc(sizeof (struct narg));
 		n->narg.type = NARG;
 		n->narg.next = NULL;
@@ -906,7 +909,7 @@ readtoken1_loop(char *out, int c, char const *syntax, char *eofmark, int flags)
 				USTPUTC(c, out);
 				break;
 			case CCTL:
-				if (eofmark == NULL || flags & RT_DBLQUOTE)
+				if (eofmark == NULL || flags & RT_DQSYNTAX)
 					USTPUTC(CTLESC, out);
 				USTPUTC(c, out);
 				break;
@@ -921,7 +924,7 @@ readtoken1_loop(char *out, int c, char const *syntax, char *eofmark, int flags)
 					nlprompt();
 				} else {
 					if (
-						flags & RT_DBLQUOTE &&
+						flags & RT_DQSYNTAX &&
 						c != '\\' && c != '`' &&
 						c != '$' && (
 							c != '"' ||
@@ -941,7 +944,7 @@ quotemark:
 				if (eofmark == NULL) {
 					USTPUTC(CTLQUOTEMARK, out);
 				}
-				out = readtoken1_loop(out, pgetc(), qsyntax, eofmark, flags | (qsyntax == DQSYNTAX ? RT_DBLQUOTE : 0));
+				out = readtoken1_loop(out, pgetc(), qsyntax, eofmark, flags | RT_STRING | (qsyntax == DQSYNTAX ? RT_DQSYNTAX : RT_SQSYNTAX));
 				break;
 			case CDQUOTE:
 				qsyntax = DQSYNTAX;
@@ -1286,7 +1289,7 @@ badsub:
 		*((char *)stackblock() + typeloc) = subtype;
 		STPUTC('=', out);
 		if (subtype != VSNORMAL) {
-			out = readtoken1_loop(out, pgetc(), syntax, eofmark, flags | RT_VARNEST | (flags & RT_DBLQUOTE ? RT_DQVARNEST : 0));
+			out = readtoken1_loop(out, pgetc(), syntax, eofmark, (flags & ~(RT_HEREDOC | RT_STRING)) | RT_VARNEST | (flags & RT_DQSYNTAX ? RT_DQVARNEST : 0));
 		}
 	}
 	return out;
@@ -1346,7 +1349,7 @@ readtoken1_parsebackq(char *out, int flags, int oldstyle)
 					continue;
 				}
                                 if (pc != '\\' && pc != '`' && pc != '$'
-                                    && (!(flags & RT_DBLQUOTE) || pc != '"'))
+                                    && (!(flags & RT_DQSYNTAX) || pc != '"'))
                                         STPUTC('\\', pout);
 				if (pc > PEOA) {
 					break;
@@ -1426,7 +1429,7 @@ STATIC char *
 readtoken1_parsearith(char *out, char *eofmark, int flags)
 {
 	USTPUTC(CTLARI, out);
-	return readtoken1_loop(out, pgetc(), ARISYNTAX, eofmark, flags & (RT_STRIPTABS | RT_DBLQUOTE));
+	return readtoken1_loop(out, pgetc(), ARISYNTAX, eofmark, flags & RT_STRIPTABS);
 }
 
 
@@ -1520,7 +1523,7 @@ expandstr(const char *ps)
 	saveprompt = doprompt;
 	doprompt = 0;
 
-	readtoken1(pgetc(), DQSYNTAX, FAKEEOFMARK, RT_DBLQUOTE);
+	readtoken1(pgetc(), DQSYNTAX, FAKEEOFMARK, RT_HEREDOC | RT_DQSYNTAX);
 
 	doprompt = saveprompt;
 
