@@ -117,7 +117,7 @@ void badnum(const char *s)
 /*
  * Convert a string into an integer of type intmax_t.  Alow trailing spaces.
  */
-intmax_t atomax(const char *s, int base)
+intmax_t atomax(const char *s, const char **end, int base)
 {
 	char *p;
 	intmax_t r;
@@ -138,7 +138,9 @@ intmax_t atomax(const char *s, int base)
 	while (isspace((unsigned char)*p))
 	      p++;
 
-	if (*p)
+	if (end)
+		*end = p;
+	else if (*p)
 		badnum(s);
 
 	return r;
@@ -146,7 +148,7 @@ intmax_t atomax(const char *s, int base)
 
 intmax_t atomax10(const char *s)
 {
-	return atomax(s, 10);
+	return atomax(s, NULL, 10);
 }
 
 /*

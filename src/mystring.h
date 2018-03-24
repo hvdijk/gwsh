@@ -50,7 +50,7 @@ void scopyn(const char *, char *, int);
 #endif
 char *prefix(const char *, const char *);
 void badnum(const char *s) __attribute__ ((noreturn));
-intmax_t atomax(const char *, int);
+intmax_t atomax(const char *, const char **, int);
 intmax_t atomax10(const char *);
 int number(const char *);
 int is_number(const char *);

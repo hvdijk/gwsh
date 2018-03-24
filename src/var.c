@@ -369,7 +369,7 @@ intmax_t lookupvarint(const char *name)
 			varunset(name, name, 0, 0);
 		return 0;
 	}
-	return atomax(val, 0);
+	return atomax(val, NULL, 0);
 }
 
 

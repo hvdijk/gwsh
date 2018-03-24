@@ -40,6 +40,7 @@
 #include "error.h"
 #include "shell.h"
 #include "memalloc.h"
+#include "mystring.h"
 #include "syntax.h"
 #include "system.h"
 
@@ -76,7 +77,7 @@ yylex()
 		case '7':
 		case '8':
 		case '9':
-			yylval.val = strtoimax(buf, (char **)&arith_buf, 0);
+			yylval.val = atomax(buf, &arith_buf, 0);
 			return ARITH_NUM;
 		case 'A':
 		case 'B':
