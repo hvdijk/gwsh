@@ -1408,7 +1408,7 @@ done:
 	struct nodelist *savebqlist = backquotelist;
 	struct heredoc *saveheredoclist = heredoclist;
 	heredoclist = 0;
-	n = list(2);
+	n = list(2 << oldstyle);
 	backquotelist = savebqlist;
 	struct heredoc **here;
 	for (here = &heredoclist; *here; here = &(*here)->next)
