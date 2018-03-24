@@ -78,6 +78,8 @@
 #define RT_SQSYNTAX  0x08
 #define RT_DQSYNTAX  0x10
 #define RT_VARNEST   0x20
+#define RT_ARINEST   0x40
+#define RT_ARIPAREN  0x80
 
 
 
@@ -889,7 +891,6 @@ STATIC char *
 readtoken1_loop(char *out, int c, char const *syntax, char *eofmark, int flags)
 {
 	char const *qsyntax;
-	int parenlevel = 0;
 
 	loop: {	/* for each line, until end of word */
 		out = readtoken1_checkend(out, &c, eofmark, flags);	/* set c to PEOF if at end of here document */
@@ -971,13 +972,13 @@ quotemark:
 				}
 				break;
 			case CLP:	/* '(' in arithmetic */
-				parenlevel++;
 				USTPUTC(c, out);
+				out = readtoken1_loop(out, pgetc(), syntax, eofmark, flags | RT_ARIPAREN);
 				break;
 			case CRP:	/* ')' in arithmetic */
-				if (parenlevel > 0) {
+				if (flags & RT_ARIPAREN) {
 					USTPUTC(c, out);
-					--parenlevel;
+					return out;
 				} else {
 					if (pgetc() == ')') {
 						USTPUTC(CTLENDARI, out);
@@ -1010,7 +1011,7 @@ quotemark:
 		}
 	}
 endword:
-	if (syntax == ARISYNTAX)
+	if (flags & RT_ARINEST)
 		synerror("Missing '))'");
 	if (flags & RT_STRING)
 		synerror("Unterminated quoted string");
@@ -1287,7 +1288,7 @@ badsub:
 		*((char *)stackblock() + typeloc) = subtype;
 		STPUTC('=', out);
 		if (subtype != VSNORMAL) {
-			out = readtoken1_loop(out, pgetc(), syntax, eofmark, (flags & ~(RT_HEREDOC | RT_STRING)) | RT_VARNEST);
+			out = readtoken1_loop(out, pgetc(), syntax, eofmark, (flags & (RT_STRIPTABS | RT_DQSYNTAX)) | RT_VARNEST);
 		}
 	}
 	return out;
@@ -1427,7 +1428,7 @@ STATIC char *
 readtoken1_parsearith(char *out, char *eofmark, int flags)
 {
 	USTPUTC(CTLARI, out);
-	return readtoken1_loop(out, pgetc(), ARISYNTAX, eofmark, flags & RT_STRIPTABS);
+	return readtoken1_loop(out, pgetc(), ARISYNTAX, eofmark, (flags & RT_STRIPTABS) | RT_ARINEST);
 }
 
 
