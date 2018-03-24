@@ -855,49 +855,37 @@ static int pgetc_eatbnl(void)
  * word which marks the end of the document and striptabs is true if
  * leading tabs should be stripped from the document.  The argument firstc
  * is the first character of the input token or document.
- *
- * Because C does not have internal subroutines, I have simulated them
- * using goto's to implement the subroutine linkage.  The following macros
- * will run code that appears at the end of readtoken1.
  */
 
-#define CHECKEND()	{goto checkend; checkend_return:;}
-#define PARSEREDIR()	{goto parseredir; parseredir_return:;}
-#define PARSESUB()	{goto parsesub; parsesub_return:;}
-#define PARSEBACKQOLD()	{oldstyle = 1; goto parsebackq; parsebackq_oldreturn:;}
-#define PARSEBACKQNEW()	{oldstyle = 0; goto parsebackq; parsebackq_newreturn:;}
-#define	PARSEARITH()	{goto parsearith; parsearith_return:;}
+STATIC char *readtoken1_loop(char *, int, char const *, char *, int, int, int, int);
+STATIC int readtoken1_endword(char *, char *);
+STATIC char *readtoken1_checkend(char *, int *, char *, int);
+STATIC void readtoken1_parseredir(char *, int);
+STATIC char *readtoken1_parsesub(char *, char const *, char *, int, int);
+STATIC char *readtoken1_parsebackq(char *, int, int);
+STATIC char *readtoken1_parsearith(char *, char *, int, int);
 
 STATIC int
 readtoken1(int firstc, char const *syntax, char *eofmark, int striptabs)
 {
-	int c = firstc;
 	char *out;
-	size_t len;
-	struct nodelist *bqlist;
-	int quotef;
-	int dblquote;
-	int varnest;	/* levels of variables expansion */
-	int arinest;	/* levels of arithmetic expansion */
-	int parenlevel;	/* levels of parens in arithmetic */
-	int dqvarnest;	/* levels of variables expansion within double quotes */
-	int oldstyle;
-	/* syntax before arithmetic */
-	char const *uninitialized_var(prevsyntax);
 
-	dblquote = 0;
-	if (syntax == DQSYNTAX)
-		dblquote = 1;
-	quotef = 0;
-	bqlist = NULL;
-	varnest = 0;
-	arinest = 0;
-	parenlevel = 0;
-	dqvarnest = 0;
-
+	quoteflag = 0;
+	backquotelist = NULL;
 	STARTSTACKSTR(out);
+	out = readtoken1_loop(out, firstc, syntax, eofmark, striptabs, syntax == DQSYNTAX, 0, 0);
+	return readtoken1_endword(out, eofmark);
+}
+
+STATIC char *
+readtoken1_loop(char *out, int c, char const *syntax, char *eofmark, int striptabs, int dblquote, int varnest, int dqvarnest)
+{
+	char const *qsyntax;
+	int innerdq = 0;
+	int parenlevel = 0;
+
 	loop: {	/* for each line, until end of word */
-		CHECKEND();	/* set c to PEOF if at end of here document */
+		out = readtoken1_checkend(out, &c, eofmark, striptabs);	/* set c to PEOF if at end of here document */
 		for (;;) {	/* until end of line or end of word */
 			CHECKSTRSPACE(4, out);	/* permit 4 calls to USTPUTC */
 			switch(syntax[c]) {
@@ -938,42 +926,39 @@ readtoken1(int firstc, char const *syntax, char *eofmark, int striptabs)
 					}
 					USTPUTC(CTLESC, out);
 					USTPUTC(c, out);
-					quotef++;
+					quoteflag++;
 				}
 				break;
 			case CSQUOTE:
-				syntax = SQSYNTAX;
+				qsyntax = SQSYNTAX;
 quotemark:
 				if (eofmark == NULL) {
 					USTPUTC(CTLQUOTEMARK, out);
 				}
+				out = readtoken1_loop(out, pgetc(), qsyntax, eofmark, striptabs, qsyntax == DQSYNTAX, varnest, dqvarnest);
 				break;
 			case CDQUOTE:
-				syntax = DQSYNTAX;
-				dblquote = 1;
+				qsyntax = DQSYNTAX;
 				goto quotemark;
 			case CENDQUOTE:
-				if (eofmark && !varnest)
+				if (varnest && dqvarnest) {
+					USTPUTC(CTLQUOTEMARK, out);
+					innerdq = !innerdq;
+				} else if (eofmark == NULL) {
+					USTPUTC(CTLQUOTEMARK, out);
+					quoteflag++;
+					return out;
+				} else {
 					USTPUTC(c, out);
-				else {
-					if (dqvarnest == 0) {
-						syntax = BASESYNTAX;
-						dblquote = 0;
-					}
-					quotef++;
-					goto quotemark;
 				}
 				break;
 			case CVAR:	/* '$' */
-				PARSESUB();		/* parse substitution */
+				out = readtoken1_parsesub(out, syntax, eofmark, striptabs, dblquote);		/* parse substitution */
 				break;
 			case CENDVAR:	/* '}' */
-				if (varnest > 0) {
-					varnest--;
-					if (dqvarnest > 0) {
-						dqvarnest--;
-					}
+				if (varnest > 0 && !innerdq) {
 					USTPUTC(CTLENDVAR, out);
+					return out;
 				} else {
 					USTPUTC(c, out);
 				}
@@ -989,8 +974,7 @@ quotemark:
 				} else {
 					if (pgetc() == ')') {
 						USTPUTC(CTLENDARI, out);
-						if (!--arinest)
-							syntax = prevsyntax;
+						return out;
 					} else {
 						/*
 						 * unbalanced parens
@@ -1001,8 +985,8 @@ quotemark:
 					}
 				}
 				break;
-			case CBQUOTE:	/* '`' */
-				PARSEBACKQOLD();
+			case CBQUOTE:
+				out = readtoken1_parsebackq(out, dblquote, 1);
 				break;
 			case CEOF:
 				goto endword;		/* exit outer loop */
@@ -1027,28 +1011,36 @@ endword:
 		/* { */
 		synerror("Missing '}'");
 	}
+	pungetc();
+	return out;
+}
+
+STATIC int
+readtoken1_endword(char *out, char *eofmark)
+{
+	size_t len;
+	int c;
+
 	USTPUTC('\0', out);
 	len = out - (char *)stackblock();
 	out = stackblock();
+
+	c = pgetc();
 	if (eofmark == NULL) {
 		if ((c == '>' || c == '<')
-		 && quotef == 0
+		 && quoteflag == 0
 		 && len <= 2
 		 && (*out == '\0' || is_digit(*out))) {
-			PARSEREDIR();
+			readtoken1_parseredir(out, c);
 			return lasttoken = TREDIR;
 		} else {
 			pungetc();
 		}
 	}
-	quoteflag = quotef;
-	backquotelist = bqlist;
 	grabstackblock(len);
 	wordtext = out;
 	return lasttoken = TWORD;
-/* end of readtoken routine */
-
-
+}
 
 /*
  * Check to see whether we are at the end of the here document.  When this
@@ -1056,30 +1048,32 @@ endword:
  * we are at the end of the here document, this routine sets the c to PEOF.
  */
 
-checkend: {
+STATIC char *
+readtoken1_checkend(char *out, int *c, char *eofmark, int striptabs)
+{
 	if (realeofmark(eofmark)) {
 		int markloc;
 		char *p;
 
-		if (c == PEOA) {
-			c = pgetc2();
+		if (*c == PEOA) {
+			*c = pgetc2();
 		}
 		if (striptabs) {
-			while (c == '\t') {
-				c = pgetc2();
+			while (*c == '\t') {
+				*c = pgetc2();
 			}
 		}
 
 		markloc = out - (char *)stackblock();
-		for (p = eofmark; STPUTC(c, out), *p; p++) {
-			if (c != *p)
+		for (p = eofmark; STPUTC(*c, out), *p; p++) {
+			if (*c != *p)
 				goto more_heredoc;
 
-			c = pgetc2();
+			*c = pgetc2();
 		}
 
-		if (c == '\n' || c == PEOF) {
-			c = PEOF;
+		if (*c == '\n' || *c == PEOF) {
+			*c = PEOF;
 			nlnoprompt();
 		} else {
 			int len;
@@ -1089,8 +1083,8 @@ more_heredoc:
 			len = out - p;
 
 			if (len) {
-				len -= c < 0;
-				c = p[-1];
+				len -= *c < 0;
+				*c = p[-1];
 
 				if (len) {
 					char *str;
@@ -1105,7 +1099,7 @@ more_heredoc:
 
 		STADJUST((char *)stackblock() + markloc - out, out);
 	}
-	goto checkend_return;
+	return out;
 }
 
 
@@ -1115,7 +1109,9 @@ more_heredoc:
  * first character of the redirection operator.
  */
 
-parseredir: {
+STATIC void
+readtoken1_parseredir(char *out, int c)
+{
 	char fd = *out;
 	union node *np;
 
@@ -1169,7 +1165,6 @@ parseredir: {
 	if (fd != '\0')
 		np->nfile.fd = digit_val(fd);
 	redirnode = np;
-	goto parseredir_return;
 }
 
 
@@ -1178,7 +1173,10 @@ parseredir: {
  * and nothing else.
  */
 
-parsesub: {
+STATIC char *
+readtoken1_parsesub(char *out, char const *syntax, char *eofmark, int striptabs, int dblquote)
+{
+	int c;
 	int subtype;
 	int typeloc;
 	char *p;
@@ -1194,10 +1192,10 @@ parsesub: {
 		pungetc();
 	} else if (c == '(') {	/* $(command) or $((arith)) */
 		if (pgetc_eatbnl() == '(') {
-			PARSEARITH();
+			out = readtoken1_parsearith(out, eofmark, striptabs, dblquote);
 		} else {
 			pungetc();
-			PARSEBACKQNEW();
+			out = readtoken1_parsebackq(out, dblquote, 0);
 		}
 	} else {
 		USTPUTC(CTLVAR, out);
@@ -1280,14 +1278,12 @@ badsub:
 			pungetc();
 		}
 		*((char *)stackblock() + typeloc) = subtype;
-		if (subtype != VSNORMAL) {
-			varnest++;
-			if (dblquote)
-				dqvarnest++;
-		}
 		STPUTC('=', out);
+		if (subtype != VSNORMAL) {
+			out = readtoken1_loop(out, pgetc(), syntax, eofmark, striptabs, dblquote, 1, dblquote);
+		}
 	}
-	goto parsesub_return;
+	return out;
 }
 
 
@@ -1298,7 +1294,9 @@ badsub:
  * characters on the top of the stack which must be preserved.
  */
 
-parsebackq: {
+STATIC char *
+readtoken1_parsebackq(char *out, int dblquote, int oldstyle)
+{
 	struct nodelist **nlpp;
 	union node *n;
 	char *str;
@@ -1370,7 +1368,7 @@ done:
 			setinputstring(pstr);
                 }
         }
-	nlpp = &bqlist;
+	nlpp = &backquotelist;
 	while (*nlpp)
 		nlpp = &(*nlpp)->next;
 	*nlpp = (struct nodelist *)stalloc(sizeof (struct nodelist));
@@ -1381,7 +1379,9 @@ done:
 		doprompt = 0;
 	}
 
+	struct nodelist *savebqlist = backquotelist;
 	n = list(2);
+	backquotelist = savebqlist;
 
 	if (oldstyle)
 		doprompt = saveprompt;
@@ -1407,26 +1407,21 @@ done:
 		STADJUST(savelen, out);
 	}
 	USTPUTC(CTLBACKQ, out);
-	if (oldstyle)
-		goto parsebackq_oldreturn;
-	else
-		goto parsebackq_newreturn;
+	return out;
 }
+
+
 
 /*
  * Parse an arithmetic expansion (indicate start of one and set state)
  */
-parsearith: {
 
-	if (++arinest == 1) {
-		prevsyntax = syntax;
-		syntax = ARISYNTAX;
-	}
+STATIC char *
+readtoken1_parsearith(char *out, char *eofmark, int striptabs, int dblquote)
+{
 	USTPUTC(CTLARI, out);
-	goto parsearith_return;
+	return readtoken1_loop(out, pgetc(), ARISYNTAX, eofmark, striptabs, dblquote, 0, 0);
 }
-
-} /* end of readtoken */
 
 
 
