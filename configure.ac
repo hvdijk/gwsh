@@ -165,5 +165,10 @@ AC_ARG_ENABLE(lineno, AS_HELP_STRING(--disable-lineno, \
 if test "$enable_lineno" != "no"; then
 	AC_DEFINE([WITH_LINENO], 1, [Define if you build with -DWITH_LINENO])
 fi
+AC_ARG_ENABLE([locale], AS_HELP_STRING([--disable-locale], \
+				     [Disable locale support]))
+if test "$enable_locale" != "no"; then
+	AC_DEFINE([WITH_LOCALE], 1, [Define if you want locale support.])
+fi
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT
