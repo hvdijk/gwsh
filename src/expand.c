@@ -50,8 +50,10 @@
 #endif
 #ifdef WITH_LOCALE
 #include <wchar.h>
-#endif
+#include <wctype.h>
+#else
 #include <ctype.h>
+#endif
 #include <stdbool.h>
 
 /*
@@ -805,13 +807,34 @@ strtodest(const char *p, int quotes)
 
 #ifdef WITH_LOCALE
 STATIC size_t
-mbclen(const char *p, size_t len)
+mbcget(const char *p, size_t len, wint_t *c, int ctlesc)
 {
+	const char *q = p;
+	wchar_t wc;
 	mbstate_t mbs = {0};
-	len = mbrlen(p, len, &mbs);
-	if (len >= (size_t)-1 || len == 0)
-		len = 1;
-	return len;
+	for (;;) {
+		if (ctlesc && *q == (char)CTLESC)
+			q++;
+		switch (mbrtowc(&wc, q++, 1, &mbs)) {
+		case (size_t)-2:
+			if (len) {
+				len--;
+				continue;
+			}
+		case (size_t)-1:
+			if (c) {
+				q = p;
+				if (ctlesc && *q == (char)CTLESC)
+					q++;
+				*c = -(unsigned char) *q++;
+			}
+			return q - p;
+		default:
+			if (c)
+				*c = wc;
+			return q - p;
+		}
+	}
 }
 
 STATIC size_t
@@ -819,7 +842,7 @@ mbccnt(const char *p, size_t len)
 {
 	size_t count = 0;
 	while (*p) {
-		size_t clen = mbclen(p, len);
+		size_t clen = mbcget(p, len, NULL, 0);
 		p += clen;
 		len -= clen;
 		count++;
@@ -1452,24 +1475,38 @@ patmatch(char *pattern, const char *string)
 }
 
 
+#ifdef WITH_LOCALE
+STATIC int ccmatch(const char *p, wint_t chr, const char **r)
+#else
 STATIC int ccmatch(const char *p, int chr, const char **r)
+#endif
 {
 	static const struct class {
 		char name[10];
+#ifdef WITH_LOCALE
+		int (*fn)(wint_t);
+#else
 		int (*fn)(int);
+#endif
 	} classes[] = {
-		{ .name = ":alnum:]", .fn = isalnum },
-		{ .name = ":cntrl:]", .fn = iscntrl },
-		{ .name = ":lower:]", .fn = islower },
-		{ .name = ":space:]", .fn = isspace },
-		{ .name = ":alpha:]", .fn = isalpha },
-		{ .name = ":digit:]", .fn = isdigit },
-		{ .name = ":print:]", .fn = isprint },
-		{ .name = ":upper:]", .fn = isupper },
-		{ .name = ":blank:]", .fn = isblank },
-		{ .name = ":graph:]", .fn = isgraph },
-		{ .name = ":punct:]", .fn = ispunct },
-		{ .name = ":xdigit:]", .fn = isxdigit },
+#ifdef WITH_LOCALE
+#define IS(x) isw##x
+#else
+#define IS(x) is##x
+#endif
+		{ .name = ":alnum:]", .fn = IS(alnum) },
+		{ .name = ":cntrl:]", .fn = IS(cntrl) },
+		{ .name = ":lower:]", .fn = IS(lower) },
+		{ .name = ":space:]", .fn = IS(space) },
+		{ .name = ":alpha:]", .fn = IS(alpha) },
+		{ .name = ":digit:]", .fn = IS(digit) },
+		{ .name = ":print:]", .fn = IS(print) },
+		{ .name = ":upper:]", .fn = IS(upper) },
+		{ .name = ":blank:]", .fn = IS(blank) },
+		{ .name = ":graph:]", .fn = IS(graph) },
+		{ .name = ":punct:]", .fn = IS(punct) },
+		{ .name = ":xdigit:]", .fn = IS(xdigit) },
+#undef IS
 	};
 	const struct class *class, *end;
 
@@ -1497,7 +1534,34 @@ pmatch(const char *pattern, const char *string, int flags)
 	const bool matchmax   = flags & PM_MATCHMAX;
 
 	const char *p, *q;
+#ifndef WITH_LOCALE
 	char c;
+#define GETC(c, p)  \
+	do {            \
+	  (c) = *(p)++; \
+	} while (0)
+#define GETC_CTLESC(c, p)                 \
+	do {                                  \
+	  if (ctlesc && *(p) == (char)CTLESC) \
+	    (p)++;                            \
+	  (c) = *(p)++;                       \
+	} while (0)
+#else
+	wint_t c;
+	size_t plen, qlen;
+#define GETC(c, p)                                 \
+	do {                                           \
+	  size_t len = mbcget((p), (p##len), &(c), 0); \
+	  (p) += len;                                  \
+	  (p##len) += len;                             \
+	} while (0)
+#define GETC_CTLESC(c, p)                               \
+	do {                                                \
+	  size_t len = mbcget((p), (p##len), &(c), ctlesc); \
+	  (p) += len;                                       \
+	  (p##len) += len;                                  \
+	} while (0)
+#endif
 
 	const char *result = NULL;
 
@@ -1519,13 +1583,20 @@ pmatch(const char *pattern, const char *string, int flags)
 		stbuf[ste++] = 0;
 
 	q = string;
+#ifdef WITH_LOCALE
+	p = pattern;
+	plen = strlen(p) + 1;
+	qlen = strlen(q) + 1;
+#endif
 	for (;;) {
+#ifdef WITH_LOCALE
+		wint_t chr;
+#else
 		char chr;
+#endif
 		if (!matchright)
 			string = q;
-		if (ctlesc && *q == (char)CTLESC)
-			q++;
-		chr = *q++;
+		GETC_CTLESC(chr, q);
 		stcc = -1;
 		stc = ste;
 		if (matchright) {
@@ -1534,9 +1605,13 @@ pmatch(const char *pattern, const char *string, int flags)
 		}
 		for (stp = 0; stp != ste; stp += 1 + matchright) {
 			bool ast = false, found = false;
+#ifdef WITH_LOCALE
+			plen -= pattern + stbuf[stp] - p;
+#endif
 			p = pattern + stbuf[stp];
+			GETC(c, p);
 again:
-			switch (c = *p++) {
+			switch (c) {
 			case '\0':
 				if (matchleft || chr == '\0') {
 					result = string + (matchright ? stbuf[stp + 1] : 0);
@@ -1546,14 +1621,13 @@ again:
 				break;
 			case '\\':
 				if (*p) {
-					c = *p++;
+					GETC(c, p);
 				}
 				goto dft;
 			case '*':
 				ast = true;
-				c = *p;
-				while (c == '*')
-					c = *++p;
+				do GETC(c, p);
+				while (c == '*');
 				goto again;
 			case '?':
 				if (chr != '\0')
@@ -1563,13 +1637,16 @@ again:
 				bool invert = false;
 				if (*p == '!') {
 					invert = true;
-					p++;
+					GETC(c, p);
 				}
 				if (chr == '\0')
 					break;
-				c = *p++;
+				GETC(c, p);
 				do {
 					if (!c) {
+#ifdef WITH_LOCALE
+						plen -= pattern + stbuf[stp] + 1 - p;
+#endif
 						p = pattern + stbuf[stp] + 1;
 						c = '[';
 						goto dft;
@@ -1578,23 +1655,40 @@ again:
 						const char *r;
 						found |= !!ccmatch(p, chr, &r);
 						if (r) {
+#ifdef WITH_LOCALE
+							plen -= r - p;
+#endif
 							p = r;
 							continue;
 						}
 					} else if (c == '\\')
-						c = *p++;
+						GETC(c, p);
 					if (*p == '-' && p[1] != ']') {
-						p++;
-						if (*p == '\\')
-							p++;
-						if (chr >= c && chr <= *p)
+#ifndef WITH_LOCALE
+						char cc;
+#else
+						wint_t cc;
+#endif
+						GETC(cc, p);
+						GETC(cc, p);
+						if (cc == '\\')
+							GETC(cc, p);
+#ifdef WITH_LOCALE
+						if (chr >= 0 && c >= 0 && cc >= 0) {
+							wchar_t chrs[2] = {chr}, cs[2] = {c}, ccs[2] = {cc};
+							if (wcscoll(chrs, cs) >= 0 && wcscoll(chrs, ccs) <= 0)
+								found = true;
+						}
+#else
+						if (chr >= c && chr <= cc)
 							found = true;
-						p++;
+#endif
 					} else {
 						if (chr == c)
 							found = true;
 					}
-				} while ((c = *p++) != ']');
+					GETC(c, p);
+				} while (c != ']');
 				if (invert)
 					found = !found;
 				break;
@@ -1655,11 +1749,19 @@ _rmescapes(char *str, int flag)
 	unsigned inquotes;
 	int notescaped;
 	int globbing;
+#ifdef WITH_LOCALE
+	char *qs;
+	mbstate_t mbs;
+	int escape;
+#endif
 
 	p = strpbrk(str, qchars);
 	if (!p) {
 		return str;
 	}
+#ifdef WITH_LOCALE
+	p = str;
+#endif
 	q = p;
 	r = str;
 	if (flag & RMESCAPE_ALLOC) {
@@ -1678,13 +1780,19 @@ _rmescapes(char *str, int flag)
 			r = stalloc(fulllen);
 		}
 		q = r;
+#ifndef WITH_LOCALE
 		if (len > 0) {
 			q = mempcpy(q, str, len);
 		}
+#endif
 	}
 	inquotes = 0;
 	globbing = flag & RMESCAPE_GLOB;
 	notescaped = globbing;
+#ifdef WITH_LOCALE
+	qs = q;
+	escape = 0;
+#endif
 	while (*p) {
 		if (*p == (char)CTLQUOTEMARK) {
 			inquotes = ~inquotes;
@@ -1695,7 +1803,11 @@ _rmescapes(char *str, int flag)
 		if (*p == (char)CTLESC) {
 			p++;
 			if (notescaped)
+#ifdef WITH_LOCALE
+				escape = 1;
+#else
 				*q++ = '\\';
+#endif
 		} else if (*p == '\\' && !inquotes) {
 			/* naked back slash */
 			notescaped = 0;
@@ -1704,6 +1816,19 @@ _rmescapes(char *str, int flag)
 		notescaped = globbing;
 copy:
 		*q++ = *p++;
+
+#ifdef WITH_LOCALE
+		memset(&mbs, 0, sizeof mbs);
+		if (mbrlen(qs, q - qs, &mbs) == -2)
+			continue;
+		if (escape) {
+			memmove(qs + 1, qs, q - qs);
+			*qs = '\\';
+			q++;
+			escape = 0;
+		}
+		qs = q;
+#endif
 	}
 	*q = '\0';
 	if (flag & RMESCAPE_GROW) {
