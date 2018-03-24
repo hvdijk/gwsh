@@ -45,9 +45,6 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
-#ifdef HAVE_FNMATCH
-#include <fnmatch.h>
-#endif
 #ifdef HAVE_GLOB
 #include <glob.h>
 #endif
@@ -75,6 +72,14 @@
 #include "mystring.h"
 #include "show.h"
 #include "system.h"
+
+/*
+ * pmatch() flags
+ */
+#define PM_MATCHMAX   0x01 /* Look for the longest match. Combine with PM_MATCHLEFT or PM_MATCHRIGHT. */
+#define PM_MATCHRIGHT 0x02 /* Match a suffix, not the full string. Return the start of the suffix. */
+#define PM_MATCHLEFT  0x04 /* Match a prefix, not the full string. Return the end of the prefix. */
+#define PM_CTLESC     0x08 /* Skip over CTLESC characters. */
 
 /*
  * _rmescape() flags
@@ -130,15 +135,9 @@ STATIC struct strlist *msort(struct strlist *, int);
 #endif
 STATIC void addfname(char *);
 STATIC int patmatch(char *, const char *);
-#ifndef HAVE_FNMATCH
-STATIC int pmatch(const char *, const char *);
-#else
-#define pmatch(a, b) !fnmatch((a), (b), 0)
-#endif
+STATIC const char *pmatch(const char *, const char *, int);
 STATIC int cvtnum(intmax_t);
 STATIC size_t esclen(const char *, const char *);
-STATIC char *scanleft(char *, char *, char *, char *, int, int);
-STATIC char *scanright(char *, char *, char *, char *, int, int);
 STATIC void varunset(const char *, const char *, const char *, int)
 	__attribute__((__noreturn__));
 
@@ -575,73 +574,6 @@ read:
 }
 
 
-STATIC char *
-scanleft(
-	char *startp, char *rmesc, char *rmescend, char *str, int quotes,
-	int zero
-) {
-	char *loc;
-	char *loc2;
-	char c;
-
-	loc = startp;
-	loc2 = rmesc;
-	do {
-		int match;
-		const char *s = loc2;
-		c = *loc2;
-		if (zero) {
-			*loc2 = '\0';
-			s = rmesc;
-		}
-		match = pmatch(str, s);
-		*loc2 = c;
-		if (match)
-			return loc;
-		if (quotes && *loc == (char)CTLESC)
-			loc++;
-		loc++;
-		loc2++;
-	} while (c);
-	return 0;
-}
-
-
-STATIC char *
-scanright(
-	char *startp, char *rmesc, char *rmescend, char *str, int quotes,
-	int zero
-) {
-	int esc = 0;
-	char *loc;
-	char *loc2;
-
-	for (loc = str - 1, loc2 = rmescend; loc >= startp; loc2--) {
-		int match;
-		char c = *loc2;
-		const char *s = loc2;
-		if (zero) {
-			*loc2 = '\0';
-			s = rmesc;
-		}
-		match = pmatch(str, s);
-		*loc2 = c;
-		if (match)
-			return loc;
-		loc--;
-		if (quotes) {
-			if (--esc < 0) {
-				esc = esclen(startp, loc);
-			}
-			if (esc % 2) {
-				esc--;
-				loc--;
-			}
-		}
-	}
-	return 0;
-}
-
 STATIC const char *
 subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varflags, int flag)
 {
@@ -650,9 +582,6 @@ subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varfla
 	char *loc;
 	struct nodelist *saveargbackq = argbackq;
 	int amount;
-	char *rmesc, *rmescend;
-	int zero;
-	char *(*scan)(char *, char *, char *, char *, int , int);
 
 	argstr(p, EXP_TILDE | (subtype != VSASSIGN && subtype != VSQUESTION ?
 			       EXP_CASE : 0));
@@ -672,33 +601,17 @@ subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varfla
 		/* NOTREACHED */
 	}
 
-	subtype -= VSTRIMRIGHT;
 #ifdef DEBUG
-	if (subtype < 0 || subtype > 3)
+	if (subtype < VSTRIMRIGHT || subtype > VSTRIMLEFTMAX)
 		abort();
 #endif
 
-	rmesc = startp;
-	rmescend = stackblock() + strloc;
-	if (quotes) {
-		rmesc = _rmescapes(startp, RMESCAPE_ALLOC | RMESCAPE_GROW);
-		if (rmesc != startp) {
-			rmescend = expdest;
-			startp = stackblock() + startloc;
-		}
-	}
-	rmescend--;
 	str = stackblock() + strloc;
 	preglob(str, 0);
 
-	/* zero = subtype == VSTRIMLEFT || subtype == VSTRIMLEFTMAX */
-	zero = subtype >> 1;
-	/* VSTRIMLEFT/VSTRIMRIGHTMAX -> scanleft */
-	scan = (subtype & 1) ^ zero ? scanleft : scanright;
-
-	loc = scan(startp, rmesc, rmescend, str, quotes, zero);
+	loc = (char *)pmatch(str, startp, (quotes ? PM_CTLESC : 0) | (subtype & (PM_MATCHLEFT | PM_MATCHRIGHT | PM_MATCHMAX)));
 	if (loc) {
-		if (zero) {
+		if (subtype & PM_MATCHLEFT) {
 			memmove(startp, loc, str - loc);
 			loc = startp + (str - loc) - 1;
 		}
@@ -1390,7 +1303,7 @@ expmeta(char *enddir, char *name)
 	while (! int_pending() && (dp = readdir(dirp)) != NULL) {
 		if (dp->d_name[0] == '.' && ! matchdot)
 			continue;
-		if (pmatch(start, dp->d_name)) {
+		if (pmatch(start, dp->d_name, 0)) {
 			if (atend) {
 				scopy(dp->d_name, enddir);
 				addfname(expdir);
@@ -1495,11 +1408,10 @@ msort(struct strlist *list, int len)
 STATIC inline int
 patmatch(char *pattern, const char *string)
 {
-	return pmatch(preglob(pattern, 0), string);
+	return !!pmatch(preglob(pattern, 0), string, 0);
 }
 
 
-#ifndef HAVE_FNMATCH
 STATIC int ccmatch(const char *p, int chr, const char **r)
 {
 	static const struct class {
@@ -1536,104 +1448,159 @@ STATIC int ccmatch(const char *p, int chr, const char **r)
 	return 0;
 }
 
-STATIC int
-pmatch(const char *pattern, const char *string)
+STATIC const char *
+pmatch(const char *pattern, const char *string, int flags)
 {
+	const bool ctlesc     = flags & PM_CTLESC;
+	const bool matchleft  = flags & PM_MATCHLEFT;
+	const bool matchright = flags & PM_MATCHRIGHT;
+	const bool matchmax   = flags & PM_MATCHMAX;
+
 	const char *p, *q;
 	char c;
 
-	p = pattern;
+	const char *result = NULL;
+
+	static size_t *sstbuf, sstbuflen;
+	size_t *stbuf, stbuflen;
+	size_t ste, stp, stc, stcc;
+	if (sstbuf == NULL) {
+		INTOFF;
+		sstbuflen = 128;
+		sstbuf = ckmalloc(sstbuflen * sizeof *sstbuf);
+		INTON;
+	}
+	stbuflen = sstbuflen;
+	stbuf = sstbuf;
+
+	ste = 0;
+	stbuf[ste++] = 0;
+	if (matchright)
+		stbuf[ste++] = 0;
+
 	q = string;
 	for (;;) {
-		switch (c = *p++) {
-		case '\0':
-			goto breakloop;
-		case '\\':
-			if (*p) {
-				c = *p++;
-			}
-			goto dft;
-		case '?':
-			if (*q++ == '\0')
-				return 0;
-			break;
-		case '*':
-			c = *p;
-			while (c == '*')
-				c = *++p;
-			if (c != '\\' && c != '?' && c != '*' && c != '[') {
-				while (*q != c) {
-					if (*q == '\0')
-						return 0;
-					q++;
-				}
-			}
-			do {
-				if (pmatch(p, q))
-					return 1;
-			} while (*q++ != '\0');
-			return 0;
-		case '[': {
-			const char *startp;
-			int invert, found;
-			char chr;
-
-			startp = p;
-			invert = 0;
-			if (*p == '!') {
-				invert++;
-				p++;
-			}
-			found = 0;
-			chr = *q;
-			if (chr == '\0')
-				return 0;
-			c = *p++;
-			do {
-				if (!c) {
-					p = startp;
-					c = '[';
-					goto dft;
-				}
-				if (c == '[') {
-					const char *r;
-
-					found |= !!ccmatch(p, chr, &r);
-					if (r) {
-						p = r;
-						continue;
-					}
-				} else if (c == '\\')
-					c = *p++;
-				if (*p == '-' && p[1] != ']') {
-					p++;
-					if (*p == '\\')
-						p++;
-					if (chr >= c && chr <= *p)
-						found = 1;
-					p++;
-				} else {
-					if (chr == c)
-						found = 1;
-				}
-			} while ((c = *p++) != ']');
-			if (found == invert)
-				return 0;
+		char chr;
+		if (!matchright)
+			string = q;
+		if (ctlesc && *q == (char)CTLESC)
 			q++;
-			break;
+		chr = *q++;
+		stcc = -1;
+		stc = ste;
+		if (matchright) {
+			stbuf[stc++] = 0;
+			stbuf[stc++] = q - string;
 		}
-dft:	        default:
-			if (*q++ != c)
-				return 0;
-			break;
+		for (stp = 0; stp != ste; stp += 1 + matchright) {
+			bool ast = false, found = false;
+			p = pattern + stbuf[stp];
+again:
+			switch (c = *p++) {
+			case '\0':
+				if (matchleft || chr == '\0') {
+					result = string + (matchright ? stbuf[stp + 1] : 0);
+					if (!matchmax)
+						return result;
+				}
+				break;
+			case '\\':
+				if (*p) {
+					c = *p++;
+				}
+				goto dft;
+			case '*':
+				ast = true;
+				c = *p;
+				while (c == '*')
+					c = *++p;
+				goto again;
+			case '?':
+				if (chr != '\0')
+					found = true;
+				break;
+			case '[': {
+				bool invert = false;
+				if (*p == '!') {
+					invert = true;
+					p++;
+				}
+				if (chr == '\0')
+					break;
+				c = *p++;
+				do {
+					if (!c) {
+						p = pattern + stbuf[stp] + 1;
+						c = '[';
+						goto dft;
+					}
+					if (c == '[') {
+						const char *r;
+						found |= !!ccmatch(p, chr, &r);
+						if (r) {
+							p = r;
+							continue;
+						}
+					} else if (c == '\\')
+						c = *p++;
+					if (*p == '-' && p[1] != ']') {
+						p++;
+						if (*p == '\\')
+							p++;
+						if (chr >= c && chr <= *p)
+							found = true;
+						p++;
+					} else {
+						if (chr == c)
+							found = true;
+					}
+				} while ((c = *p++) != ']');
+				if (invert)
+					found = !found;
+				break;
+			}
+dft:		default:
+				found = chr == c;
+				break;
+			}
+
+			if (stbuflen - stc < (ast + found) << matchright) {
+				INTOFF;
+				sstbuflen *= 2;
+				sstbuf = ckrealloc(stbuf, stbuflen);
+				INTON;
+				stbuf = sstbuf;
+				stbuflen = sstbuflen;
+			}
+
+			if (ast) {
+				if (stcc == stbuf[stp]) {
+					if (matchright && matchmax)
+						stbuf[stc - 1] = stbuf[stp + 1];
+				} else {
+					stcc = stbuf[stc++] = stbuf[stp];
+					if (matchright)
+						stbuf[stc++] = stbuf[stp + 1];
+				}
+			}
+
+			if (found) {
+				if (stcc == p - pattern) {
+					if (matchright && matchmax)
+						stbuf[stc - 1] = stbuf[stp + 1];
+				} else {
+					stcc = stbuf[stc++] = p - pattern;
+					if (matchright)
+						stbuf[stc++] = stbuf[stp + 1];
+				}
+			}
 		}
+		if (stc == stp || !chr)
+			return result;
+		ste = stc - stp;
+		memmove(stbuf, stbuf + stp, ste * sizeof *stbuf);
 	}
-breakloop:
-	if (*q != '\0')
-		return 0;
-	return 1;
 }
-#endif
 
 
 
