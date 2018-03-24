@@ -47,6 +47,15 @@
 #define	CTLQUOTEMARK -120
 #define	CTL_LAST -120		/* last 'special' character */
 
+#define CTLCHARS \
+	     CTLESC:      \
+	case CTLVAR:      \
+	case CTLENDVAR:   \
+	case CTLBACKQ:    \
+	case CTLARI:      \
+	case CTLENDARI:   \
+	case CTLQUOTEMARK
+
 /* variable substitution byte (follows CTLVAR) */
 #define VSTYPE	0x0f		/* type of variable substitution */
 #define VSNUL	0x10		/* colon--treat the empty string as unset */
