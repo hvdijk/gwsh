@@ -910,8 +910,10 @@ control:
 					USTPUTC('\\', out);
 					pungetc();
 				} else {
-					if (
-						flags & RT_DQSYNTAX &&
+					int quotemark = 0;
+					if (!(flags & RT_DQSYNTAX)) {
+						quotemark = c >= CTL_FIRST && c <= CTL_LAST;
+					} else if (
 						c != '\\' && c != '`' &&
 						c != '$' && (
 							c != '"' ||
@@ -924,8 +926,12 @@ control:
 						USTPUTC(CTLESC, out);
 						USTPUTC('\\', out);
 					}
+					if (quotemark)
+						USTPUTC(CTLQUOTEMARK, out);
 					USTPUTC(CTLESC, out);
 					USTPUTC(c, out);
+					if (quotemark)
+						USTPUTC(CTLQUOTEMARK, out);
 					quoteflag++;
 				}
 				break;

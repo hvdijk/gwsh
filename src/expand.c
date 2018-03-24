@@ -327,6 +327,14 @@ addquote:
 			}
 			break;
 		case CTLESC:
+			if (!(flag & EXP_QUOTED) && (c >= CTL_FIRST && c <= CTL_LAST)) {
+				length++;
+				if (flag & QUOTES_ESC) {
+					p--;
+					length++;
+				}
+				break;
+			}
 			startloc++;
 			length++;
 			goto addquote;
@@ -389,7 +397,11 @@ done:
 	if (!home || !*home)
 		goto lose;
 	*p = c;
+	if (quotes)
+		STPUTC(CTLQUOTEMARK, expdest);
 	strtodest(home, quotes | EXP_QUOTED);
+	if (quotes)
+		STPUTC(CTLQUOTEMARK, expdest);
 	return (p);
 lose:
 	*p = c;
