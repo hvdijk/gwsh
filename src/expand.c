@@ -1443,7 +1443,12 @@ msort(struct strlist *list, int len)
 	p = msort(p, len - half);		/* sort second half */
 	lpp = &list;
 	for (;;) {
-		if (strcmp(p->text, q->text) < 0) {
+#ifndef WITH_LOCALE
+		int cmp = strcmp(p->text, q->text);
+#else
+		int cmp = strcoll(p->text, q->text);
+#endif
+		if (cmp < 0) {
 			*lpp = p;
 			lpp = &p->next;
 			if ((p = *lpp) == NULL) {
