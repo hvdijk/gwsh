@@ -114,11 +114,7 @@ main(int argc, char **argv)
 		if (e == EXEXIT || s == 0 || iflag == 0 || shlvl)
 			exitshell();
 
-		if (e == EXINT
-#if ATTY
-		 && (! attyset() || equal(termval(), "emacs"))
-#endif
-		 ) {
+		if (e == EXINT) {
 			out2c('\n');
 #ifdef FLUSHERR
 			flushout(out2);
