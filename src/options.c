@@ -394,7 +394,7 @@ void
 getoptsreset(value)
 	const char *value;
 {
-	shellparam.optind = number(value) ?: 1;
+	shellparam.optind = -1;
 	shellparam.optoff = -1;
 }
 
@@ -412,16 +412,20 @@ getoptscmd(int argc, char **argv)
 
 	if (argc < 3)
 		sh_error("Usage: getopts optstring var [arg]");
-	else if (argc == 3) {
+	if (shellparam.optind < 0) {
+		shellparam.optind = lookupvarint("OPTIND");
+		shellparam.optoff = -1;
+	}
+	if (argc == 3) {
 		optbase = shellparam.p;
-		if ((unsigned)shellparam.optind > shellparam.nparam + 1) {
+		if ((unsigned) (shellparam.optind - 1) > shellparam.nparam) {
 			shellparam.optind = 1;
 			shellparam.optoff = -1;
 		}
 	}
 	else {
 		optbase = &argv[3];
-		if ((unsigned)shellparam.optind > argc - 2) {
+		if ((unsigned) (shellparam.optind - 1) > argc - 3) {
 			shellparam.optind = 1;
 			shellparam.optoff = -1;
 		}
