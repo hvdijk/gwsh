@@ -1238,6 +1238,9 @@ varname:
 		} else {
 			int cc = c;
 
+			if (!subtype && cc == '}')
+				goto badsub;
+
 			c = pgetc_eatbnl();
 
 			if (!subtype && cc == '#') {
