@@ -720,24 +720,22 @@ record:
 	}
 #endif
 
-	if (varlen >= 0) {
-		/*
-		 * Terminate the string and start recording the pattern
-		 * right after it
-		 */
-		STPUTC('\0', expdest);
-		patloc = expdest - (char *)stackblock();
-		if (subevalvar(p, NULL, patloc, subtype,
-			       startloc, varflags, flag) == 0) {
-			int amount = expdest - (
-				(char *)stackblock() + patloc - 1
-			);
-			STADJUST(-amount, expdest);
-		}
-		/* Remove any recorded regions beyond start of variable */
-		removerecordregions(startloc);
-		goto record;
+	/*
+	 * Terminate the string and start recording the pattern
+	 * right after it
+	 */
+	STPUTC('\0', expdest);
+	patloc = expdest - (char *)stackblock();
+	if (subevalvar(p, NULL, patloc, subtype,
+		       startloc, varflags, flag) == 0) {
+		int amount = expdest - (
+			(char *)stackblock() + patloc - 1
+		);
+		STADJUST(-amount, expdest);
 	}
+	/* Remove any recorded regions beyond start of variable */
+	removerecordregions(startloc);
+	goto record;
 
 end:
 	if (subtype != VSNORMAL) {	/* skip to end of alternative */
@@ -746,7 +744,7 @@ end:
 			if ((c = (signed char)*p++) == CTLESC)
 				p++;
 			else if (c == CTLBACKQ) {
-				if (varlen >= 0)
+				if (varlen >= 0 || subtype >= VSTRIMRIGHT)
 					argbackq = argbackq->next;
 			} else if (c == CTLVAR) {
 				if ((*p++ & VSTYPE) != VSNORMAL)
