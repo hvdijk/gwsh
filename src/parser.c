@@ -68,9 +68,6 @@
 
 
 
-/* Used by expandstr to get here-doc like behaviour. */
-#define FAKEEOFMARK (char *)1
-
 /* Flags for readtoken1(). */
 #define RT_STRIPTABS 0x01
 #define RT_HEREDOC   0x02
@@ -129,11 +126,6 @@ isassignment(const char *p)
 	if (p == q)
 		return 0;
 	return *q == '=';
-}
-
-static inline int realeofmark(const char *eofmark)
-{
-	return eofmark && eofmark != FAKEEOFMARK;
 }
 
 
@@ -1069,7 +1061,7 @@ readtoken1_endword(char *out, char *eofmark)
 STATIC char *
 readtoken1_checkend(char *out, int *c, char *eofmark, int flags)
 {
-	if (realeofmark(eofmark)) {
+	if (eofmark) {
 		int markloc;
 		char *p;
 
@@ -1532,7 +1524,7 @@ expandstr(const char *ps)
 	saveprompt = doprompt;
 	doprompt = 0;
 
-	readtoken1(pgetc(), FAKEEOFMARK, RT_HEREDOC | RT_DQSYNTAX);
+	readtoken1(pgetc(), NULL, RT_HEREDOC | RT_DQSYNTAX);
 
 	doprompt = saveprompt;
 
