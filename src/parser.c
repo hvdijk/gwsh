@@ -78,7 +78,6 @@
 #define RT_SQSYNTAX  0x08
 #define RT_DQSYNTAX  0x10
 #define RT_VARNEST   0x20
-#define RT_DQVARNEST 0x40
 
 
 
@@ -890,7 +889,6 @@ STATIC char *
 readtoken1_loop(char *out, int c, char const *syntax, char *eofmark, int flags)
 {
 	char const *qsyntax;
-	int innerdq = 0;
 	int parenlevel = 0;
 
 	loop: {	/* for each line, until end of word */
@@ -909,7 +907,7 @@ readtoken1_loop(char *out, int c, char const *syntax, char *eofmark, int flags)
 				USTPUTC(c, out);
 				break;
 			case CCTL:
-				if (eofmark == NULL || flags & RT_DQSYNTAX)
+				if ((flags & (RT_HEREDOC | RT_SQSYNTAX)) != (RT_HEREDOC | RT_SQSYNTAX))
 					USTPUTC(CTLESC, out);
 				USTPUTC(c, out);
 				break;
@@ -928,7 +926,7 @@ readtoken1_loop(char *out, int c, char const *syntax, char *eofmark, int flags)
 						c != '\\' && c != '`' &&
 						c != '$' && (
 							c != '"' ||
-							eofmark != NULL
+							flags & RT_HEREDOC
 						)
 					) {
 						USTPUTC('\\', out);
@@ -941,19 +939,19 @@ readtoken1_loop(char *out, int c, char const *syntax, char *eofmark, int flags)
 			case CSQUOTE:
 				qsyntax = SQSYNTAX;
 quotemark:
-				if (eofmark == NULL) {
+				if (!(flags & RT_HEREDOC)) {
 					USTPUTC(CTLQUOTEMARK, out);
 				}
-				out = readtoken1_loop(out, pgetc(), qsyntax, eofmark, flags | RT_STRING | (qsyntax == DQSYNTAX ? RT_DQSYNTAX : RT_SQSYNTAX));
+				out = readtoken1_loop(out, pgetc(), qsyntax, eofmark, (flags & RT_STRIPTABS) | RT_STRING | (qsyntax == DQSYNTAX ? RT_DQSYNTAX : RT_SQSYNTAX));
 				break;
 			case CDQUOTE:
 				qsyntax = DQSYNTAX;
 				goto quotemark;
 			case CENDQUOTE:
-				if ((flags & (RT_VARNEST | RT_DQVARNEST)) == (RT_VARNEST | RT_DQVARNEST)) {
-					USTPUTC(CTLQUOTEMARK, out);
-					innerdq = !innerdq;
-				} else if (eofmark == NULL) {
+				if (flags & RT_VARNEST) {
+					qsyntax = DQSYNTAX;
+					goto quotemark;
+				} else if (!(flags & RT_HEREDOC)) {
 					USTPUTC(CTLQUOTEMARK, out);
 					quoteflag++;
 					return out;
@@ -965,7 +963,7 @@ quotemark:
 				out = readtoken1_parsesub(out, syntax, eofmark, flags);		/* parse substitution */
 				break;
 			case CENDVAR:	/* '}' */
-				if (flags & RT_VARNEST && !innerdq) {
+				if (flags & RT_VARNEST) {
 					USTPUTC(CTLENDVAR, out);
 					return out;
 				} else {
@@ -1014,7 +1012,7 @@ quotemark:
 endword:
 	if (syntax == ARISYNTAX)
 		synerror("Missing '))'");
-	if (syntax != BASESYNTAX && eofmark == NULL)
+	if (flags & RT_STRING)
 		synerror("Unterminated quoted string");
 	if (flags & RT_VARNEST) {
 		/* { */
@@ -1289,7 +1287,7 @@ badsub:
 		*((char *)stackblock() + typeloc) = subtype;
 		STPUTC('=', out);
 		if (subtype != VSNORMAL) {
-			out = readtoken1_loop(out, pgetc(), syntax, eofmark, (flags & ~(RT_HEREDOC | RT_STRING)) | RT_VARNEST | (flags & RT_DQSYNTAX ? RT_DQVARNEST : 0));
+			out = readtoken1_loop(out, pgetc(), syntax, eofmark, (flags & ~(RT_HEREDOC | RT_STRING)) | RT_VARNEST);
 		}
 	}
 	return out;
