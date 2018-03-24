@@ -70,6 +70,8 @@ void recordregion(int, int, int);
 void removerecordregions(int); 
 void ifsbreakup(char *, int, struct arglist *);
 void ifsfree(void);
+void varunset(const char *, const char *, const char *, int)
+	__attribute__((__noreturn__));
 
 /* From arith.y */
 intmax_t arith(const char *);

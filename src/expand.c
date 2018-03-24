@@ -143,8 +143,6 @@ STATIC int patmatch(char *, const char *);
 STATIC const char *pmatch(const char *, const char *, int);
 STATIC int cvtnum(intmax_t, int);
 STATIC size_t esclen(const char *, const char *);
-STATIC void varunset(const char *, const char *, const char *, int)
-	__attribute__((__noreturn__));
 
 
 /*
@@ -1919,7 +1917,7 @@ cvtnum(intmax_t num, int flag)
 	return len;
 }
 
-STATIC void
+void
 varunset(const char *end, const char *var, const char *umsg, int varflags)
 {
 	const char *msg;
