@@ -117,8 +117,8 @@ STATIC char *exptilde(char *, char *, int);
 STATIC void expbackq(union node *, int);
 STATIC const char *subevalvar(char *, char *, int, int, int, int, int);
 STATIC char *evalvar(char *, int);
-STATIC size_t strtodest(const char *, const char *, int);
-STATIC void memtodest(const char *, size_t, const char *, int);
+STATIC size_t strtodest(const char *, int);
+STATIC void memtodest(const char *, size_t, int);
 STATIC ssize_t varvalue(char *, int, int, int *);
 STATIC void expandmeta(struct strlist *, int);
 #ifdef HAVE_GLOB
@@ -398,7 +398,7 @@ done:
 	if (!home || !*home)
 		goto lose;
 	*p = c;
-	strtodest(home, SQSYNTAX, quotes);
+	strtodest(home, quotes | EXP_QUOTED);
 	return (p);
 lose:
 	*p = c;
@@ -523,7 +523,6 @@ expbackq(union node *cmd, int flag)
 	char *p;
 	char *dest;
 	int startloc;
-	char const *syntax = flag & EXP_QUOTED ? DQSYNTAX : BASESYNTAX;
 	struct stackmark smark;
 
 	INTOFF;
@@ -537,7 +536,7 @@ expbackq(union node *cmd, int flag)
 	if (i == 0)
 		goto read;
 	for (;;) {
-		memtodest(p, i, syntax, flag & QUOTES_ESC);
+		memtodest(p, i, flag & (QUOTES_ESC | EXP_QUOTED));
 read:
 		if (in.fd < 0)
 			break;
@@ -846,7 +845,7 @@ end:
  */
 
 STATIC void
-memtodest(const char *p, size_t len, const char *syntax, int quotes) {
+memtodest(const char *p, size_t len, int quotes) {
 	char *q;
 
 	if (unlikely(!len))
@@ -857,11 +856,17 @@ memtodest(const char *p, size_t len, const char *syntax, int quotes) {
 	do {
 		int c = (signed char)*p++;
 		if (c) {
-			if ((quotes & QUOTES_ESC) &&
-			    ((syntax[c] == CCTL) ||
-			     (((quotes & EXP_FULL) || syntax != BASESYNTAX) &&
-			      syntax[c] == CBACK)))
-				USTPUTC(CTLESC, q);
+			if (quotes & QUOTES_ESC) {
+				switch (c) {
+					case '\\':
+					case '!': case '*': case '?': case '[': case '=':
+					case '~': case ':': case '/': case '-': case ']':
+						if (quotes & EXP_QUOTED)
+					case CTLCHARS:
+							USTPUTC(CTLESC, q);
+						break;
+				}
+			}
 		} else if (!(quotes & QUOTES_KEEPNUL))
 			continue;
 		USTPUTC(c, q);
@@ -872,13 +877,10 @@ memtodest(const char *p, size_t len, const char *syntax, int quotes) {
 
 
 STATIC size_t
-strtodest(p, syntax, quotes)
-	const char *p;
-	const char *syntax;
-	int quotes;
+strtodest(const char *p, int quotes)
 {
 	size_t len = strlen(p);
-	memtodest(p, len, syntax, quotes);
+	memtodest(p, len, quotes);
 	return len;
 }
 
@@ -897,15 +899,13 @@ varvalue(char *name, int varflags, int flags, int *quotedp)
 	int sep;
 	char sepc;
 	char **ap;
-	char const *syntax;
 	int quoted = *quotedp;
 	int subtype = varflags & VSTYPE;
 	int discard = subtype == VSPLUS || subtype == VSLENGTH;
-	int quotes = (discard ? 0 : (flags & QUOTES_ESC)) | QUOTES_KEEPNUL;
+	int quotes = quoted | (discard ? 0 : (flags & QUOTES_ESC)) | QUOTES_KEEPNUL;
 	ssize_t len = 0;
 
 	sep = (flags & EXP_FULL) << CHAR_BIT;
-	syntax = quoted ? DQSYNTAX : BASESYNTAX;
 
 	switch (*name) {
 	case '$':
@@ -948,11 +948,11 @@ param:
 		if (!(ap = shellparam.p))
 			return -1;
 		while ((p = *ap++)) {
-			len += strtodest(p, syntax, quotes);
+			len += strtodest(p, quotes);
 
 			if (*ap && sep) {
 				len++;
-				memtodest(&sepc, 1, syntax, quotes);
+				memtodest(&sepc, 1, quotes);
 			}
 		}
 		break;
@@ -977,7 +977,7 @@ value:
 		if (!p)
 			return -1;
 
-		len = strtodest(p, syntax, quotes);
+		len = strtodest(p, quotes);
 		break;
 	}
 
