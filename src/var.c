@@ -85,7 +85,6 @@ MKINIT char defoptindvar[] = "OPTIND=1";
 int lineno;
 char linenovar[sizeof("LINENO=")+sizeof(int)*CHAR_BIT/3+1] = "LINENO=";
 
-/* Some macros in var.h depend on the order, add new variables to the end. */
 struct var varinit[] = {
 #ifdef IFS_BROKEN
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defifsvar,	0 },
