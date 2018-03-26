@@ -1,5 +1,5 @@
 AC_INIT(gwsh, 0.5.9.1)
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/main.c])
 
 AC_CONFIG_HEADERS(config.h)
