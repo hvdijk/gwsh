@@ -99,5 +99,6 @@ void popstring(void);
 int setinputfile(const char *, int);
 void setinputstring(const char *);
 void popfile(void);
+void unwindfiles(struct parsefile *);
 void popallfiles(void);
 void closescript(void);
