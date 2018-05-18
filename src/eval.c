@@ -114,7 +114,7 @@ STATIC const struct builtincmd bltin = {
 #ifdef mkinit
 INCLUDE "eval.h"
 
-RESET {
+EXITRESET {
 	evalskip = 0;
 	loopnest = 0;
 	if (savestatus >= 0) {
