@@ -399,7 +399,7 @@ done:
 	} else {
 		home = getpwhome(name);
 	}
-	if (!home || !*home)
+	if (!home)
 		goto lose;
 	*p = c;
 	if (quotes)
