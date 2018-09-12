@@ -87,9 +87,6 @@ char linenovar[sizeof("LINENO=")+sizeof(int)*CHAR_BIT/3+1] = "LINENO=";
 
 /* Some macros in var.h depend on the order, add new variables to the end. */
 struct var varinit[] = {
-#if ATTY
-	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"ATTY\0",	0 },
-#endif
 #ifdef IFS_BROKEN
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defifsvar,	0 },
 #else

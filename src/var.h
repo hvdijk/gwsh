@@ -75,12 +75,7 @@ struct localvar_list;
 extern struct localvar *localvars;
 extern struct var varinit[];
 
-#if ATTY
-#define vatty varinit[0]
-#define vifs varinit[1]
-#else
 #define vifs varinit[0]
-#endif
 #define vmail (&vifs)[1]
 #define vmpath (&vmail)[1]
 #define vpath (&vmpath)[1]
@@ -133,9 +128,6 @@ extern char linenovar[];
 #define termval()	(vterm.text + 5)
 #endif
 
-#if ATTY
-#define attyset()	((vatty.flags & VUNSET) == 0)
-#endif
 #define mpathset()	((vmpath.flags & VUNSET) == 0)
 
 void initvar(void);
