@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -75,24 +77,38 @@ struct localvar_list;
 extern struct localvar *localvars;
 extern struct var varinit[];
 
-#define vifs varinit[0]
-#define vmail (&vifs)[1]
-#define vmpath (&vmail)[1]
-#define vpath (&vmpath)[1]
-#define vps1 (&vpath)[1]
-#define vps2 (&vps1)[1]
-#define vps4 (&vps2)[1]
-#define voptind (&vps4)[1]
+enum {
+	VIFS,
+	VMAIL,
+	VMPATH,
+	VPATH,
+	VPS1,
+	VPS2,
+	VPS4,
+	VOPTIND,
 #ifdef WITH_LINENO
-#define vlineno (&voptind)[1]
+	VLINENO,
 #endif
 #ifndef SMALL
-#ifdef WITH_LINENO
-#define vterm (&vlineno)[1]
-#else
-#define vterm (&voptind)[1]
+	VTERM,
+	VHISTSIZE,
 #endif
-#define vhistsize (&vterm)[1]
+};
+
+#define vifs varinit[VIFS]
+#define vmail varinit[VMAIL]
+#define vmpath varinit[VMPATH]
+#define vpath varinit[VPATH]
+#define vps1 varinit[VPS1]
+#define vps2 varinit[VPS2]
+#define vps4 varinit[VPS4]
+#define voptind varinit[VOPTIND]
+#ifdef WITH_LINENO
+#define vlineno varinit[VLINENO]
+#endif
+#ifndef SMALL
+#define vterm varinit[VTERM]
+#define vhistsize varinit[VHISTSIZE]
 #endif
 
 #ifdef IFS_BROKEN
@@ -122,7 +138,9 @@ extern char linenovar[];
 #define ps2val()	(vps2.text + 4)
 #define ps4val()	(vps4.text + 4)
 #define optindval()	(voptind.text + 7)
+#ifdef WITH_LINENO
 #define linenoval()	(vlineno.text + 7)
+#endif
 #ifndef SMALL
 #define histsizeval()	(vhistsize.text + 9)
 #define termval()	(vterm.text + 5)
