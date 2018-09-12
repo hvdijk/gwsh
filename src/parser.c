@@ -930,6 +930,7 @@ control:
 							flags & RT_HEREDOC
 						)
 					) {
+						USTPUTC(CTLESC, out);
 						USTPUTC('\\', out);
 					}
 					USTPUTC(CTLESC, out);
