@@ -928,6 +928,9 @@ control:
 						c != '$' && (
 							c != '"' ||
 							flags & RT_HEREDOC
+						) && (
+							c != '}' ||
+							!(flags & RT_VARNEST)
 						)
 					) {
 						USTPUTC(CTLESC, out);
