@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -170,8 +172,18 @@ docd(const char *dest, int flags)
 	INTOFF;
 	if (!(flags & CD_PHYSICAL)) {
 		dir = updatepwd(dest);
-		if (dir)
+		if (dir) {
 			dest = dir;
+
+			/* If curdir is a prefix of dest, turn it into a relative path. */
+			if (*curdir == '/') {
+				size_t n = strlen(curdir);
+				if (n == 1)
+					n = 0;
+				if (strncmp(dir, curdir, n) == 0 && dir[n] == '/' && dir[n + 1])
+					dest += n + 1;
+			}
+		}
 	}
 	err = chdir(dest);
 	if (err)
