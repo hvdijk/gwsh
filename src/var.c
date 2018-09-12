@@ -685,9 +685,7 @@ hashvar(const char *p)
 
 
 /*
- * Compares two strings up to the first = or '\0'.  The first
- * string must be terminated by '='; the second may be terminated by
- * either '=' or '\0'.
+ * Compares two strings up to the first = or '\0'.
  */
 
 int
@@ -697,7 +695,7 @@ varcmp(const char *p, const char *q)
 
 	while ((c = *p) == (d = *q)) {
 		if (!c || c == '=')
-			goto out;
+			break;
 		p++;
 		q++;
 	}
@@ -705,14 +703,25 @@ varcmp(const char *p, const char *q)
 		c = 0;
 	if (d == '=')
 		d = 0;
-out:
 	return c - d;
 }
 
 STATIC int
 vpcmp(const void *a, const void *b)
 {
+#ifndef WITH_LOCALE
 	return varcmp(*(const char **)a, *(const char **)b);
+#else
+	const char *pa = *(const char **)a;
+	const char *pb = *(const char **)b;
+	const char *pea = strchrnul(pa, '=');
+	const char *peb = strchrnul(pb, '=');
+	char *cpa = alloca(pea - pa + 1);
+	char *cpb = alloca(peb - pb + 1);
+	*(char *) mempcpy(cpa, pa, pea - pa) = 0;
+	*(char *) mempcpy(cpb, pb, peb - pb) = 0;
+	return strcoll(cpa, cpb);
+#endif
 }
 
 STATIC struct var **
