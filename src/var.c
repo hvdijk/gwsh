@@ -81,7 +81,7 @@ MKINIT struct localvar_list *localvar_stack;
 const char defpathvar[] =
 	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
 #ifdef IFS_BROKEN
-const char defifsvar[] = "IFS= \t\n";
+char defifsvar[] = "IFS= \t\n";
 #else
 const char defifs[] = " \t\n";
 #endif
@@ -154,6 +154,7 @@ INIT {
 		}
 	}
 
+	setvareq(defifsvar, VTEXTFIXED);
 	setvareq(defoptindvar, VTEXTFIXED);
 
 	fmtstr(ppid + 5, sizeof(ppid) - 5, "%ld", (long) getppid());

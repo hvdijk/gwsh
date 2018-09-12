@@ -125,7 +125,7 @@ enum {
 #endif
 
 #ifdef IFS_BROKEN
-extern const char defifsvar[];
+extern char defifsvar[];
 #define defifs (defifsvar + 4)
 #else
 extern const char defifs[];
