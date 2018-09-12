@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -321,11 +323,25 @@ usage:
 	do {
 		if (**argv == '%') {
 			jp = getjob(*argv, 0);
-			pid = -jp->ps[0].pid;
+			if (jp->jobctl)
+				pid = -jp->ps[0].pid;
+			else {
+				/* Send a signal to each process by its PID. Pay attention
+				 * to processes which already exited: if we waited on them
+				 * already, they are gone and we might accidentally be
+				 * sending signals to some random other process that happens
+				 * to have received the same PID. */
+				struct procstat *ps = jp->ps;
+				for (int n = jp->nprocs; n; n--, ps++)
+					if (ps->status && kill(ps->pid, signo) != 0)
+						goto err;
+				continue;
+			}
 		} else
 			pid = **argv == '-' ?
 				-number(*argv + 1) : number(*argv);
 		if (kill(pid, signo) != 0) {
+err:
 			sh_warnx("%s\n", strerror(errno));
 			i = 1;
 		}
