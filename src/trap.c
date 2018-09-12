@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -77,7 +79,8 @@ volatile sig_atomic_t pending_sig;
 /* received SIGCHLD */
 int gotsigchld;
 
-extern char *signal_names[];
+extern const char *const signal_names[];
+extern const int signal_names_length;
 
 static int decode_signum(const char *);
 
@@ -105,11 +108,16 @@ trapcmd(int argc, char **argv)
 	if (!*ap) {
 		for (signo = 0 ; signo < NSIG ; signo++) {
 			if (trap[signo] != NULL) {
-				out1fmt(
-					"trap -- %s %s\n",
-					single_quote(trap[signo]),
-					signal_names[signo]
-				);
+				if (signo < signal_names_length && signal_names[signo])
+					out1fmt(
+						"trap -- %s %s\n",
+						single_quote(trap[signo]),
+						signal_names[signo]);
+				else
+					out1fmt(
+						"trap -- %s %d\n",
+						single_quote(trap[signo]),
+						signo);
 			}
 		}
 		return 0;
@@ -423,8 +431,8 @@ int decode_signal(const char *string, int minsig)
 	if (signo >= 0)
 		return signo;
 
-	for (signo = minsig; signo < NSIG; signo++) {
-		if (!strcasecmp(string, signal_names[signo])) {
+	for (signo = minsig; signo < signal_names_length; signo++) {
+		if (signal_names[signo] && !strcasecmp(string, signal_names[signo])) {
 			return signo;
 		}
 	}

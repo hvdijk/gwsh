@@ -5,9 +5,7 @@ gwsh
 init.c
 mkinit
 mknodes
-mksignames
 mksyntax
 nodes.[ch]
-signames.c
 syntax.[ch]
 token.h

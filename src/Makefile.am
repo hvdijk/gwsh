@@ -21,8 +21,8 @@ bin_PROGRAMS = gwsh
 gwsh_CFILES = \
 	alias.c arith_yacc.c arith_yylex.c cd.c error.c eval.c exec.c expand.c \
 	histedit.c input.c jobs.c mail.c main.c memalloc.c miscbltin.c \
-	mystring.c options.c parser.c redir.c show.c trap.c output.c \
-	bltin/printf.c system.c bltin/test.c bltin/times.c var.c
+	mystring.c options.c parser.c redir.c show.c signames.c trap.c \
+	output.c bltin/printf.c system.c bltin/test.c bltin/times.c var.c
 gwsh_SOURCES = \
 	$(gwsh_CFILES) \
 	alias.h arith_yacc.h bltin/bltin.h cd.h error.h eval.h exec.h \
@@ -30,9 +30,9 @@ gwsh_SOURCES = \
 	init.h input.h jobs.h machdep.h mail.h main.h memalloc.h miscbltin.h \
 	myhistedit.h mystring.h options.h output.h parser.h redir.h shell.h \
 	show.h system.h trap.h var.h
-gwsh_LDADD = builtins.o init.o nodes.o signames.o syntax.o
+gwsh_LDADD = builtins.o init.o nodes.o syntax.o
 
-HELPERS = mkinit mksyntax mknodes mksignames
+HELPERS = mkinit mksyntax mknodes
 
 BUILT_SOURCES = builtins.h nodes.h syntax.h token.h token_vars.h
 CLEANFILES = \
@@ -43,7 +43,7 @@ man_MANS = gwsh.1
 EXTRA_DIST = \
 	$(man_MANS) \
 	mktokens mkbuiltins builtins.def.in mkinit.c \
-	mknodes.c nodetypes nodes.c.pat mksyntax.c mksignames.c
+	mknodes.c nodetypes nodes.c.pat mksyntax.c
 
 token.h token_vars.h: mktokens
 	$(SHELL) $^
@@ -61,9 +61,6 @@ nodes.c nodes.h: mknodes nodetypes nodes.c.pat
 	./$^
 
 syntax.c syntax.h: mksyntax
-	./$^
-
-signames.c: mksignames
 	./$^
 
 mksyntax: token.h

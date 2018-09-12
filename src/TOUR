@@ -26,7 +26,6 @@ programs is:
         mkbuiltins      builtins            builtins.h builtins.c
         mkinit          *.c                 init.c
         mknodes         nodetypes           nodes.h nodes.c
-        mksignames          -               signames.h signames.c
         mksyntax            -               syntax.h syntax.c
         mktokens            -               token.h
         bltin/mkexpr    unary_op binary_op  operators.h operators.c
