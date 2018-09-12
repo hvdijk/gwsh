@@ -57,7 +57,6 @@
 #include "error.h"
 
 
-#define REALLY_CLOSED -3	/* fd that was closed and still is */
 #define EMPTY -2		/* marks an unused slot in redirtab */
 #define CLOSED -1		/* fd opened for redir needs to be closed */
 
@@ -135,10 +134,6 @@ redirect(union node *redir, int flags)
 					fd = -1;
 				}
 			}
-
-			if (i == newfd)
-				/* Can only happen if i == newfd == CLOSED */
-				i = REALLY_CLOSED;
 
 			*p = i;
 		}
@@ -352,7 +347,6 @@ popredir(int drop)
 				close(i);
 			break;
 		case EMPTY:
-		case REALLY_CLOSED:
 			break;
 		default:
 			if (!drop)
