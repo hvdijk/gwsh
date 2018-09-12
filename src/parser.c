@@ -1234,35 +1234,29 @@ varname:
 				STPUTC(c, out);
 				c = pgetc_eatbnl();
 			} while (is_digit(c));
-		} else {
+		} else if (is_special(c)) {
 			int cc = c;
 
 			c = pgetc_eatbnl();
 
 			if (!subtype && cc == '#') {
-				subtype = VSLENGTH;
-
-				if (c == '_' || isalnum(c))
+				if (is_name(c) || is_digit(c) || is_special(c)) {
+					subtype = VSLENGTH;
 					goto varname;
-
-				cc = c;
-				c = pgetc_eatbnl();
-				if (cc == '}' || c != '}') {
-					pungetc();
-					subtype = 0;
-					c = cc;
-					cc = '#';
 				}
 			}
 
-			if (!is_special(cc)) {
-				if (subtype == VSLENGTH)
-					subtype = 0;
-				goto badsub;
+			if (subtype == VSLENGTH && c != '}') {
+				subtype = 0;
+				pungetc();
+				c = cc;
+				cc = '#';
 			}
 
 			USTPUTC(cc, out);
 		}
+		else
+			goto badsub;
 
 		if (subtype == 0) {
 			switch (c) {
