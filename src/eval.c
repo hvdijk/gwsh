@@ -203,8 +203,9 @@ evaltree(union node *n, int flags)
 	int (*evalfn)(union node *, int);
 	unsigned isor;
 	int status = 0;
-	if (n == NULL) {
-		TRACE(("evaltree(NULL) called\n"));
+	if (n == NULL || nflag) {
+		if (n == NULL)
+			TRACE(("evaltree(NULL) called\n"));
 		goto out;
 	}
 
