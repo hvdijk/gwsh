@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999 Herbert Xu <herbert@gondor.apana.org.au>
+ * Copyright (c) 2018 Harald van Dijk <harald@gigawatt.nl>
  * This file contains code for the times builtin.
  */
 
@@ -15,6 +16,8 @@
 int timescmd() {
 	struct tms buf;
 	long int clk_tck = sysconf(_SC_CLK_TCK);
+
+	endargs();
 
 	times(&buf);
 	printf("%dm%fs %dm%fs\n%dm%fs %dm%fs\n",

@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -311,19 +313,17 @@ int
 dotcmd(int argc, char **argv)
 {
 	int status = 0;
+	char *name;
 
 	nextopt(nullstr);
-	argv = argptr;
+	name = nextarg(1);
+	endargs();
 
-	if (*argv) {
-		char *fullname;
-
-		fullname = find_dot_file(*argv);
-		setinputfile(fullname, INPUT_PUSH_FILE);
-		commandname = fullname;
-		status = cmdloop(0);
-		popfile();
-	}
+	name = find_dot_file(name);
+	setinputfile(name, INPUT_PUSH_FILE);
+	commandname = name;
+	status = cmdloop(0);
+	popfile();
 
 	return status;
 }

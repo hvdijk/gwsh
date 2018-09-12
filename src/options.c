@@ -348,12 +348,13 @@ freeparam(volatile struct shparam *param)
 int
 shiftcmd(int argc, char **argv)
 {
+	const char *ns;
 	int n;
 	char **ap1, **ap2;
 
-	n = 1;
-	if (argc > 1)
-		n = number(argv[1]);
+	ns = nextarg(0);
+	endargs();
+	n = ns ? number(ns) : 1;
 	if (n > shellparam.nparam)
 		sh_error("can't shift that many");
 	INTOFF;
@@ -562,4 +563,25 @@ nextopt(const char *optstring)
 	}
 	optptr = p;
 	return c;
+}
+
+
+char *
+nextarg(int req)
+{
+	if (!*argptr) {
+		if (req)
+			sh_error("missing argument");
+		return NULL;
+	}
+
+	return *argptr++;
+}
+
+
+void
+endargs(void)
+{
+	if (*argptr)
+		sh_error("too many arguments");
 }

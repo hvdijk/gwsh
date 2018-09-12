@@ -102,7 +102,8 @@ cdcmd(int argc, char **argv)
 	int flags;
 
 	flags = cdopt();
-	dest = *argptr;
+	dest = nextarg(0);
+	endargs();
 	if (!dest)
 		dest = bltinlookup(homestr);
 	else if (dest[0] == '-' && dest[1] == '\0') {
@@ -301,6 +302,7 @@ pwdcmd(int argc, char **argv)
 	const char *dir = curdir;
 
 	flags = cdopt();
+	endargs();
 	if (flags) {
 		if (physdir == nullstr)
 			setpwd(dir, 0);

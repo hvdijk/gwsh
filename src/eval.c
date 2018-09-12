@@ -1054,10 +1054,15 @@ bltincmd(int argc, char **argv)
 int
 breakcmd(int argc, char **argv)
 {
-	int n = argc > 1 ? number(argv[1]) : 1;
+	const char *ns;
+	int n;
+
+	ns = nextarg(0);
+	endargs();
+	n = ns ? number(ns) : 1;
 
 	if (n <= 0)
-		badnum(argv[1]);
+		badnum(ns);
 	if (n > loopnest)
 		n = loopnest;
 	if (n > 0) {
@@ -1075,16 +1080,20 @@ breakcmd(int argc, char **argv)
 int
 returncmd(int argc, char **argv)
 {
+	const char *ns;
 	int skip;
 	int status;
+
+	ns = nextarg(0);
+	endargs();
 
 	/*
 	 * If called outside a function, do what ksh does;
 	 * skip the rest of the file.
 	 */
-	if (argv[1]) {
+	if (ns) {
 		skip = SKIPFUNC;
-		status = number(argv[1]);
+		status = number(ns);
 	} else {
 		skip = SKIPFUNCDEF;
 		status = exitstatus;
