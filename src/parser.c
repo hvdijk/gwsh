@@ -479,7 +479,7 @@ redir:
 	tokpushback++;
 	*rpp = NULL;
 	if (redir) {
-		if (n1->type != NSUBSHELL) {
+		if (n1->type != NSUBSHELL || n1->nredir.redirect) {
 			n2 = (union node *)stalloc(sizeof (struct nredir));
 			n2->type = NREDIR;
 			n2->nredir.linno = savelinno;
