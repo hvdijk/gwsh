@@ -405,10 +405,13 @@ exitshell(void)
 	if (setjmp(loc.loc))
 		goto out;
 	handler = &loc;
-	if (have_traps() && (p = trap[0])) {
-		trap[0] = NULL;
-		evalskip = 0;
-		evalstring(p, 0);
+	if (have_traps()) {
+		dotrap();
+		if ((p = trap[0])) {
+			trap[0] = NULL;
+			evalskip = 0;
+			evalstring(p, 0);
+		}
 	}
 out:
 	/*
