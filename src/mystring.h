@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -50,7 +52,7 @@ void scopyn(const char *, char *, int);
 #endif
 char *prefix(const char *, const char *);
 void badnum(const char *s) __attribute__ ((noreturn));
-intmax_t atomax(const char *, int);
+intmax_t atomax(const char *, const char **, int);
 intmax_t atomax10(const char *);
 int number(const char *);
 int is_number(const char *);
