@@ -36,12 +36,12 @@
 
 static inline void sigclearmask(void)
 {
-#ifdef HAVE_SIGSETMASK
-	sigsetmask(0);
-#else
+#if defined(HAVE_SIGEMPTYSET) && defined(HAVE_SIGPROCMASK)
 	sigset_t set;
 	sigemptyset(&set);
 	sigprocmask(SIG_SETMASK, &set, 0);
+#else
+	sigsetmask(0);
 #endif
 }
 
