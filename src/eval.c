@@ -984,7 +984,7 @@ evalfun(struct funcnode *func, int argc, char **argv, int flags)
 	shellparam.optind = 1;
 	shellparam.optoff = -1;
 	pushlocalvars();
-	evaltree(func->n.ndefun.body, flags & EV_TESTED);
+	evaltree(func->n.ndefun.body, flags & (EV_EXIT | EV_TESTED));
 	poplocalvars(0);
 funcdone:
 	INTOFF;
