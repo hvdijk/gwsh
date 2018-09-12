@@ -118,7 +118,7 @@ STATIC void parseheredoc(void);
 STATIC int peektoken(void);
 STATIC int readtoken(void);
 STATIC int xxreadtoken(void);
-STATIC int readtoken1(int, char const *, char *, int);
+STATIC int readtoken1(int, char *, int);
 STATIC void synexpect(int) __attribute__((__noreturn__));
 STATIC void synerror(const char *) __attribute__((__noreturn__));
 STATIC void setprompt(int);
@@ -668,8 +668,7 @@ parseheredoc(void)
 		if (needprompt) {
 			setprompt(2);
 		}
-		readtoken1(pgetc(), here->here->type == NHERE? SQSYNTAX : DQSYNTAX,
-				here->eofmark, here->striptabs | RT_HEREDOC | (here->here->type == NHERE ? RT_SQSYNTAX : RT_DQSYNTAX));
+		readtoken1(pgetc(), here->eofmark, here->striptabs | RT_HEREDOC | (here->here->type == NHERE ? RT_SQSYNTAX : RT_DQSYNTAX));
 		n = (union node *)stalloc(sizeof (struct narg));
 		n->narg.type = NARG;
 		n->narg.next = NULL;
@@ -839,7 +838,7 @@ xxreadtoken(void)
 		}
 	}
 breakloop:
-	return readtoken1(c, BASESYNTAX, (char *)NULL, 0);
+	return readtoken1(c, (char *)NULL, 0);
 #undef RETURN
 }
 
@@ -869,53 +868,60 @@ static int pgetc_eatbnl(void)
  * is the first character of the input token or document.
  */
 
-STATIC char *readtoken1_loop(char *, int, char const *, char *, int);
+STATIC char *readtoken1_loop(char *, int, char *, int);
 STATIC int readtoken1_endword(char *, char *);
 STATIC char *readtoken1_checkend(char *, int *, char *, int);
 STATIC void readtoken1_parseredir(char *, int);
-STATIC char *readtoken1_parsesub(char *, char const *, char *, int);
+STATIC char *readtoken1_parsesub(char *, char *, int);
 STATIC char *readtoken1_parsebackq(char *, int, int);
 STATIC char *readtoken1_parsearith(char *, char *, int);
 
 STATIC int
-readtoken1(int firstc, char const *syntax, char *eofmark, int flags)
+readtoken1(int firstc, char *eofmark, int flags)
 {
 	char *out;
 
 	quoteflag = 0;
 	backquotelist = NULL;
 	STARTSTACKSTR(out);
-	out = readtoken1_loop(out, firstc, syntax, eofmark, flags);
+	out = readtoken1_loop(out, firstc, eofmark, flags);
 	return readtoken1_endword(out, eofmark);
 }
 
 STATIC char *
-readtoken1_loop(char *out, int c, char const *syntax, char *eofmark, int flags)
+readtoken1_loop(char *out, int c, char *eofmark, int flags)
 {
-	char const *qsyntax;
+	int qsyntax;
 
 	loop: {	/* for each line, until end of word */
 		out = readtoken1_checkend(out, &c, eofmark, flags);	/* set c to PEOF if at end of here document */
 		for (;;) {	/* until end of line or end of word */
 			CHECKSTRSPACE(4, out);	/* permit 4 calls to USTPUTC */
-			switch(syntax[c]) {
-			case CNL:	/* '\n' */
-				if (syntax == BASESYNTAX)
+			switch(c) {
+			case '\n':
+				if (!flags)
 					goto endword;	/* exit outer loop */
 				USTPUTC(c, out);
 				nlprompt();
 				c = pgetc();
 				goto loop;		/* continue outer loop */
-			case CWORD:
+word:
+			default:
 				USTPUTC(c, out);
 				break;
-			case CCTL:
-				if ((flags & (RT_HEREDOC | RT_SQSYNTAX)) != (RT_HEREDOC | RT_SQSYNTAX))
+control:
+			case '!': case '*': case '?': case '[': case '=':
+			case '~': case ':': case '/': case '-': case ']':
+			case CTLCHARS:
+				if ((flags & (RT_HEREDOC | RT_SQSYNTAX)) != (RT_HEREDOC | RT_SQSYNTAX)
+						&& (flags & (RT_SQSYNTAX | RT_DQSYNTAX) || (c >= CTL_FIRST && c <= CTL_LAST))) {
 					USTPUTC(CTLESC, out);
+				}
 				USTPUTC(c, out);
 				break;
-			/* backslash */
-			case CBACK:
+			case '\\':
+				if (flags & RT_SQSYNTAX)
+					goto control;
 				c = pgetc2();
 				if (c == PEOF) {
 					USTPUTC(CTLESC, out);
@@ -939,33 +945,30 @@ readtoken1_loop(char *out, int c, char const *syntax, char *eofmark, int flags)
 					quoteflag++;
 				}
 				break;
-			case CSQUOTE:
-				qsyntax = SQSYNTAX;
-quotemark:
-				if (!(flags & RT_HEREDOC)) {
-					USTPUTC(CTLQUOTEMARK, out);
-				}
-				out = readtoken1_loop(out, pgetc(), qsyntax, eofmark, (flags & RT_STRIPTABS) | RT_STRING | (qsyntax == DQSYNTAX ? RT_DQSYNTAX : RT_SQSYNTAX));
-				break;
-			case CDQUOTE:
-				qsyntax = DQSYNTAX;
-				goto quotemark;
-			case CENDQUOTE:
-				if (flags & RT_VARNEST) {
-					qsyntax = DQSYNTAX;
-					goto quotemark;
-				} else if (!(flags & RT_HEREDOC)) {
+				do {
+			case '\'':
+					qsyntax = RT_SQSYNTAX;
+					break;
+			case '"':
+					qsyntax = RT_DQSYNTAX;
+					break;
+				} while(0);
+				if (flags & (RT_HEREDOC | RT_SQSYNTAX | RT_DQSYNTAX) & ~qsyntax)
+					goto word;
+				if ((flags & (qsyntax | RT_VARNEST)) == qsyntax) {
 					USTPUTC(CTLQUOTEMARK, out);
 					quoteflag++;
 					return out;
-				} else {
-					USTPUTC(c, out);
 				}
+				USTPUTC(CTLQUOTEMARK, out);
+				out = readtoken1_loop(out, pgetc(), eofmark, (flags & RT_STRIPTABS) | RT_STRING | qsyntax);
 				break;
-			case CVAR:	/* '$' */
-				out = readtoken1_parsesub(out, syntax, eofmark, flags);		/* parse substitution */
+			case '$':
+				if (flags & RT_SQSYNTAX)
+					goto word;
+				out = readtoken1_parsesub(out, eofmark, flags);		/* parse substitution */
 				break;
-			case CENDVAR:	/* '}' */
+			case '}':
 				if (flags & RT_VARNEST) {
 					USTPUTC(CTLENDVAR, out);
 					return out;
@@ -973,11 +976,15 @@ quotemark:
 					USTPUTC(c, out);
 				}
 				break;
-			case CLP:	/* '(' in arithmetic */
+			case '(':
+				if (!(flags & RT_ARINEST))
+					goto special;
 				USTPUTC(c, out);
-				out = readtoken1_loop(out, pgetc(), syntax, eofmark, flags | RT_ARIPAREN);
+				out = readtoken1_loop(out, pgetc(), eofmark, flags | RT_ARIPAREN);
 				break;
-			case CRP:	/* ')' in arithmetic */
+			case ')':
+				if (!(flags & RT_ARINEST))
+					goto special;
 				if (flags & RT_ARIPAREN) {
 					USTPUTC(c, out);
 					return out;
@@ -995,15 +1002,18 @@ quotemark:
 					}
 				}
 				break;
-			case CBQUOTE:
+			case '`':
+				if (flags & RT_SQSYNTAX)
+					goto word;
 				out = readtoken1_parsebackq(out, flags, 1);
 				break;
-			case CEOF:
+			case PEOF:
 				goto endword;		/* exit outer loop */
-			case CIGN:
-				break;
-			default:
-				if (!(flags & RT_VARNEST))
+special:
+			case PEOA:
+			case '<': case '>': // case '(': case ')':
+			case ';': case '&': case '|': case ' ': case '\t':
+				if (!flags)
 					goto endword;	/* exit outer loop */
 				if (c != PEOA) {
 					USTPUTC(c, out);
@@ -1181,7 +1191,7 @@ readtoken1_parseredir(char *out, int c)
  */
 
 STATIC char *
-readtoken1_parsesub(char *out, char const *syntax, char *eofmark, int flags)
+readtoken1_parsesub(char *out, char *eofmark, int flags)
 {
 	int c;
 	int subtype;
@@ -1287,7 +1297,7 @@ badsub:
 		*((char *)stackblock() + typeloc) = subtype;
 		STPUTC('=', out);
 		if (subtype != VSNORMAL) {
-			out = readtoken1_loop(out, pgetc(), syntax, eofmark, (flags & (RT_STRIPTABS | RT_DQSYNTAX)) | RT_VARNEST);
+			out = readtoken1_loop(out, pgetc(), eofmark, (flags & (RT_STRIPTABS | RT_DQSYNTAX)) | RT_VARNEST);
 		}
 	}
 	return out;
@@ -1427,7 +1437,7 @@ STATIC char *
 readtoken1_parsearith(char *out, char *eofmark, int flags)
 {
 	USTPUTC(CTLARI, out);
-	return readtoken1_loop(out, pgetc(), ARISYNTAX, eofmark, (flags & RT_STRIPTABS) | RT_ARINEST);
+	return readtoken1_loop(out, pgetc(), eofmark, (flags & RT_STRIPTABS) | RT_ARINEST);
 }
 
 
@@ -1521,7 +1531,7 @@ expandstr(const char *ps)
 	saveprompt = doprompt;
 	doprompt = 0;
 
-	readtoken1(pgetc(), DQSYNTAX, FAKEEOFMARK, RT_HEREDOC | RT_DQSYNTAX);
+	readtoken1(pgetc(), FAKEEOFMARK, RT_HEREDOC | RT_DQSYNTAX);
 
 	doprompt = saveprompt;
 

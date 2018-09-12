@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -46,6 +48,15 @@
 #define	CTLENDARI -121
 #define	CTLQUOTEMARK -120
 #define	CTL_LAST -120		/* last 'special' character */
+
+#define CTLCHARS \
+	     CTLESC:      \
+	case CTLVAR:      \
+	case CTLENDVAR:   \
+	case CTLBACKQ:    \
+	case CTLARI:      \
+	case CTLENDARI:   \
+	case CTLQUOTEMARK
 
 /* variable substitution byte (follows CTLVAR) */
 #define VSTYPE	0x0f		/* type of variable substitution */
