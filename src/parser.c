@@ -122,16 +122,6 @@ STATIC void synerror(const char *) __attribute__((__noreturn__));
 STATIC void setprompt(int);
 
 
-static inline int
-isassignment(const char *p)
-{
-	const char *q = endofname(p);
-	if (p == q)
-		return 0;
-	return *q == '=';
-}
-
-
 /*
  * Read and parse a command.  Returns NEOF on end of file.  (NULL is a
  * valid parse tree indicating a blank line.)

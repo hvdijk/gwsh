@@ -106,6 +106,15 @@ goodname(const char *p)
 	return !*endofname(p);
 }
 
+static inline int
+isassignment(const char *p)
+{
+	const char *q = endofname(p);
+	if (p == q)
+		return 0;
+	return *q == '=';
+}
+
 static inline int parser_eof(void)
 {
 	return tokpushback && lasttoken == TEOF;

@@ -60,7 +60,7 @@ histcmd		-u fc
 
 breakcmd	-s break -s continue
 cdcmd		-u cd chdir
-commandcmd	-u command
+commandcmd	-au command
 dotcmd		-s .
 echocmd		echo
 evalcmd		-ns eval
@@ -86,7 +86,7 @@ umaskcmd	-u umask
 unaliascmd	-u unalias
 unsetcmd	-s unset
 waitcmd		-u wait
-aliascmd	-au alias
+aliascmd	-u alias
 #ifdef HAVE_GETRLIMIT
 ulimitcmd	ulimit
 #endif

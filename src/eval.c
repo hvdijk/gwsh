@@ -718,6 +718,7 @@ evalcommand(union node *cmd, int flags)
 	int execcmd;
 	int status;
 	char **nargv;
+	int cmdflags = 0;
 
 	errlinno = lineno = cmd->ncmd.linno;
 	if (funcline)
@@ -739,11 +740,21 @@ evalcommand(union node *cmd, int flags)
 	argc = 0;
 	for (argp = cmd->ncmd.args; argp; argp = argp->narg.next) {
 		struct strlist **spp;
+		int eflags;
 
 		spp = arglist.lastp;
-		expandarg(argp, &arglist, EXP_FULL | EXP_TILDE);
-		for (sp = *spp; sp; sp = sp->next)
+		eflags = EXP_FULL | EXP_TILDE;
+		if (cmdflags & BUILTIN_ASSIGN
+			&& isassignment(argp->narg.text))
+			eflags = EXP_VARTILDE;
+		expandarg(argp, &arglist, eflags);
+		for (sp = *spp; sp; sp = sp->next) {
+			if (!argc || cmdflags & BUILTIN_REGULAR) {
+				struct builtincmd *bltin = find_builtin(sp->text);
+				cmdflags = bltin ? bltin->flags : 0;
+			}
 			argc++;
+		}
 	}
 
 	/* Reserve one extra spot at the front for shellexec. */
