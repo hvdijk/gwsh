@@ -865,8 +865,7 @@ varvalue(char *name, int varflags, int flags)
 	int num;
 	char *p;
 	int i;
-	int sep;
-	char sepc;
+	const char *sep;
 	char **ap;
 	int subtype = varflags & VSTYPE;
 	int discard = subtype == VSPLUS || subtype == VSLENGTH;
@@ -909,11 +908,13 @@ numvar:
 		flags &= EXP_FULL;
 		/* fall through */
 	case '*':
-		if (flags == EXP_FULL)
-			sep = 1 << CHAR_BIT;
-		else
-			sep = ifsset() ? ifsval()[0] : ' ';
-		sepc = sep;
+		if (flags == EXP_FULL) {
+			sep = nullstr;
+		} else {
+			sep = ifsset() ? ifsval() : defifs;
+			if (!*sep)
+				sep = NULL;
+		}
 		if (!*(ap = shellparam.p))
 			return -1;
 		while ((p = *ap++)) {
@@ -921,7 +922,11 @@ numvar:
 
 			if (*ap && sep) {
 				len++;
-				memtodest(&sepc, 1, quotes);
+#ifndef WITH_LOCALE
+				memtodest(sep, 1, quotes);
+#else
+				memtodest(sep, mbcget(sep, -1, NULL, 0), quotes);
+#endif
 			}
 		}
 		break;
