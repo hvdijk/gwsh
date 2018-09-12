@@ -122,6 +122,18 @@ trapcmd(int argc, char **argv)
 		}
 		return 0;
 	}
+	if (trapcnt < 0) {
+		char **tp;
+		INTOFF;
+		for (tp = trap ; tp < &trap[NSIG] ; tp++) {
+			if (*tp && **tp) {      /* trap not NULL or SIG_IGN */
+				ckfree(*tp);
+				*tp = NULL;
+			}
+		}
+		trapcnt = 0;
+		INTON;
+	}
 	if (!ap[1] || decode_signum(*ap) >= 0)
 		action = NULL;
 	else
@@ -169,13 +181,11 @@ clear_traps(void)
 	INTOFF;
 	for (tp = trap ; tp < &trap[NSIG] ; tp++) {
 		if (*tp && **tp) {	/* trap not NULL or SIG_IGN */
-			ckfree(*tp);
-			*tp = NULL;
 			if (tp != &trap[0])
 				setsignal(tp - trap);
 		}
 	}
-	trapcnt = 0;
+	trapcnt = -1;
 	INTON;
 }
 
@@ -195,10 +205,12 @@ setsignal(int signo)
 
 	if ((t = trap[signo]) == NULL)
 		action = S_DFL;
-	else if (*t != '\0')
+	else if (*t == '\0')
+		action = S_IGN;
+	else if (have_traps())
 		action = S_CATCH;
 	else
-		action = S_IGN;
+		action = S_DFL;
 	if (rootshell && action == S_DFL) {
 		switch (signo) {
 		case SIGINT:
@@ -294,14 +306,14 @@ onsig(int signo)
 {
 	if (signo == SIGCHLD) {
 		gotsigchld = 1;
-		if (!trap[SIGCHLD])
+		if (!have_traps() || !trap[SIGCHLD])
 			return;
 	}
 
 	gotsig[signo - 1] = 1;
 	pending_sig = signo;
 
-	if (signo == SIGINT && !trap[SIGINT]) {
+	if (signo == SIGINT && (!have_traps() || !trap[SIGINT])) {
 		if (!suppressint)
 			onint();
 		intpending = 1;
@@ -346,7 +358,7 @@ void dotrap(void)
 		*q = 0;
 
 		p = trap[i + 1];
-		if (!p)
+		if (!have_traps() || !p)
 			continue;
 		evalstring(p, 0);
 		if (evalskip != SKIPFUNC)
@@ -393,7 +405,7 @@ exitshell(void)
 	if (setjmp(loc.loc))
 		goto out;
 	handler = &loc;
-	if ((p = trap[0])) {
+	if (have_traps() && (p = trap[0])) {
 		trap[0] = NULL;
 		evalskip = 0;
 		evalstring(p, 0);
