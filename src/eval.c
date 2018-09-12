@@ -226,7 +226,9 @@ evaltree(union node *n, int flags)
 		break;
 #endif
 	case NNOT:
-		status = !evaltree(n->nnot.com, EV_TESTED);
+		status = evaltree(n->nnot.com, EV_TESTED);
+		if (!evalskip)
+			status = !status;
 		goto setstatus;
 	case NREDIR:
 		errlinno = lineno = n->nredir.linno;
