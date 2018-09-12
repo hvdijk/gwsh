@@ -136,7 +136,7 @@ STATIC void expandmeta(struct strlist *, int);
 #ifdef HAVE_GLOB
 STATIC void addglob(const glob_t *);
 #else
-STATIC void expmeta(char *, char *);
+STATIC void expmeta(char *);
 STATIC struct strlist *expsort(struct strlist *);
 STATIC struct strlist *msort(struct strlist *, int);
 #endif
@@ -1250,9 +1250,6 @@ addglob(pglob)
 
 
 #else	/* HAVE_GLOB */
-STATIC char *expdir;
-
-
 STATIC void
 expandmeta(struct strlist *str, int flag)
 {
@@ -1274,13 +1271,7 @@ expandmeta(struct strlist *str, int flag)
 
 		INTOFF;
 		p = preglob(str->text, RMESCAPE_ALLOC | RMESCAPE_HEAP);
-		{
-			int i = strlen(str->text);
-			expdir = ckmalloc(i < 2048 ? 2048 : i); /* XXX */
-		}
-
-		expmeta(expdir, p);
-		ckfree(expdir);
+		expmeta(p);
 		if (p != str->text)
 			ckfree(p);
 		INTON;
@@ -1309,7 +1300,7 @@ nometa:
  */
 
 STATIC void
-expmeta(char *enddir, char *name)
+expmeta1(char *expdir, char *enddir, char *name)
 {
 	char *p;
 	const char *cp;
@@ -1357,6 +1348,8 @@ expmeta(char *enddir, char *name)
 			metaflag++;
 		p = name;
 		do {
+			if (enddir == expdir + PATH_MAX)
+				return;
 			if (*p == '\\')
 				p++;
 			*enddir++ = *p;
@@ -1369,6 +1362,8 @@ expmeta(char *enddir, char *name)
 	if (name < start) {
 		p = name;
 		do {
+			if (enddir == expdir + PATH_MAX)
+				return;
 			if (*p == '\\')
 				p++;
 			*enddir++ = *p++;
@@ -1403,21 +1398,34 @@ expmeta(char *enddir, char *name)
 		if (dp->d_name[0] == '.' && ! matchdot)
 			continue;
 		if (pmatch(start, dp->d_name, 0)) {
+			p = enddir;
+			cp = dp->d_name;
+			for (;;) {
+				if (p == expdir + PATH_MAX)
+					goto toolong;
+				if ((*p++ = *cp++) == '\0')
+					break;
+			}
 			if (atend) {
-				scopy(dp->d_name, enddir);
 				addfname(expdir);
 			} else {
-				for (p = enddir, cp = dp->d_name;
-				     (*p++ = *cp++) != '\0';)
-					continue;
 				p[-1] = '/';
-				expmeta(p, endname);
+				expmeta1(expdir, p, endname);
 			}
 		}
+toolong: ;
 	}
 	closedir(dirp);
 	if (! atend)
 		endname[-esc - 1] = esc ? '\\' : '/';
+}
+
+
+STATIC void
+expmeta(char *name)
+{
+	char expdir[PATH_MAX];
+	expmeta1(expdir, expdir, name);
 }
 #endif	/* HAVE_GLOB */
 
