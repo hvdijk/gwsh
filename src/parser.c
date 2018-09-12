@@ -158,10 +158,9 @@ list(int nlflag)
 
 	n1 = NULL;
 	for (;;) {
-		switch (peektoken()) {
+		checkkwd = (nlflag & 1 ? 0 : CHKNL) | CHKKWD | CHKALIAS;
+		switch (tok = peektoken()) {
 		case TNL:
-			if (!(nlflag & 1))
-				break;
 			parseheredoc();
 			return n1;
 
@@ -172,8 +171,7 @@ list(int nlflag)
 			return n1;
 		}
 
-		checkkwd = CHKNL | CHKKWD | CHKALIAS;
-		if (nlflag == 2 && tokendlist[peektoken()])
+		if (nlflag == 2 && tokendlist[tok])
 			return n1;
 		nlflag |= 2;
 
