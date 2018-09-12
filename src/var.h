@@ -124,12 +124,8 @@ enum {
 #define vhistsize varinit[VHISTSIZE]
 #endif
 
-#ifdef IFS_BROKEN
 extern char defifsvar[];
 #define defifs (defifsvar + 4)
-#else
-extern const char defifs[];
-#endif
 extern const char defpathvar[];
 #define defpath (defpathvar + 36)
 

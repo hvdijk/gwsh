@@ -80,11 +80,7 @@ MKINIT struct localvar_list *localvar_stack;
 
 const char defpathvar[] =
 	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
-#ifdef IFS_BROKEN
 char defifsvar[] = "IFS= \t\n";
-#else
-const char defifs[] = " \t\n";
-#endif
 MKINIT char defoptindvar[] = "OPTIND=1";
 
 int lineno;
@@ -95,11 +91,7 @@ STATIC void changelocale(const char *val);
 #endif
 
 struct var varinit[] = {
-#ifdef IFS_BROKEN
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defifsvar,	0 },
-#else
-	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"IFS\0",	0 },
-#endif
 	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAIL\0",	changemail },
 	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAILPATH\0",	changemail },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defpathvar,	changepath },
