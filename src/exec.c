@@ -731,20 +731,19 @@ describe_command(out, command, path, verbose)
 	struct tblentry *cmdp;
 	const struct alias *ap;
 
-	if (verbose) {
-		outstr(command, out);
-	}
-
 	/* First look at the keywords */
 	if (findkwd(command)) {
-		outstr(verbose ? " is a shell keyword" : command, out);
+		outstr(command, out);
+		if (verbose) {
+			outstr(" is a shell keyword", out);
+		}
 		goto out;
 	}
 
 	/* Then look at the aliases */
 	if ((ap = lookupalias(command, 0)) != NULL) {
 		if (verbose) {
-			outfmt(out, " is an alias for %s", ap->val);
+			outfmt(out, "%s is an alias for %s", command, ap->val);
 		} else {
 			outstr("alias ", out);
 			printalias(ap);
@@ -785,7 +784,8 @@ describe_command(out, command, path, verbose)
 		}
 		if (verbose) {
 			outfmt(
-				out, " is%s %s",
+				out, "%s is%s %s",
+				command,
 				cmdp ? " a tracked alias for" : nullstr, p
 			);
 		} else {
@@ -795,28 +795,27 @@ describe_command(out, command, path, verbose)
 	}
 
 	case CMDFUNCTION:
+		outstr(command, out);
 		if (verbose) {
 			outstr(" is a shell function", out);
-		} else {
-			outstr(command, out);
 		}
 		break;
 
 	case CMDBUILTIN:
+		outstr(command, out);
 		if (verbose) {
 			outfmt(
 				out, " is a %sshell builtin",
 				entry.u.cmd->flags & BUILTIN_SPECIAL ?
 					"special " : nullstr
 			);
-		} else {
-			outstr(command, out);
 		}
 		break;
 
 	default:
 		if (verbose) {
-			outstr(": not found\n", out);
+			outstr(command, out2);
+			outstr(": not found\n", out2);
 		}
 		return 127;
 	}
