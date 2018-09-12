@@ -1227,7 +1227,7 @@ varname:
 			do {
 				STPUTC(c, out);
 				c = pgetc_eatbnl();
-			} while (is_digit(c));
+			} while (subtype != VSNORMAL && is_digit(c));
 		} else if (is_special(c)) {
 			int cc = c;
 
