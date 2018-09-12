@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -92,7 +94,7 @@ STATIC int builtinloc = -1;		/* index in path of %builtin, or -1 */
 
 STATIC void tryexec(char *, char **, char **);
 STATIC void printentry(struct tblentry *);
-STATIC void clearcmdentry(int);
+STATIC void clearcmdentry(void);
 STATIC struct tblentry *cmdlookup(const char *, int);
 STATIC void delete_cmd_entry(void);
 STATIC void addcmdentry(char *, struct cmdentry *);
@@ -231,7 +233,7 @@ hashcmd(int argc, char **argv)
 	char *name;
 
 	while ((c = nextopt("r")) != '\0') {
-		clearcmdentry(0);
+		clearcmdentry();
 		return 0;
 	}
 	if (*argptr == NULL) {
@@ -517,24 +519,14 @@ hashcd(void)
 void
 changepath(const char *newval)
 {
-	const char *old, *new;
+	const char *new;
 	int idx;
-	int firstchange;
 	int bltin;
 
-	old = pathval();
 	new = newval;
-	firstchange = 9999;	/* assume no change */
 	idx = 0;
 	bltin = -1;
 	for (;;) {
-		if (*old != *new) {
-			firstchange = idx;
-			if ((*old == '\0' && *new == ':')
-			 || (*old == ':' && *new == '\0'))
-				firstchange++;
-			old = new;	/* ignore subsequent differences */
-		}
 		if (*new == '\0')
 			break;
 		if (*new == '%' && bltin < 0 && prefix(new + 1, "builtin"))
@@ -542,24 +534,21 @@ changepath(const char *newval)
 		if (*new == ':') {
 			idx++;
 		}
-		new++, old++;
+		new++;
 	}
 	if (builtinloc < 0 && bltin >= 0)
 		builtinloc = bltin;		/* zap builtins */
-	if (builtinloc >= 0 && bltin < 0)
-		firstchange = 0;
-	clearcmdentry(firstchange);
+	clearcmdentry();
 	builtinloc = bltin;
 }
 
 
 /*
- * Clear out command entries.  The argument specifies the first entry in
- * PATH which has changed.
+ * Clear out command entries.
  */
 
 STATIC void
-clearcmdentry(int firstchange)
+clearcmdentry(void)
 {
 	struct tblentry **tblp;
 	struct tblentry **pp;
@@ -569,10 +558,8 @@ clearcmdentry(int firstchange)
 	for (tblp = cmdtable ; tblp < &cmdtable[CMDTABLESIZE] ; tblp++) {
 		pp = tblp;
 		while ((cmdp = *pp) != NULL) {
-			if ((cmdp->cmdtype == CMDNORMAL &&
-			     cmdp->param.index >= firstchange)
-			 || (cmdp->cmdtype == CMDBUILTIN &&
-			     builtinloc >= firstchange)) {
+			if (cmdp->cmdtype == CMDNORMAL
+			 || cmdp->cmdtype == CMDBUILTIN) {
 				*pp = cmdp->next;
 				ckfree(cmdp);
 			} else {
