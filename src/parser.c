@@ -165,9 +165,11 @@ list(int nlflag)
 			return n1;
 
 		case TEOF:
-			if (!n1 && (nlflag & 1))
-				n1 = NEOF;
-			parseheredoc();
+			if (nlflag & 1) {
+				if (!n1)
+					n1 = NEOF;
+				parseheredoc();
+			}
 			return n1;
 		}
 
