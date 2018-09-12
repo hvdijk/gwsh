@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -133,7 +135,9 @@ aliascmd(int argc, char **argv)
 	int ret = 0;
 	struct alias *ap;
 
-	if (argc == 1) {
+	nextopt(nullstr);
+	argv = argptr;
+	if (!*argv) {
 		int i;
 
 		for (i = 0; i < ATABSIZE; i++)
@@ -142,7 +146,7 @@ aliascmd(int argc, char **argv)
 			}
 		return (0);
 	}
-	while ((n = *++argv) != NULL) {
+	while ((n = *argv) != NULL) {
 		if ((v = strchr(n+1, '=')) == NULL) { /* n+1: funny ksh stuff */
 			if ((ap = *__lookupalias(n)) == NULL) {
 				outfmt(out2, "%s: %s not found\n", "alias", n);
@@ -153,6 +157,7 @@ aliascmd(int argc, char **argv)
 			*v++ = '\0';
 			setalias(n, v);
 		}
+		argv++;
 	}
 
 	return (ret);

@@ -492,6 +492,7 @@ localcmd(int argc, char **argv)
 	if (!localvar_stack)
 		sh_error("not in a function");
 
+	nextopt(nullstr);
 	argv = argptr;
 	while ((name = *argv++) != NULL) {
 		mklocal(name);
