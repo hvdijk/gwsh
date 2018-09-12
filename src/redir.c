@@ -261,13 +261,13 @@ dupredirect(redir, f)
 		err = errno;
 
 	close(f);
-	if (err < 0)
+	if (err)
 		goto err;
 
 	return;
 
 err:
-	sh_error("%d: %s", f, strerror(err));
+	sh_error("%d: %s", fd, strerror(err));
 }
 
 
