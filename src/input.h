@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -92,7 +94,7 @@ extern struct parsefile *parsefile;
 int pgetc(void);
 int pgetc2(void);
 void pungetc(void);
-void pushstring(char *, void *);
+void pushstring(char *, size_t, void *);
 void popstring(void);
 int setinputfile(const char *, int);
 void setinputstring(char *);

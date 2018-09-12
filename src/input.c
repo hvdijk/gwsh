@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -318,12 +320,10 @@ pungetc(void)
  * We handle aliases this way.
  */
 void
-pushstring(char *s, void *ap)
+pushstring(char *s, size_t len, void *ap)
 {
 	struct strpush *sp;
-	size_t len;
 
-	len = strlen(s);
 	INTOFF;
 /*dprintf("*** calling pushstring: %s, %d\n", s, len);*/
 	if (parsefile->strpush) {

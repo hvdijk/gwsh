@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -721,7 +723,7 @@ top:
 		struct alias *ap;
 		if ((ap = lookupalias(wordtext, 1)) != NULL) {
 			if (*ap->val) {
-				pushstring(ap->val, ap);
+				pushstring(ap->val, strlen(ap->val), ap);
 			}
 			goto top;
 		}
@@ -1093,12 +1095,9 @@ more_heredoc:
 				c = p[-1];
 
 				if (len) {
-					char *str;
-
-					str = alloca(len + 1);
-					*(char *)mempcpy(str, p, len) = 0;
-
-					pushstring(str, NULL);
+					pungetc();
+					if (--len)
+						pushstring(eofmark + 1, len, NULL);
 				}
 			}
 		}
