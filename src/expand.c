@@ -649,6 +649,7 @@ evalvar(char *p, int flag)
 	subtype = varflags & VSTYPE;
 
 	if (!subtype)
+badsub:
 		sh_error("Bad substitution");
 
 	quoted = flag & EXP_QUOTED;
@@ -656,6 +657,8 @@ evalvar(char *p, int flag)
 	easy = (!quoted || (*var == '@' && shellparam.nparam));
 	startloc = expdest - (char *)stackblock();
 	p = strchr(p, '=') + 1;
+	if (subtype == VSLENGTH && *p != (char)CTLENDVAR)
+		goto badsub;
 
 again:
 	varlen = varvalue(var, varflags, flag);
