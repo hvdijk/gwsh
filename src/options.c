@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -394,7 +396,7 @@ void
 getoptsreset(value)
 	const char *value;
 {
-	shellparam.optind = number(value) ?: 1;
+	shellparam.optind = -1;
 	shellparam.optoff = -1;
 }
 
@@ -412,16 +414,20 @@ getoptscmd(int argc, char **argv)
 
 	if (argc < 3)
 		sh_error("Usage: getopts optstring var [arg]");
-	else if (argc == 3) {
+	if (shellparam.optind < 0) {
+		shellparam.optind = lookupvarint("OPTIND");
+		shellparam.optoff = -1;
+	}
+	if (argc == 3) {
 		optbase = shellparam.p;
-		if ((unsigned)shellparam.optind > shellparam.nparam + 1) {
+		if ((unsigned) (shellparam.optind - 1) > shellparam.nparam) {
 			shellparam.optind = 1;
 			shellparam.optoff = -1;
 		}
 	}
 	else {
 		optbase = &argv[3];
-		if ((unsigned)shellparam.optind > argc - 2) {
+		if ((unsigned) (shellparam.optind - 1) > argc - 3) {
 			shellparam.optind = 1;
 			shellparam.optoff = -1;
 		}
