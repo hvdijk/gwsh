@@ -763,7 +763,7 @@ vsplus:
 		goto again;
 	}
 
-	if (varlen < 0 && uflag)
+	if (varlen < 0 && uflag && (*var != '@' && *var != '*'))
 		varunset(p, var, 0, 0);
 
 	if (subtype == VSLENGTH) {
@@ -937,7 +937,7 @@ numvar:
 		else
 			sep = ifsset() ? ifsval()[0] : ' ';
 		sepc = sep;
-		if (!(ap = shellparam.p))
+		if (!*(ap = shellparam.p))
 			return -1;
 		while ((p = *ap++)) {
 			len += strtodest(p, quotes);
