@@ -48,27 +48,6 @@ struct synclass {
 	char *comment;
 };
 
-/* Syntax classes */
-struct synclass synclass[] = {
-	{ "CWORD",	"character is nothing special" },
-	{ "CNL",	"newline character" },
-	{ "CBACK",	"a backslash character" },
-	{ "CSQUOTE",	"single quote" },
-	{ "CDQUOTE",	"double quote" },
-	{ "CENDQUOTE",	"a terminating quote" },
-	{ "CBQUOTE",	"backwards single quote" },
-	{ "CVAR",	"a dollar sign" },
-	{ "CENDVAR",	"a '}' character" },
-	{ "CLP",	"a left paren in arithmetic" },
-	{ "CRP",	"a right paren in arithmetic" },
-	{ "CEOF",	"end of file" },
-	{ "CCTL",	"like CWORD, except it must be escaped" },
-	{ "CSPCL",	"these terminate a word" },
-	{ "CIGN",	"character should be ignored" },
-	{ NULL,		NULL }
-};
-
-
 /*
  * Syntax classes for is_ functions.  Warning:  if you add new classes
  * you may have to change the definition of the is_in_name macro.
@@ -94,7 +73,6 @@ static FILE *hfile;
 static char *syntax[513];
 
 static void filltable(char *);
-static void init(void);
 static void add(char *, char *);
 static void print(char *);
 static void output_type_macros(void);
@@ -127,15 +105,6 @@ main(int argc, char **argv)
 	fputs("\n", hfile);
 
 	/* Generate the #define statements in the header file */
-	fputs("/* Syntax classes */\n", hfile);
-	for (i = 0 ; synclass[i].name ; i++) {
-		sprintf(buf, "#define %s %d", synclass[i].name, i);
-		fputs(buf, hfile);
-		for (pos = strlen(buf) ; pos < 32 ; pos = (pos + 8) & ~07)
-			putc('\t', hfile);
-		fprintf(hfile, "/* %s */\n", synclass[i].comment);
-	}
-	putc('\n', hfile);
 	fputs("/* Syntax classes for is_ functions */\n", hfile);
 	for (i = 0 ; is_entry[i].name ; i++) {
 		sprintf(buf, "#define %s %#o", is_entry[i].name, 1 << i);
@@ -149,57 +118,12 @@ main(int argc, char **argv)
 	fprintf(hfile, "#define PEOF %d\n\n", -130);
 	fprintf(hfile, "#define PEOA %d\n\n", -129);
 	putc('\n', hfile);
-	fputs("#define BASESYNTAX (basesyntax + SYNBASE)\n", hfile);
-	fputs("#define DQSYNTAX (dqsyntax + SYNBASE)\n", hfile);
-	fputs("#define SQSYNTAX (sqsyntax + SYNBASE)\n", hfile);
-	fputs("#define ARISYNTAX (arisyntax + SYNBASE)\n", hfile);
-	putc('\n', hfile);
 	output_type_macros();		/* is_digit, etc. */
 	putc('\n', hfile);
 
 	/* Generate the syntax tables. */
 	fputs("#include \"shell.h\"\n", cfile);
 	fputs("#include \"syntax.h\"\n\n", cfile);
-	init();
-	fputs("/* syntax table used when not in quotes */\n", cfile);
-	add("\n", "CNL");
-	add("\\", "CBACK");
-	add("'", "CSQUOTE");
-	add("\"", "CDQUOTE");
-	add("`", "CBQUOTE");
-	add("$", "CVAR");
-	add("}", "CENDVAR");
-	add("<>();&| \t", "CSPCL");
-	syntax[1] = "CSPCL";
-	print("basesyntax");
-	init();
-	fputs("\n/* syntax table used when in double quotes */\n", cfile);
-	add("\n", "CNL");
-	add("\\", "CBACK");
-	add("\"", "CENDQUOTE");
-	add("`", "CBQUOTE");
-	add("$", "CVAR");
-	add("}", "CENDVAR");
-	/* ':/' for tilde expansion, '-' for [a\-x] pattern ranges */
-	add("!*?[=~:/-]", "CCTL");
-	print("dqsyntax");
-	init();
-	fputs("\n/* syntax table used when in single quotes */\n", cfile);
-	add("\n", "CNL");
-	add("'", "CENDQUOTE");
-	/* ':/' for tilde expansion, '-' for [a\-x] pattern ranges */
-	add("!*?[=~:/-]\\", "CCTL");
-	print("sqsyntax");
-	init();
-	fputs("\n/* syntax table used when in arithmetic */\n", cfile);
-	add("\n", "CNL");
-	add("\\", "CBACK");
-	add("`", "CBQUOTE");
-	add("$", "CVAR");
-	add("}", "CENDVAR");
-	add("(", "CLP");
-	add(")", "CRP");
-	print("arisyntax");
 	filltable("0");
 	fputs("\n/* character classification table */\n", cfile);
 	add("0123456789", "ISDIGIT");
@@ -225,23 +149,6 @@ filltable(char *dftval)
 
 	for (i = 0 ; i < 258; i++)
 		syntax[i] = dftval;
-}
-
-
-/*
- * Initialize the syntax table with default values.
- */
-
-static void
-init(void)
-{
-	int ctl;
-
-	filltable("CWORD");
-	syntax[0] = "CEOF";
-	syntax[1] = "CIGN";
-	for (ctl = CTL_FIRST; ctl <= CTL_LAST; ctl++ )
-		syntax[130 + ctl] = "CCTL";
 }
 
 
