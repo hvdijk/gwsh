@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -528,7 +530,7 @@ expredir(union node *n)
 		case NFROMFD:
 		case NTOFD:
 			if (redir->ndup.vname) {
-				expandarg(redir->ndup.vname, &fn, EXP_FULL | EXP_TILDE);
+				expandarg(redir->ndup.vname, &fn, EXP_TILDE);
 				fixredir(redir, fn.list->text, 1);
 			}
 			break;
