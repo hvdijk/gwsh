@@ -948,13 +948,19 @@ control:
 				} while(0);
 				if (flags & (RT_HEREDOC | RT_SQSYNTAX | RT_DQSYNTAX) & ~qsyntax)
 					goto word;
-				if ((flags & (qsyntax | RT_VARNEST)) == qsyntax) {
-					USTPUTC(CTLQUOTEMARK, out);
-					quoteflag++;
-					return out;
+				int quotemark = 1;
+				if (flags & qsyntax) {
+					if (!(flags & RT_VARNEST)) {
+						quoteflag++;
+						return out;
+					}
+					quotemark = 0;
 				}
-				USTPUTC(CTLQUOTEMARK, out);
+				if (quotemark)
+					USTPUTC(CTLQUOTEMARK, out);
 				out = readtoken1_loop(out, pgetc(), eofmark, (flags & RT_STRIPTABS) | RT_STRING | qsyntax);
+				if (quotemark)
+					USTPUTC(CTLQUOTEMARK, out);
 				break;
 			case '$':
 				if (flags & RT_SQSYNTAX)
