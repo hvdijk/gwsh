@@ -93,8 +93,9 @@
  */
 #define RMESCAPE_ALLOC	0x1	/* Allocate a new string */
 #define RMESCAPE_GLOB	0x2	/* Add backslashes for glob */
-#define RMESCAPE_GROW	0x8	/* Grow strings instead of stalloc */
-#define RMESCAPE_HEAP	0x10	/* Malloc strings instead of stalloc */
+#define RMESCAPE_NOMETA1 0x4
+#define RMESCAPE_NOMETA2 0x8
+#define RMESCAPE_NOMETA	0xc /* Return NULL if no metacharacters were found */
 
 /* Add CTLESC when necessary. */
 #define QUOTES_ESC	(EXP_FULL | EXP_CASE)
@@ -780,9 +781,6 @@ memtodest(const char *p, size_t len, int quotes) {
 			if (quotes & QUOTES_ESC) {
 				switch (c) {
 					case '\\':
-						if (quotes & (EXP_FULL | EXP_QUOTED))
-							USTPUTC(CTLESC, q);
-						break;
 					case '!': case '*': case '?': case '[': case '=':
 					case '~': case ':': case '/': case '-': case ']':
 						if (quotes & EXP_QUOTED)
@@ -1204,21 +1202,21 @@ expandmeta(str, flag)
 		if (fflag)
 			goto nometa;
 		INTOFF;
-		p = preglob(str->text, RMESCAPE_ALLOC | RMESCAPE_HEAP);
-		i = glob(p, GLOB_NOMAGIC, 0, &pglob);
+		p = preglob(str->text, RMESCAPE_ALLOC | RMESCAPE_META);
+		if (p == NULL)
+			goto nometa2;
+		i = glob(p, 0, 0, &pglob);
 		if (p != str->text)
 			ckfree(p);
 		switch (i) {
 		case 0:
-			if (!(pglob.gl_flags & GLOB_MAGCHAR))
-				goto nometa2;
 			addglob(&pglob);
 			globfree(&pglob);
 			INTON;
 			break;
 		case GLOB_NOMATCH:
-nometa2:
 			globfree(&pglob);
+nometa2:
 			INTON;
 nometa:
 			*exparg.lastp = str;
@@ -1253,9 +1251,6 @@ addglob(pglob)
 STATIC void
 expandmeta(struct strlist *str, int flag)
 {
-	static const char metachars[] = {
-		'*', '?', '[', 0
-	};
 	/* TODO - EXP_REDIR */
 
 	while (str) {
@@ -1265,15 +1260,15 @@ expandmeta(struct strlist *str, int flag)
 
 		if (fflag)
 			goto nometa;
-		if (!strpbrk(str->text, metachars))
-			goto nometa;
 		savelastp = exparg.lastp;
 
 		INTOFF;
-		p = preglob(str->text, RMESCAPE_ALLOC | RMESCAPE_HEAP);
-		expmeta(p);
-		if (p != str->text)
-			ckfree(p);
+		p = preglob(str->text, RMESCAPE_ALLOC | RMESCAPE_NOMETA);
+		if (p != NULL) {
+			expmeta(p);
+			if (p != str->text)
+				ckfree(p);
+		}
 		INTON;
 		if (exparg.lastp == savelastp) {
 			/*
@@ -1334,8 +1329,11 @@ expmeta1(char *expdir, char *enddir, char *name)
 				}
 			}
 		} else {
-			if (*p == '\\')
+			if (*p == '\\') {
 				esc++;
+				if (p[esc] == '\0')
+					break;
+			}
 			if (p[esc] == '/') {
 				if (metaflag)
 					break;
@@ -1344,8 +1342,6 @@ expmeta1(char *expdir, char *enddir, char *name)
 		}
 	}
 	if (metaflag == 0) {	/* we've reached the end of the file name */
-		if (enddir != expdir)
-			metaflag++;
 		p = name;
 		do {
 			if (enddir == expdir + PATH_MAX)
@@ -1354,7 +1350,7 @@ expmeta1(char *expdir, char *enddir, char *name)
 				p++;
 			*enddir++ = *p;
 		} while (*p++);
-		if (metaflag == 0 || lstat64(expdir, &statb) >= 0)
+		if (lstat64(expdir, &statb) >= 0)
 			addfname(expdir);
 		return;
 	}
@@ -1730,31 +1726,21 @@ _rmescapes(char *str, int flag)
 	mbstate_t mbs;
 	int escape;
 #endif
-
-	p = strpbrk(str, qchars);
-	if (!p) {
-		return str;
+	if (!(flag & RMESCAPE_NOMETA)) {
+		p = strpbrk(str, qchars);
+		if (!p)
+			return str;
 	}
-#ifdef WITH_LOCALE
-	p = str;
+#ifndef WITH_LOCALE
+	else
 #endif
+	p = str;
 	q = p;
 	r = str;
 	if (flag & RMESCAPE_ALLOC) {
 		size_t len = p - str;
 		size_t fulllen = len + strlen(p) + 1;
-
-		if (flag & RMESCAPE_GROW) {
-			int strloc = str - (char *)stackblock();
-
-			r = makestrspace(fulllen, expdest);
-			str = (char *)stackblock() + strloc;
-			p = str + len;
-		} else if (flag & RMESCAPE_HEAP) {
-			r = ckmalloc(fulllen);
-		} else {
-			r = stalloc(fulllen);
-		}
+		r = ckmalloc(fulllen);
 		q = r;
 #ifndef WITH_LOCALE
 		if (len > 0) {
@@ -1770,13 +1756,13 @@ _rmescapes(char *str, int flag)
 	escape = 0;
 #endif
 	while (*p) {
-		if (*p == (char)CTLQUOTEMARK) {
+		switch (*p) {
+		case (char)CTLQUOTEMARK:
 			inquotes = ~inquotes;
 			p++;
 			notescaped = globbing;
 			continue;
-		}
-		if (*p == (char)CTLESC) {
+		case (char)CTLESC:
 			p++;
 			if (notescaped)
 #ifdef WITH_LOCALE
@@ -1784,13 +1770,27 @@ _rmescapes(char *str, int flag)
 #else
 				*q++ = '\\';
 #endif
-		} else if (*p == '\\' && !inquotes) {
+			goto dft;
+		case '[':
+			flag &= ~RMESCAPE_NOMETA1;
+			goto dft;
+		case ']':
+			flag &= ~RMESCAPE_NOMETA2;
+			goto dft;
+		case '?':
+		case '*':
+			flag &= ~RMESCAPE_NOMETA;
+			goto dft;
+		default:
+dft:
+			notescaped = globbing;
+			break;
+		case '\\':
 			/* naked back slash */
 			notescaped = 0;
-			goto copy;
+			flag &= ~RMESCAPE_NOMETA;
+			break;
 		}
-		notescaped = globbing;
-copy:
 		*q++ = *p++;
 
 #ifdef WITH_LOCALE
@@ -1806,11 +1806,12 @@ copy:
 		qs = q;
 #endif
 	}
-	*q = '\0';
-	if (flag & RMESCAPE_GROW) {
-		expdest = r;
-		STADJUST(q - r + 1, expdest);
+	if (flag & RMESCAPE_NOMETA) {
+		if (flag & RMESCAPE_ALLOC)
+			ckfree(r);
+		return NULL;
 	}
+	*q = '\0';
 	return r;
 }
 
