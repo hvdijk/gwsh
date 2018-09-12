@@ -1,7 +1,7 @@
 *.o
 builtins.[ch]
 builtins.def
-dash
+gwsh
 init.c
 mkinit
 mknodes

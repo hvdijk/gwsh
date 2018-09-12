@@ -65,7 +65,7 @@
 int rootpid;
 int shlvl;
 #ifdef __GLIBC__
-int *dash_errno;
+int *gwsh_errno;
 #endif
 #if PROFILE
 short profile_buf[16384];
@@ -95,7 +95,7 @@ main(int argc, char **argv)
 	int login;
 
 #ifdef __GLIBC__
-	dash_errno = __errno_location();
+	gwsh_errno = __errno_location();
 #endif
 
 #if PROFILE

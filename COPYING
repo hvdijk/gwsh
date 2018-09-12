@@ -33,7 +33,7 @@ SUCH DAMAGE.
 
 mksignames.c:
 
-This file is not directly linked with dash.  However, its output is.
+This file is not directly linked with gwsh.  However, its output is.
 
 Copyright (C) 1992 Free Software Foundation, Inc.
 

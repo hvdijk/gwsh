@@ -2,6 +2,8 @@
 .\"	The Regents of the University of California.  All rights reserved.
 .\" Copyright (c) 1997-2005
 .\"	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+.\" Copyright (c) 2018
+.\"     Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Kenneth Almquist.
@@ -32,11 +34,11 @@
 .\"
 .\"	@(#)sh.1	8.6 (Berkeley) 5/4/95
 .\"
-.Dd January 19, 2003
+.Dd September 11, 2018
 .Os
-.Dt DASH 1
+.Dt GWSH 1
 .Sh NAME
-.Nm dash
+.Nm gwsh
 .Nd command interpreter (shell)
 .Sh SYNOPSIS
 .Nm
@@ -233,7 +235,7 @@ Ignore EOF's from input when interactive.
 .It Fl i Em interactive
 Force the shell to behave interactively.
 .It Fl l
-Make dash act as if it had been invoked as a login shell.
+Make gwsh act as if it had been invoked as a login shell.
 .It Fl m Em monitor
 Turn on job control (set automatically when interactive).
 .It Fl s Em stdin
@@ -2344,11 +2346,11 @@ The process ID of the parent process of the shell.
 is a POSIX-compliant implementation of /bin/sh that aims to be as small as
 possible.
 .Nm
-is a direct descendant of the NetBSD version of ash (the Almquist SHell),
-ported to Linux in early 1997.
-It was renamed to
+is a descendant of the NetBSD version of ash (the Almquist SHell), ported to
+Linux in early 1997 and renamed to dash (the Debian Almquist SHell) in 2002.
+It was forked as
 .Nm
-in 2002.
+in 2018.
 .Sh BUGS
 Setuid shell scripts should be avoided at all costs, as they are a
 significant security risk.

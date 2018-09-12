@@ -1,4 +1,4 @@
-AC_INIT(dash, 0.5.9.1)
+AC_INIT(gwsh, 0.5.9.1)
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([src/main.c])
 
@@ -19,13 +19,13 @@ AC_MSG_RESULT(${CC_FOR_BUILD})
 AC_SUBST(CC_FOR_BUILD)
 
 AC_MSG_CHECKING([for __attribute__((__alias__()))])
-dash_cv_have_attribute_alias=no
+gwsh_cv_have_attribute_alias=no
 AC_LINK_IFELSE([AC_LANG_PROGRAM([void t() {}
                                  void a() __attribute__((__alias__("t")));],
                                 [a();])],
-               [dash_cv_have_attribute_alias=yes])
-AC_MSG_RESULT($dash_cv_have_attribute_alias)
-if test "x$dash_cv_have_attribute_alias" = xyes; then
+               [gwsh_cv_have_attribute_alias=yes])
+AC_MSG_RESULT($gwsh_cv_have_attribute_alias)
+if test "x$gwsh_cv_have_attribute_alias" = xyes; then
   AC_DEFINE([HAVE_ALIAS_ATTRIBUTE], 1,
             [Define if __attribute__((__alias__())) is supported])
 fi
