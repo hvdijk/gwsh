@@ -291,8 +291,8 @@ ignoresig(int signo)
 {
 	if (sigmode[signo - 1] != S_IGN && sigmode[signo - 1] != S_HARD_IGN) {
 		signal(signo, SIG_IGN);
+		sigmode[signo - 1] = S_IGN;
 	}
-	sigmode[signo - 1] = S_HARD_IGN;
 }
 
 
