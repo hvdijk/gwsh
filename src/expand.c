@@ -143,7 +143,7 @@ STATIC struct strlist *msort(struct strlist *, int);
 STATIC void addfname(char *);
 STATIC int patmatch(char *, const char *);
 STATIC const char *pmatch(const char *, const char *, int);
-STATIC int cvtnum(intmax_t);
+STATIC int cvtnum(intmax_t, int);
 STATIC size_t esclen(const char *, const char *);
 STATIC void varunset(const char *, const char *, const char *, int)
 	__attribute__((__noreturn__));
@@ -512,7 +512,7 @@ expari(int flag)
 	result = arith(p + 1);
 	popstackmark(&sm);
 
-	len = cvtnum(result);
+	len = cvtnum(result, flag);
 
 	if (likely(!(flag & EXP_QUOTED)))
 		recordregion(begoff, begoff + len, 0);
@@ -697,7 +697,7 @@ vsplus:
 		varunset(p, var, 0, 0);
 
 	if (subtype == VSLENGTH) {
-		cvtnum(varlen > 0 ? varlen : 0);
+		cvtnum(varlen > 0 ? varlen : 0, flag);
 		goto record;
 	}
 
@@ -892,7 +892,7 @@ varvalue(char *name, int varflags, int flags)
 		if (num == 0)
 			return -1;
 numvar:
-		len = cvtnum(num);
+		len = cvtnum(num, flags);
 		break;
 	case '-':
 		p = makestrspace(NOPTS, expdest);
@@ -1835,11 +1835,14 @@ casematch(union node *pattern, char *val)
  */
 
 STATIC int
-cvtnum(intmax_t num)
+cvtnum(intmax_t num, int flag)
 {
+	int ctlesc = num < 0 && flag & QUOTES_ESC && flag & EXP_QUOTED;
 	int len = max_int_length(sizeof(num));
 
-	expdest = makestrspace(len, expdest);
+	expdest = makestrspace(ctlesc + len, expdest);
+	if (ctlesc)
+		*expdest++ = CTLESC;
 	len = fmtstr(expdest, len, "%" PRIdMAX, num);
 	STADJUST(len, expdest);
 	return len;
