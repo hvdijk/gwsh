@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -98,7 +100,6 @@ redirect(union node *redir, int flags)
 {
 	union node *n;
 	struct redirtab *sv;
-	int i;
 	int fd;
 	int newfd;
 	int *p;
@@ -117,26 +118,15 @@ redirect(union node *redir, int flags)
 		sv = redirlist;
 	n = redir;
 	do {
-		newfd = openredirect(n);
-		if (newfd < -1)
-			continue;
-
 		fd = n->nfile.fd;
 
 		if (sv) {
 			p = &sv->renamed[fd];
-			i = *p;
-
-			if (likely(i == EMPTY)) {
-				i = CLOSED;
-				if (fd != newfd) {
-					i = savefd(fd, fd);
-					fd = -1;
-				}
-			}
-
-			*p = i;
+			if (likely(*p == EMPTY))
+				*p = savefd(fd, -1);
 		}
+
+		newfd = openredirect(n);
 
 		if (fd == newfd)
 			continue;
@@ -212,8 +202,8 @@ openredirect(union node *redir)
 	case NTOFD:
 	case NFROMFD:
 		f = redir->ndup.dupfd;
-		if (f == redir->nfile.fd)
-			f = -2;
+		if (f >= 0 && fcntl(f, F_GETFD) < 0)
+			sh_error("%d: %s", f, strerror(errno));
 		break;
 	default:
 #ifdef DEBUG
