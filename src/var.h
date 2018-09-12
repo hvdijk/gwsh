@@ -52,6 +52,7 @@
 #define VNOFUNC		0x40	/* don't call the callback function */
 #define VNOSET		0x80	/* do not set variable - just readonly test */
 #define VNOSAVE		0x100	/* when text is on the heap before setvareq */
+#define VLATEFUNC	0x200	/* call the callback function after the value has been changed */
 
 
 struct var {
@@ -89,6 +90,12 @@ enum {
 #ifdef WITH_LINENO
 	VLINENO,
 #endif
+#ifdef WITH_LOCALE
+	VLC_ALL,
+	VLC_COLLATE,
+	VLC_CTYPE,
+	VLANG,
+#endif
 #ifndef SMALL
 	VTERM,
 	VHISTSIZE,
@@ -105,6 +112,12 @@ enum {
 #define voptind varinit[VOPTIND]
 #ifdef WITH_LINENO
 #define vlineno varinit[VLINENO]
+#endif
+#ifdef WITH_LOCALE
+#define vlc_all varinit[VLC_ALL]
+#define vlc_collate varinit[VLC_COLLATE]
+#define vlc_ctype varinit[VLC_CTYPE]
+#define vlang varinit[VLANG]
 #endif
 #ifndef SMALL
 #define vterm varinit[VTERM]
@@ -140,6 +153,12 @@ extern char linenovar[];
 #define optindval()	(voptind.text + 7)
 #ifdef WITH_LINENO
 #define linenoval()	(vlineno.text + 7)
+#endif
+#ifdef WITH_LOCALE
+#define lc_allval()	(vlc_all.text + 7)
+#define lc_collateval()	(vlc_collate.text + 11)
+#define lc_ctypeval()	(vlc_ctype.text + 9)
+#define langval()	(vlang.text + 5)
 #endif
 #ifndef SMALL
 #define histsizeval()	(vhistsize.text + 9)

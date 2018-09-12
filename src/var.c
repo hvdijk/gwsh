@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -37,6 +39,9 @@
 #include <stdlib.h>
 #ifdef HAVE_PATHS_H
 #include <paths.h>
+#endif
+#ifdef WITH_LOCALE
+#include <locale.h>
 #endif
 
 /*
@@ -85,6 +90,10 @@ MKINIT char defoptindvar[] = "OPTIND=1";
 int lineno;
 char linenovar[sizeof("LINENO=")+sizeof(int)*CHAR_BIT/3+1] = "LINENO=";
 
+#ifdef WITH_LOCALE
+STATIC void changelocale(const char *val);
+#endif
+
 struct var varinit[] = {
 #ifdef IFS_BROKEN
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defifsvar,	0 },
@@ -100,6 +109,12 @@ struct var varinit[] = {
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defoptindvar,	getoptsreset },
 #ifdef WITH_LINENO
 	{ 0,	VSTRFIXED|VTEXTFIXED,		linenovar,	0 },
+#endif
+#ifdef WITH_LOCALE
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_ALL\0",	changelocale },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_COLLATE\0",	changelocale },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_CTYPE\0",	changelocale },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LANG\0",	changelocale },
 #endif
 #ifndef SMALL
 	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"TERM\0",	0 },
@@ -268,7 +283,7 @@ struct var *setvareq(char *s, int flags)
 		if (flags & VNOSET)
 			goto out;
 
-		if (vp->func && (flags & VNOFUNC) == 0)
+		if (vp->func && (flags & VNOFUNC) == 0 && (vp->flags & VLATEFUNC) == 0)
 			(*vp->func)(strchrnul(s, '=') + 1);
 
 		if ((vp->flags & (VTEXTFIXED|VSTACK)) == 0)
@@ -300,7 +315,8 @@ out_free:
 		s = savestr(s);
 	vp->text = s;
 	vp->flags = flags;
-
+	if (vp->func && flags & VLATEFUNC)
+		(*vp->func)(strchrnul(s, '=') + 1);
 out:
 	return vp;
 }
@@ -577,6 +593,8 @@ poplocalvars(int keep)
 				ckfree(vp->text);
 			vp->flags = lvp->flags;
 			vp->text = lvp->text;
+			if (vp->func && vp->flags & VLATEFUNC)
+				(*vp->func)(strchrnul(lvp->text, '=') + 1);
 		}
 		ckfree(lvp);
 	}
@@ -707,3 +725,17 @@ findvar(struct var **vpp, const char *name)
 	}
 	return vpp;
 }
+
+
+#ifdef WITH_LOCALE
+
+STATIC
+void changelocale(const char *var) {
+	setlocale(LC_CTYPE, *lc_allval() ? lc_allval() : *lc_ctypeval() ? lc_ctypeval() : langval());
+	/* No support for state-dependent encodings. */
+	if (mblen(NULL, 0))
+		setlocale(LC_CTYPE, "C");
+	setlocale(LC_COLLATE, *lc_allval() ? lc_allval() : *lc_collateval() ? lc_collateval() : langval());
+}
+
+#endif
