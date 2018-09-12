@@ -36,8 +36,6 @@ if test "$enable_static" = "yes"; then
 	export LDFLAGS="-static -Wl,--fatal-warnings"
 fi
 
-AC_ARG_ENABLE(fnmatch, AS_HELP_STRING(--enable-fnmatch, \
-				      [Use fnmatch(3) from libc]))
 AC_ARG_ENABLE(glob, AS_HELP_STRING(--enable-glob, [Use glob(3) from libc]))
 
 dnl Checks for libraries.
