@@ -506,7 +506,7 @@ atend:
 		setvar("OPTARG", p, 0);
 		p = NULL;
 	} else
-		setvar("OPTARG", nullstr, 0);
+		(void) unsetvar("OPTARG");
 
 out:
 	ind = optnext - optfirst + 1;
