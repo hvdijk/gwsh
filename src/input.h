@@ -47,7 +47,7 @@ struct alias;
 
 struct strpush {
 	struct strpush *prev;	/* preceding string on stack */
-	char *prevstring;
+	const char *prevstring;
 	int prevnleft;
 	struct alias *ap;	/* if push was associated with an alias */
 	char *string;		/* remember the string since it may change */
@@ -70,7 +70,7 @@ struct parsefile {
 	int fd;			/* file descriptor (or -1 if string) */
 	int nleft;		/* number of chars left in this line */
 	int lleft;		/* number of chars left in this buffer */
-	char *nextc;		/* next char in buffer */
+	const char *nextc;	/* next char in buffer */
 	char *buf;		/* input buffer */
 	struct strpush *strpush; /* for pushing strings at this level */
 	struct strpush basestrpush; /* so pushing one is fast */
@@ -97,7 +97,7 @@ void pungetc(void);
 void pushstring(char *, size_t, void *);
 void popstring(void);
 int setinputfile(const char *, int);
-void setinputstring(char *);
+void setinputstring(const char *);
 void popfile(void);
 void popallfiles(void);
 void closescript(void);

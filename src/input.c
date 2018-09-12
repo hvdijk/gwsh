@@ -236,7 +236,7 @@ again:
 		}
 	}
 
-	q = parsefile->nextc;
+	q = parsefile->buf + (parsefile->nextc - parsefile->buf);
 
 	/* delete nul characters */
 #ifndef SMALL
@@ -428,7 +428,7 @@ setinputfd(int fd, int push)
  */
 
 void
-setinputstring(char *string)
+setinputstring(const char *string)
 {
 	INTOFF;
 	pushfile();

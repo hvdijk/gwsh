@@ -1529,8 +1529,7 @@ expandstr(const char *ps)
 	union node n;
 	int saveprompt;
 
-	/* XXX Fix (char *) cast. */
-	setinputstring((char *)ps);
+	setinputstring(ps);
 
 	saveprompt = doprompt;
 	doprompt = 0;
