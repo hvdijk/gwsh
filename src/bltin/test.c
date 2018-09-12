@@ -19,6 +19,11 @@
 #include <stdarg.h>
 #include "bltin.h"
 
+#if !defined(HAVE_ST_MTIM) && defined(HAVE_ST_MTIMESPEC)
+#define HAVE_ST_MTIM
+#define st_mtim st_mtimespec
+#endif
+
 /* test(1) accepts the following grammar:
 	oexpr	::= aexpr | aexpr "-o" oexpr ;
 	aexpr	::= nexpr | nexpr "-a" aexpr ;
@@ -476,9 +481,17 @@ newerf (const char *f1, const char *f2)
 {
 	struct stat b1, b2;
 
+#ifdef HAVE_ST_MTIM
 	return (stat (f1, &b1) == 0 &&
 		(stat (f2, &b2) != 0 ||
-		b1.st_mtime > b2.st_mtime));
+		 b1.st_mtim.tv_sec > b2.st_mtim.tv_sec ||
+		 (b1.st_mtim.tv_sec == b2.st_mtim.tv_sec &&
+		  b1.st_mtim.tv_nsec > b2.st_mtim.tv_nsec)));
+#else
+	return (stat (f1, &b1) == 0 &&
+		(stat (f2, &b2) != 0 ||
+		 b1.st_mtime > b2.st_mtime));
+#endif
 }
 
 static int
@@ -486,9 +499,17 @@ olderf (const char *f1, const char *f2)
 {
 	struct stat b1, b2;
 
+#ifdef HAVE_ST_MTIM
 	return (stat (f2, &b2) == 0 &&
 		(stat (f1, &b1) != 0 ||
-		b1.st_mtime < b2.st_mtime));
+		 b1.st_mtim.tv_sec < b2.st_mtim.tv_sec ||
+		 (b1.st_mtim.tv_sec == b2.st_mtim.tv_sec &&
+		  b1.st_mtim.tv_nsec < b2.st_mtim.tv_nsec)));
+#else
+	return (stat (f2, &b2) == 0 &&
+		(stat (f1, &b1) != 0 ||
+		 b1.st_mtime < b2.st_mtime));
+#endif
 }
 
 static int

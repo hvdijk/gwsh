@@ -147,6 +147,11 @@ AC_CHECK_FUNC(open64,, [
 	AC_DEFINE(open64, open, [64-bit operations are the same as 32-bit])
 ])
 
+AC_CHECK_MEMBER([struct stat.st_mtim], [
+	AC_DEFINE([HAVE_ST_MTIM], [1], [Define to 1 if your `struct stat' has the member `st_mtim'.])])
+AC_CHECK_MEMBER([struct stat.st_mtimespec], [
+	AC_DEFINE([HAVE_ST_MTIMESPEC], [1], [Define to 1 if your `struct stat' has the member `st_mtimespec'.])])
+
 AC_ARG_WITH(libedit, AS_HELP_STRING(--with-libedit, [Compile with libedit support]))
 use_libedit=
 if test "$with_libedit" = "yes"; then
