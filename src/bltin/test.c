@@ -477,8 +477,8 @@ newerf (const char *f1, const char *f2)
 	struct stat b1, b2;
 
 	return (stat (f1, &b1) == 0 &&
-		stat (f2, &b2) == 0 &&
-		b1.st_mtime > b2.st_mtime);
+		(stat (f2, &b2) != 0 ||
+		b1.st_mtime > b2.st_mtime));
 }
 
 static int
@@ -486,9 +486,9 @@ olderf (const char *f1, const char *f2)
 {
 	struct stat b1, b2;
 
-	return (stat (f1, &b1) == 0 &&
-		stat (f2, &b2) == 0 &&
-		b1.st_mtime < b2.st_mtime);
+	return (stat (f2, &b2) == 0 &&
+		(stat (f1, &b1) != 0 ||
+		b1.st_mtime < b2.st_mtime));
 }
 
 static int
