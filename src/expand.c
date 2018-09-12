@@ -253,7 +253,6 @@ argstr(char *p, int flag)
 	const char *reject = spclchars;
 	int c;
 	int breakall = (flag & (EXP_WORD | EXP_QUOTED)) == EXP_WORD;
-	int inquotes;
 	size_t length;
 	int startloc;
 
@@ -262,7 +261,6 @@ argstr(char *p, int flag)
 	} else if (flag & EXP_VARTILDE2) {
 		reject++;
 	}
-	inquotes = 0;
 	length = 0;
 	if (flag & EXP_TILDE) {
 		char *q;
@@ -286,7 +284,7 @@ start:
 			int newloc;
 			expdest = stnputs(p, length, expdest);
 			newloc = expdest - (char *)stackblock();
-			if (breakall && !inquotes && newloc > startloc) {
+			if (breakall && !(flag & EXP_QUOTED) && newloc > startloc) {
 				recordregion(startloc, newloc, 0);
 			}
 			startloc = newloc;
@@ -320,11 +318,11 @@ start:
 		case CTLENDVAR: /* ??? */
 			goto breakloop;
 		case CTLQUOTEMARK:
-			inquotes ^= EXP_QUOTED;
+			flag ^= EXP_QUOTED;
 			/* "$@" syntax adherence hack */
-			if (inquotes && !memcmp(p, dolatstr + 1,
-						DOLATSTRLEN - 1)) {
-				p = evalvar(p + 1, flag | inquotes) + 1;
+			if (flag & EXP_QUOTED && !memcmp(p, dolatstr + 1,
+							 DOLATSTRLEN - 1)) {
+				p = evalvar(p + 1, flag) + 1;
 				goto start;
 			}
 addquote:
@@ -339,15 +337,15 @@ addquote:
 			length++;
 			goto addquote;
 		case CTLVAR:
-			p = evalvar(p, flag | inquotes);
+			p = evalvar(p, flag);
 			goto start;
 		case CTLBACKQ:
-			expbackq(argbackq->n, flag | inquotes);
+			expbackq(argbackq->n, flag);
 			argbackq = argbackq->next;
 			goto start;
 		case CTLENDARI:
 			p--;
-			expari(flag | inquotes);
+			expari(flag);
 			goto start;
 		}
 	}
