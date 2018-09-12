@@ -977,6 +977,9 @@ recordregion(int start, int end, int nulonly)
 
 	if (ifslastp == NULL) {
 		ifsp = &ifsfirst;
+	} else if (ifslastp->endoff == start && ifslastp->nulonly == nulonly) {
+		ifslastp->endoff = end;
+		return;
 	} else {
 		INTOFF;
 		ifsp = (struct ifsregion *)ckmalloc(sizeof (struct ifsregion));
@@ -1009,6 +1012,9 @@ ifsbreakup(char *string, int maxargs, struct arglist *arglist)
 	char *q;
 	char *r = NULL;
 	const char *ifs, *realifs;
+#ifdef WITH_LOCALE
+	size_t realifslen;
+#endif
 	int ifsspc;
 	int nulonly;
 
@@ -1018,23 +1024,47 @@ ifsbreakup(char *string, int maxargs, struct arglist *arglist)
 		ifsspc = 0;
 		nulonly = 0;
 		realifs = ifsset() ? ifsval() : defifs;
+#ifdef WITH_LOCALE
+		realifslen = strlen(realifs);
+#endif
 		ifsp = &ifsfirst;
 		do {
 			p = string + ifsp->begoff;
 			nulonly = ifsp->nulonly;
+#ifndef WITH_LOCALE
 			ifs = nulonly ? nullstr : realifs;
+#endif
 			ifsspc = 0;
 			while (p < string + ifsp->endoff) {
 				int c;
 				bool isifs;
 				bool isdefifs;
+#ifdef WITH_LOCALE
+				wint_t wc, wifs;
+#endif
 
 				q = p;
+
+#ifdef WITH_LOCALE
+				p += mbcget(p, string + ifsp->endoff - p, &wc, 1);
+				c = wctob(wc);
+				isifs = !wc;
+				if (!isifs && !nulonly) {
+					for (ifs = realifs; *ifs; ) {
+						ifs += mbcget(ifs, realifs + realifslen - ifs, &wifs, 0);
+						if (wc == wifs) {
+							isifs = true;
+							break;
+						}
+					}
+				}
+#else
 				c = *p++;
 				if (c == (char)CTLESC)
 					c = *p++;
 
 				isifs = strchr(ifs, c);
+#endif
 				isdefifs = false;
 				if (isifs)
 					isdefifs = strchr(defifs, c);
