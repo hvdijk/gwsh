@@ -560,7 +560,7 @@ read:
 		ckfree(in.buf);
 	if (in.fd >= 0) {
 		close(in.fd);
-		back_exitstatus = waitforjob(in.jp);
+		exitstatus = back_exitstatus = waitforjob(in.jp);
 	}
 	INTON;
 
