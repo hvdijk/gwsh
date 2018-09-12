@@ -50,6 +50,9 @@
 #ifdef HAVE_GLOB
 #include <glob.h>
 #endif
+#ifdef WITH_LOCALE
+#include <wchar.h>
+#endif
 #include <ctype.h>
 #include <stdbool.h>
 
@@ -805,6 +808,30 @@ strtodest(const char *p, int quotes)
 }
 
 
+#ifdef WITH_LOCALE
+STATIC size_t
+mbclen(const char *p, size_t len)
+{
+	mbstate_t mbs = {0};
+	len = mbrlen(p, len, &mbs);
+	if (len == (size_t)-1 || len == 0)
+		len = 1;
+	return len;
+}
+
+STATIC size_t
+mbccnt(const char *p)
+{
+	size_t count = 0;
+	while (*p) {
+		p += mbclen(p, -1);
+		count++;
+	}
+	return count;
+}
+#endif
+
+
 
 /*
  * Add the value of a specialized variable to the stack string.
@@ -823,6 +850,9 @@ varvalue(char *name, int varflags, int flags)
 	int discard = subtype == VSPLUS || subtype == VSLENGTH;
 	int quotes = (flags & (EXP_QUOTED | (discard ? 0 : QUOTES_ESC))) | QUOTES_KEEPNUL;
 	ssize_t len = 0;
+#ifdef WITH_LOCALE
+	ssize_t count = -1;
+#endif
 
 	flags &= EXP_QUOTED | EXP_FULL;
 
@@ -895,11 +925,19 @@ value:
 			return -1;
 
 		len = strtodest(p, quotes);
+#ifdef WITH_LOCALE
+		if (subtype == VSLENGTH)
+			count = mbccnt(p);
+#endif
 		break;
 	}
 
 	if (discard)
 		STADJUST(-len, expdest);
+#ifdef WITH_LOCALE
+	if (subtype == VSLENGTH && count >= 0)
+		return count;
+#endif
 	return len;
 }
 
