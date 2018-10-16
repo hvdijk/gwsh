@@ -311,11 +311,11 @@ setstatus:
 		break;
 	}
 out:
-	if (checkexit & status && eflag)
-		goto exexit;
-
 	waitforjob(NULL);
 	dotrap();
+
+	if (checkexit & status && eflag)
+		goto exexit;
 
 	if (flags & EV_EXIT) {
 exexit:
