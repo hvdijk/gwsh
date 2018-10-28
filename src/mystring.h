@@ -56,10 +56,13 @@ intmax_t atomax(const char *, const char **, int);
 intmax_t atomax10(const char *);
 int number(const char *);
 int is_number(const char *);
-char *single_quote(const char *);
+char *single_quote(const char *, int);
 char *sstrdup(const char *);
 int pstrcmp(const void *, const void *);
 const char *const *findstring(const char *, const char *const *, size_t);
 
 #define equal(s1, s2)	(strcmp(s1, s2) == 0)
 #define scopy(s1, s2)	((void)strcpy(s2, s1))
+
+/* Characters that don't need quoting before re-entry into the shell */
+#define SHELLSAFECHARS "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz%+,./:@_^-"

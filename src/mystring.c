@@ -57,6 +57,7 @@
 #include "memalloc.h"
 #include "parser.h"
 #include "system.h"
+#include "token_vars.h"
 
 
 char nullstr[1];		/* zero length string */
@@ -188,12 +189,19 @@ is_number(const char *p)
 
 /*
  * Produce a possibly single quoted string suitable as input to the shell.
- * The return string is allocated on the stack.
+ * If 'conditional' is nonzero, quoting is only done if the string contains
+ * non-shellsafe characters, or is identical to a shell keyword (reserved
+ * word); if it is zero, quoting is always done.
+ * If quoting was done, the return string is allocated on the stack,
+ * otherwise a pointer to the original string is returned.
  */
 
 char *
-single_quote(const char *s) {
+single_quote(const char *s, int conditional) {
 	char *p;
+
+	if (conditional && *s != '\0' && s[strspn(s, SHELLSAFECHARS)] == '\0' && ! findkwd(s))
+		return (char *)s;
 
 	STARTSTACKSTR(p);
 

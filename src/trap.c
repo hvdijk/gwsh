@@ -111,12 +111,12 @@ trapcmd(int argc, char **argv)
 				if (signo < signal_names_length && signal_names[signo])
 					out1fmt(
 						"trap -- %s %s\n",
-						single_quote(trap[signo]),
+						single_quote(trap[signo], 0),
 						signal_names[signo]);
 				else
 					out1fmt(
 						"trap -- %s %d\n",
-						single_quote(trap[signo]),
+						single_quote(trap[signo], 0),
 						signo);
 			}
 		}

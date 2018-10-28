@@ -97,7 +97,8 @@ STATIC int evalcommand(union node *, int);
 STATIC int evalbltin(const struct builtincmd *, int, char **, int);
 STATIC int evalfun(struct funcnode *, int, char **, int);
 STATIC void prehash(union node *);
-STATIC int eprintlist(struct output *, struct strlist *, int);
+STATIC int eprintvarlist(struct output *, struct strlist *, int);
+STATIC void eprintarglist(struct output *, struct strlist *, int);
 STATIC int bltincmd(int, char **);
 
 
@@ -804,8 +805,8 @@ evalcommand(union node *cmd, int flags)
 		out = &preverrout;
 		outstr(expandstr(ps4val()), out);
 		sep = 0;
-		sep = eprintlist(out, varlist.list, sep);
-		eprintlist(out, arglist.list, sep);
+		sep = eprintvarlist(out, varlist.list, sep);
+		eprintarglist(out, arglist.list, sep);
 		outcslow('\n', out);
 #ifdef FLUSHERR
 		flushout(out);
@@ -1129,16 +1130,35 @@ execcmd(int argc, char **argv)
 
 
 STATIC int
-eprintlist(struct output *out, struct strlist *sp, int sep)
+eprintvarlist(struct output *out, struct strlist *sp, int sep)
+{
+	while (sp) {
+		const char *p;
+		int i;
+
+		if (sep)
+			outfmt(out, " ");
+		sep |= 1;
+		i = 0;
+		while (sp->text[i] != '=' && sp->text[i] != '\0')
+			outfmt(out, "%c", sp->text[i++]);
+		if (sp->text[i] == '=')
+			outfmt(out, "=%s", single_quote(sp->text+i+1, 1));
+		sp = sp->next;
+	}
+
+	return sep;
+}
+
+STATIC void
+eprintarglist(struct output *out, struct strlist *sp, int sep)
 {
 	while (sp) {
 		const char *p;
 
 		p = " %s" + (1 - sep);
 		sep |= 1;
-		outfmt(out, p, sp->text);
+		outfmt(out, p, single_quote(sp->text, 1));
 		sp = sp->next;
 	}
-
-	return sep;
 }
