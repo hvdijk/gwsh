@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -58,6 +60,7 @@ struct synclass is_entry[] = {
 	{ "ISLOWER",	"a lower case letter" },
 	{ "ISUNDER",	"an underscore" },
 	{ "ISSPECL",	"the name of a special parameter" },
+	{ "ISSPACE",	"a space character" },
 	{ NULL, 	NULL }
 };
 
@@ -97,8 +100,6 @@ main(int argc, char **argv)
 	fputs(writer, hfile);
 	fputs(writer, cfile);
 
-	fputs("#include <ctype.h>\n", hfile);
-	fputs("\n", hfile);
 	fputs("#ifdef CEOF\n", hfile);
 	fputs("#undef CEOF\n", hfile);
 	fputs("#endif\n", hfile);
@@ -131,6 +132,7 @@ main(int argc, char **argv)
 	add("ABCDEFGHIJKLMNOPQRSTUCVWXYZ", "ISUPPER");
 	add("_", "ISUNDER");
 	add("#?$!-*@", "ISSPECL");
+	add(" \f\n\r\t\v", "ISSPACE");
 	print("is_type");
 	exit(0);
 	/* NOTREACHED */
@@ -203,11 +205,13 @@ print(char *name)
  */
 
 static char *macro[] = {
-	"#define is_digit(c)\t((unsigned)((c) - '0') <= 9)\n",
-	"#define is_alpha(c)\tisalpha((unsigned char)(c))\n",
-	"#define is_name(c)\t((c) == '_' || isalpha((unsigned char)(c)))\n",
-	"#define is_in_name(c)\t((c) == '_' || isalnum((unsigned char)(c)))\n",
+	"#define is_digit(c)\t((unsigned) ((c) - '0') <= 9)\n",
+	"#define is_alpha(c)\t((is_type+SYNBASE)[(signed char)(c)] & (ISUPPER|ISLOWER))\n",
+	"#define is_alnum(c)\t((is_type+SYNBASE)[(signed char)(c)] & (ISUPPER|ISLOWER|ISDIGIT))\n",
+	"#define is_name(c)\t((is_type+SYNBASE)[(signed char)(c)] & (ISUPPER|ISLOWER|ISUNDER))\n",
+	"#define is_in_name(c)\t((is_type+SYNBASE)[(signed char)(c)] & (ISUPPER|ISLOWER|ISUNDER|ISDIGIT))\n",
 	"#define is_special(c)\t((is_type+SYNBASE)[(signed char)(c)] & (ISSPECL|ISDIGIT))\n",
+	"#define is_space(c)\t((is_type+SYNBASE)[(signed char)(c)] & ISSPACE)\n",
 	NULL
 };
 

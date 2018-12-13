@@ -137,7 +137,7 @@ intmax_t atomax(const char *s, const char **end, int base)
 	if (p == s && base)
 		badnum(s);
 
-	while (isspace((unsigned char)*p))
+	while (is_space(*p))
 	      p++;
 
 	if (end)

@@ -50,6 +50,7 @@
 
 #include "shell.h"
 #include "options.h"
+#include "syntax.h"
 #include "var.h"
 #include "output.h"
 #include "memalloc.h"
@@ -249,7 +250,7 @@ umaskcmd(int argc, char **argv)
 	} else {
 		int new_mask;
 
-		if (isdigit((unsigned char) *ap)) {
+		if (is_digit(*ap)) {
 			new_mask = 0;
 			do {
 				if (*ap >= '8' || *ap < '0')
