@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -93,20 +95,21 @@ static int print_escape_str(const char *f, int *param, int *array, char *s)
 {
 	struct stackmark smark;
 	char *p, *q;
-	int done;
+	int next;
 	int len;
 	int total;
 
 	setstackmark(&smark);
-	done = conv_escape_str(s, &q);
+	next = conv_escape_str(s, &q);
 	p = stackblock();
 	len = q - p;
 	total = len - 1;
 
-	q[-1] = (!!((f[1] - 's') | done) - 1) & f[2];
-	total += !!q[-1];
-	if (f[1] == 's')
+	if (f[1] == 'b') {
+		q[-1] = (next & f[2]);
+		total += !!q[-1];
 		goto easy;
+	}
 
 	p = makestrspace(len, q);
 	memset(p, 'X', total);
@@ -122,7 +125,7 @@ easy:
 	out1mem(p, total);
 
 	popstackmark(&smark);
-	return done;
+	return next;
 }
 
 
@@ -211,12 +214,10 @@ pc:
 			switch (ch) {
 
 			case 'b':
-				*fmt = 's';
 				/* escape if a \c was encountered */
-				if (print_escape_str(start, param, array,
-						     getstr()))
+				if (!print_escape_str(start, param, array,
+						      getstr()))
 					goto out;
-				*fmt = 'b';
 				break;
 			case 'c': {
 				int p = getchr();
@@ -270,7 +271,8 @@ out:
 
 /*
  * Print SysV echo(1) style escape string 
- *	Halts processing string if a \c escape is encountered.
+ *	Halts processing string and returns 0 if a \c escape is encountered.
+ *	Returns -1 otherwise.
  */
 static int
 conv_escape_str(char *str, char **sp)
@@ -284,14 +286,15 @@ conv_escape_str(char *str, char **sp)
 
 	do {
 		c = ch = *str++;
-		if (ch != '\\')
+		if (c != '\\')
 			continue;
 
 		c = *str++;
 		if (c == 'c') {
 			/* \c as in SYSV echo - abort all processing.... */
-			c = ch = 0x100;
-			continue;
+			STPUTC('\0', cp);
+			*sp = cp;
+			return 0;
 		}
 
 		/* 
@@ -304,11 +307,10 @@ conv_escape_str(char *str, char **sp)
 
 		/* Finally test for sequences valid in the format string */
 		str = conv_escape(str - 1, &c);
-	} while (STPUTC(c, cp), (char)ch);
+	} while (STPUTC(c, cp), ch);
 
 	*sp = cp;
-
-	return ch;
+	return -1;
 }
 
 /*
@@ -457,22 +459,23 @@ check_conversion(const char *s, const char *ep)
 int
 echocmd(int argc, char **argv)
 {
-	const char *lastfmt = snlfmt;
-	int nonl;
+	char fmt[] = "%b ";
+	char lastfmt = '\n';
+	int next;
 
 	if (*++argv && equal(*argv, "-n")) {
 		argv++;
-		lastfmt = "%s";
+		lastfmt = '\0';
 	}
 
 	do {
-		const char *fmt = "%s ";
 		char *s = *argv;
 
+		fmt[2] = ' ';
 		if (!s || !*++argv)
-			fmt = lastfmt;
+			fmt[2] = lastfmt;
 
-		nonl = print_escape_str(fmt, NULL, NULL, s ?: nullstr);
-	} while (!nonl && *argv);
+		next = print_escape_str(fmt, NULL, NULL, s ?: nullstr);
+	} while (next && *argv);
 	return 0;
 }
