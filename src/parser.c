@@ -135,8 +135,10 @@ parsecmd(int interact)
 	checkkwd = 0;
 	heredoclist = 0;
 	doprompt = interact;
-	if (doprompt)
+	if (doprompt) {
+		plinno = 1;
 		setprompt(doprompt);
+	}
 	needprompt = 0;
 	return list(1);
 }

@@ -70,7 +70,7 @@
 int evalskip;			/* set if we are skipping commands */
 STATIC int skipcount;		/* number of levels to skip */
 MKINIT int loopnest;		/* current loop nesting level */
-static int funcline;		/* starting line number of current function, or 0 if not in a function */
+static int funcnest;		/* depth of function calls */
 
 
 char *commandname;
@@ -232,8 +232,6 @@ evaltree(union node *n, int flags)
 		goto setstatus;
 	case NREDIR:
 		errlinno = lineno = n->nredir.linno;
-		if (funcline)
-			lineno -= funcline - 1;
 		expredir(n->nredir.redirect);
 		pushredir(n->nredir.redirect);
 		status = redirectsafe(n->nredir.redirect, REDIR_PUSH) ?:
@@ -404,8 +402,6 @@ evalfor(union node *n, int flags)
 	int status;
 
 	errlinno = lineno = n->nfor.linno;
-	if (funcline)
-		lineno -= funcline - 1;
 
 	setstackmark(&smark);
 	arglist.lastp = &arglist.list;
@@ -441,8 +437,6 @@ evalcase(union node *n, int flags)
 	int status = 0;
 
 	errlinno = lineno = n->ncase.linno;
-	if (funcline)
-		lineno -= funcline - 1;
 
 	setstackmark(&smark);
 	arglist.lastp = &arglist.list;
@@ -482,8 +476,6 @@ evalsubshell(union node *n, int flags)
 	int status;
 
 	errlinno = lineno = n->nredir.linno;
-	if (funcline)
-		lineno -= funcline - 1;
 
 	expredir(n->nredir.redirect);
 	if (!backgnd && flags & EV_EXIT && !have_traps())
@@ -722,8 +714,6 @@ evalcommand(union node *cmd, int flags)
 	int cmdflags = 0;
 
 	errlinno = lineno = cmd->ncmd.linno;
-	if (funcline)
-		lineno -= funcline - 1;
 
 	/* First expand the arguments. */
 	TRACE(("evalcommand(0x%lx, %d) called\n", (long)cmd, flags));
@@ -769,7 +759,7 @@ evalcommand(union node *cmd, int flags)
 	*nargv = NULL;
 
 	lastarg = NULL;
-	if (iflag && funcline == 0 && argc > 0)
+	if (iflag && funcnest == 0 && argc > 0)
 		lastarg = nargv[-1];
 
 	preverrout.fd = 2;
@@ -961,11 +951,11 @@ evalfun(struct funcnode *func, int argc, char **argv, int flags)
 	struct jmploc *volatile savehandler;
 	struct jmploc jmploc;
 	int e;
-	int savefuncline;
+	int savefuncnest;
 	int saveloopnest;
 
 	saveparam = shellparam;
-	savefuncline = funcline;
+	savefuncnest = funcnest;
 	saveloopnest = loopnest;
 	savehandler = handler;
 	if ((e = setjmp(jmploc.loc))) {
@@ -975,7 +965,7 @@ evalfun(struct funcnode *func, int argc, char **argv, int flags)
 	handler = &jmploc;
 	shellparam.malloc = 0;
 	func->count++;
-	funcline = func->n.ndefun.linno;
+	funcnest++;
 	loopnest = 0;
 	INTON;
 	shellparam.nparam = argc - 1;
@@ -986,7 +976,7 @@ evalfun(struct funcnode *func, int argc, char **argv, int flags)
 funcdone:
 	INTOFF;
 	loopnest = saveloopnest;
-	funcline = savefuncline;
+	funcnest = savefuncnest;
 	freefunc(func);
 	freeparam(&shellparam);
 	shellparam = saveparam;
