@@ -809,7 +809,7 @@ strtodest(const char *p, int quotes)
 
 #ifdef WITH_LOCALE
 STATIC size_t
-mbcget(const char *p, size_t len, wint_t *c, int ctlesc)
+mbcget(const char *p, size_t len, int *c, int ctlesc)
 {
 	const char *q = p;
 	wchar_t wc;
@@ -1042,7 +1042,7 @@ ifsbreakup(char *string, int maxargs, struct arglist *arglist)
 				bool isifs;
 				bool isdefifs;
 #ifdef WITH_LOCALE
-				wint_t wc, wifs;
+				int wc, wifs;
 #endif
 
 				q = p;
@@ -1520,11 +1520,7 @@ patmatch(char *pattern, const char *string)
 }
 
 
-#ifdef WITH_LOCALE
-STATIC int ccmatch(const char *p, wint_t chr, const char **r)
-#else
 STATIC int ccmatch(const char *p, int chr, const char **r)
-#endif
 {
 	static const struct class {
 		char name[10];
@@ -1580,7 +1576,7 @@ pmatch(const char *pattern, const char *string, int flags)
 #define GETC(c, p)        ((void) ((c) = *(p)++))
 #define GETC_CTLESC(c, p) ((void) ((p) += flags & PM_CTLESC && *(p) == (char)CTLESC, (c) = *(p)++))
 #else
-	wint_t c, chr;
+	int c, chr;
 #define GETC(c, p)        ((void) ((p) += mbcget((p), -1, &(c), 0)))
 #define GETC_CTLESC(c, p) ((void) ((p) += mbcget((p), -1, &(c), flags & PM_CTLESC)))
 #endif
@@ -1661,7 +1657,7 @@ ast:
 #ifndef WITH_LOCALE
 					char c2;
 #else
-					wint_t c2;
+					int c2;
 #endif
 					p++;
 					if (*p == '\\')
