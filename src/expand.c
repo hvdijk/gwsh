@@ -126,8 +126,9 @@ static struct ifsregion *ifslastp;
 /* holds expanded arg list */
 static struct arglist exparg;
 
-STATIC void argstr(char *, int);
+STATIC char *argstr(char *, int);
 STATIC char *exptilde(char *, char *, int);
+STATIC char *expari(char *, int);
 STATIC void expbackq(union node *, int);
 STATIC const char *subevalvar(char *, char *, int, int, int, int, int);
 STATIC char *evalvar(char *, int);
@@ -146,7 +147,6 @@ STATIC void addfname(char *);
 STATIC int patmatch(char *, const char *);
 STATIC const char *pmatch(const char *, const char *, int);
 STATIC int cvtnum(intmax_t, int);
-STATIC size_t esclen(const char *, const char *);
 
 
 /*
@@ -159,17 +159,6 @@ STATIC inline char *
 preglob(const char *pattern, int flag) {
 	flag |= RMESCAPE_GLOB;
 	return _rmescapes((char *)pattern, flag);
-}
-
-
-STATIC size_t
-esclen(const char *start, const char *p) {
-	size_t esc = 0;
-
-	while (p > start && *--p == (char)CTLESC) {
-		esc++;
-	}
-	return esc;
 }
 
 
@@ -240,7 +229,7 @@ out:
  * $@ like $* since no splitting will be performed.
  */
 
-STATIC void
+STATIC char *
 argstr(char *p, int flag)
 {
 	static const char spclchars[] = {
@@ -250,7 +239,9 @@ argstr(char *p, int flag)
 		CTLENDVAR,
 		CTLESC,
 		CTLVAR,
+		CTLENDVAR,
 		CTLBACKQ,
+		CTLARI,
 		CTLENDARI,
 		0
 	};
@@ -281,8 +272,8 @@ start:
 		length += strcspn(p + length, reject);
 		prev = c;
 		c = (signed char)p[length];
-		if (c && (!(c & 0x80) || c == CTLENDARI)) {
-			/* c == '=' || c == ':' || c == CTLENDARI */
+		if (!((c - 1) & 0x80)) {
+			/* c == '=' || c == ':' */
 			length++;
 		}
 		if (length > 0) {
@@ -298,8 +289,11 @@ start:
 		length = 0;
 
 		switch (c) {
+			int dolatstrhack;
 		case '\0':
-			goto breakloop;
+		case CTLENDVAR:
+		case CTLENDARI:
+			return p;
 		case '=':
 			if (flag & EXP_VARTILDE2) {
 				p--;
@@ -317,12 +311,6 @@ start:
 				goto tilde;
 			}
 			continue;
-		}
-
-		switch (c) {
-			int dolatstrhack;
-		case CTLENDVAR: /* ??? */
-			goto breakloop;
 		case CTLQUOTEMARK:
 			flag ^= EXP_QUOTED;
 addquote:
@@ -358,14 +346,11 @@ addquote:
 			expbackq(argbackq->n, flag);
 			argbackq = argbackq->next;
 			goto start;
-		case CTLENDARI:
-			p--;
-			expari(flag);
+		case CTLARI:
+			p = expari(p, flag);
 			goto start;
 		}
 	}
-breakloop:
-	;
 }
 
 STATIC char *
@@ -456,66 +441,33 @@ removerecordregions(int endoff)
 
 
 /*
- * Expand arithmetic expression.  Backup to start of expression,
- * evaluate, place result in (backed up) result, adjust string position.
+ * Expand arithmetic expression.
  */
-void
-expari(int flag)
+STATIC char *
+expari(char *start, int flag)
 {
 	struct stackmark sm;
-	char *p, *start;
+	char *p;
 	int begoff;
+	int endoff;
 	int len;
 	intmax_t result;
 
-	/*	ifsfree(); */
-
-	/*
-	 * This routine is slightly over-complicated for
-	 * efficiency.  Next we scan backwards looking for the
-	 * start of arithmetic.
-	 */
-	start = stackblock();
-	p = expdest;
-	pushstackmark(&sm, p - start);
-	*--p = '\0';
-	p--;
-	do {
-		int esc;
-
-		while (*p != (char)CTLARI) {
-			p--;
-#ifdef DEBUG
-			if (p < start) {
-				sh_error("missing CTLARI (shouldn't happen)");
-			}
-#endif
-		}
-
-		esc = esclen(start, p);
-		if (!(esc % 2)) {
-			break;
-		}
-
-		p -= esc + 1;
-	} while (1);
-
-	begoff = p - start;
-
-	removerecordregions(begoff);
-
-	expdest = p;
-
-	if (likely(flag & QUOTES_ESC))
-		rmescapes(p + 1);
-
-	result = arith(p + 1);
+	begoff = expdest - (char *) stackblock();
+	p = argstr(start, EXP_QUOTED);
+	STPUTC('\0', expdest);
+	endoff = expdest - (char *) stackblock();
+	expdest = (char *) stackblock() + begoff;
+	pushstackmark(&sm, endoff);
+	result = arith(expdest);
 	popstackmark(&sm);
 
 	len = cvtnum(result, flag);
 
 	if (likely(!(flag & EXP_QUOTED)))
 		recordregion(begoff, begoff + len, 0);
+
+	return p;
 }
 
 
@@ -675,8 +627,7 @@ again:
 	if (subtype == VSMINUS) {
 vsplus:
 		if (varlen < 0) {
-			argstr(p, flag | EXP_TILDE | EXP_WORD);
-			goto end;
+			return argstr(p, flag | EXP_TILDE | EXP_WORD);
 		}
 		goto record;
 	}
@@ -706,9 +657,8 @@ vsplus:
 
 	if (subtype == VSNORMAL) {
 record:
-		if (!easy)
-			goto end;
-		recordregion(startloc, expdest - (char *)stackblock(), quoted);
+		if (easy)
+			recordregion(startloc, expdest - (char *)stackblock(), quoted);
 		goto end;
 	}
 

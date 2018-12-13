@@ -62,7 +62,6 @@ struct arglist {
 
 union node;
 void expandarg(union node *, struct arglist *, int);
-void expari(int);
 #define rmescapes(p) _rmescapes((p), 0)
 char *_rmescapes(char *, int);
 int casematch(union node *, char *);
