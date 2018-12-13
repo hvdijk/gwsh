@@ -122,10 +122,7 @@ INCLUDE "eval.h"
 EXITRESET {
 	evalskip = 0;
 	loopnest = 0;
-	if (savestatus >= 0) {
-		exitstatus = savestatus;
-		savestatus = -1;
-	}
+	savestatus = -1;
 }
 #endif
 

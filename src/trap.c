@@ -332,17 +332,14 @@ void dotrap(void)
 	char *p;
 	char *q;
 	int i;
-	int status, last_status;
+	int status;
 
 	if (!pending_sig)
 		return;
 
 	status = savestatus;
-	last_status = status;
-	if (likely(status < 0)) {
-		status = exitstatus;
-		savestatus = status;
-	}
+	savestatus = exitstatus;
+
 	pending_sig = 0;
 	barrier();
 
@@ -362,10 +359,10 @@ void dotrap(void)
 			continue;
 		evalstring(p, 0);
 		if (evalskip != SKIPFUNC)
-			exitstatus = status;
+			exitstatus = savestatus;
 	}
 
-	savestatus = last_status;
+	savestatus = status;
 }
 
 
@@ -402,8 +399,10 @@ exitshell(void)
 
 	savestatus = exitstatus;
 	TRACE(("pid %d, exitshell(%d)\n", getpid(), savestatus));
-	if (setjmp(loc.loc))
+	if (setjmp(loc.loc)) {
+		savestatus = exitstatus;
 		goto out;
+	}
 	handler = &loc;
 	if (have_traps()) {
 		dotrap();
