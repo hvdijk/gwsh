@@ -255,7 +255,7 @@ argstr(char *p, int flag)
 		reject++;
 	}
 	length = 0;
-	if (flag & EXP_TILDE) {
+	if ((flag & (EXP_TILDE | EXP_DISCARD)) == EXP_TILDE) {
 		char *q;
 
 		flag &= ~EXP_TILDE;
@@ -274,7 +274,7 @@ start:
 			/* c == '=' || c == ':' */
 			length++;
 		}
-		if (length > 0) {
+		if (length > 0 && !(flag & EXP_DISCARD)) {
 			int newloc;
 			expdest = stnputs(p, length, expdest);
 			newloc = expdest - (char *)stackblock();
@@ -291,7 +291,7 @@ start:
 		case '\0':
 		case CTLENDVAR:
 		case CTLENDARI:
-			if (!(flag & EXP_WORD))
+			if (!(flag & (EXP_WORD | EXP_DISCARD)))
 				STPUTC('\0', expdest);
 			return p;
 		case '=':
@@ -334,7 +334,7 @@ addquote:
 			goto addquote;
 		case CTLVAR:
 			/* "$@" syntax adherence hack */
-			dolatstrhack = p[1] == '@' && (*p & VSTYPE) != VSMINUS && (*p & VSTYPE) != VSLENGTH && !shellparam.nparam && flag & QUOTES_ESC;
+			dolatstrhack = p[1] == '@' && (*p & VSTYPE) != VSMINUS && (*p & VSTYPE) != VSLENGTH && !shellparam.nparam && flag & QUOTES_ESC && !(flag & EXP_DISCARD);
 			p = evalvar(p, flag);
 			if (dolatstrhack && prev == (char)CTLQUOTEMARK && *p == (char)CTLQUOTEMARK) {
 				expdest--;
@@ -343,7 +343,8 @@ addquote:
 			}
 			goto start;
 		case CTLBACKQ:
-			expbackq(argbackq->n, flag);
+			if (!(flag & EXP_DISCARD))
+				expbackq(argbackq->n, flag);
 			argbackq = argbackq->next;
 			goto start;
 		case CTLARI:
@@ -454,7 +455,10 @@ expari(char *start, int flag)
 	intmax_t result;
 
 	begoff = expdest - (char *) stackblock();
-	p = argstr(start, EXP_QUOTED);
+	p = argstr(start, (flag & EXP_DISCARD) | EXP_QUOTED);
+	if (flag & EXP_DISCARD)
+		goto out;
+
 	endoff = expdest - (char *) stackblock();
 	expdest = (char *) stackblock() + begoff;
 	pushstackmark(&sm, endoff);
@@ -466,6 +470,7 @@ expari(char *start, int flag)
 	if (likely(!(flag & EXP_QUOTED)))
 		recordregion(begoff, begoff + len, 0);
 
+out:
 	return p;
 }
 
@@ -591,7 +596,6 @@ evalvar(char *p, int flag)
 	int varflags;
 	char *var;
 	int patloc;
-	int c;
 	int startloc;
 	ssize_t varlen;
 	int easy;
@@ -599,6 +603,9 @@ evalvar(char *p, int flag)
 
 	varflags = *p++;
 	subtype = varflags & VSTYPE;
+
+	if (flag & EXP_DISCARD)
+		goto discard;
 
 	if (!subtype)
 badsub:
@@ -657,7 +664,10 @@ vsplus:
 record:
 		if (easy)
 			recordregion(startloc, expdest - (char *)stackblock(), quoted);
-		goto end;
+discard:
+		if (subtype & ~VSNORMAL)
+			return argstr(p, flag | EXP_DISCARD);
+		return p;
 	}
 
 #ifdef DEBUG
@@ -688,26 +698,6 @@ record:
 	/* Remove any recorded regions beyond start of variable */
 	removerecordregions(startloc);
 	goto record;
-
-end:
-	if (subtype != VSNORMAL) {	/* skip to end of alternative */
-		int nesting = 1;
-		for (;;) {
-			if ((c = (signed char)*p++) == CTLESC)
-				p++;
-			else if (c == CTLBACKQ) {
-				if (varlen >= 0 || subtype >= VSTRIMRIGHT)
-					argbackq = argbackq->next;
-			} else if (c == CTLVAR) {
-				if ((*p++ & VSTYPE) != VSNORMAL)
-					nesting++;
-			} else if (c == CTLENDVAR) {
-				if (--nesting == 0)
-					break;
-			}
-		}
-	}
-	return p;
 }
 
 
