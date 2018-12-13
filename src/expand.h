@@ -52,10 +52,10 @@ struct arglist {
  */
 #define EXP_FULL	0x1	/* perform word splitting & file globbing */
 #define EXP_TILDE	0x2	/* do normal tilde expansion */
-#define	EXP_VARTILDE	0x4	/* expand tildes in an assignment */
-#define	EXP_REDIR	0x8	/* file glob for a redirection (1 match only) */
-#define EXP_CASE	0x10	/* keeps quotes around for CASE pattern */
-#define EXP_VARTILDE2	0x40	/* expand tildes after colons only */
+#define EXP_VARTILDE2	0x4	/* expand tildes after colons only */
+#define EXP_VARTILDE	0x8	/* expand tildes in an assignment */
+#define EXP_REDIR	0x10	/* file glob for a redirection (1 match only) */
+#define EXP_CASE	0x20	/* keeps quotes around for CASE pattern */
 #define EXP_WORD	0x80	/* expand word in parameter expansion */
 #define EXP_QUOTED	0x100	/* expand word in double quotes */
 #define EXP_DISCARD	0x200   /* discard result of expansion */

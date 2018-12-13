@@ -243,17 +243,13 @@ argstr(char *p, int flag)
 		CTLENDARI,
 		0
 	};
-	const char *reject = spclchars;
+	const char *reject = spclchars + 2;
 	int prev, c = 0;
 	int breakall = (flag & (EXP_WORD | EXP_QUOTED)) == EXP_WORD;
 	size_t length;
 	int startloc;
 
-	if (!(flag & EXP_VARTILDE)) {
-		reject += 2;
-	} else if (flag & EXP_VARTILDE2) {
-		reject++;
-	}
+	reject -= (flag & (EXP_VARTILDE | EXP_VARTILDE2)) / EXP_VARTILDE2;
 	length = 0;
 	if ((flag & (EXP_TILDE | EXP_DISCARD)) == EXP_TILDE) {
 		char *q;
@@ -295,11 +291,7 @@ start:
 				STPUTC('\0', expdest);
 			return p;
 		case '=':
-			if (flag & EXP_VARTILDE2) {
-				p--;
-				continue;
-			}
-			flag |= EXP_VARTILDE2;
+			flag ^= EXP_VARTILDE | EXP_VARTILDE2;
 			reject++;
 			/* fall through */
 		case ':':
@@ -371,7 +363,7 @@ exptilde(char *startp, char *p, int flag)
 		case CTLQUOTEMARK:
 			return (startp);
 		case ':':
-			if (flag & EXP_VARTILDE)
+			if (flag & (EXP_VARTILDE | EXP_VARTILDE2))
 				goto done;
 			break;
 		case '/':
