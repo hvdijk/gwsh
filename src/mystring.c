@@ -64,7 +64,7 @@
 #include "system.h"
 
 
-char nullstr[1];		/* zero length string */
+const char nullstr[1];		/* zero length string */
 const char spcstr[] = " ";
 const char snlfmt[] = "%s\n";
 const char dolatstr[] = { CTLQUOTEMARK, CTLVAR, VSNORMAL, '@', '=',

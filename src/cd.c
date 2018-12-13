@@ -68,11 +68,11 @@
 
 STATIC int docd(const char *, int);
 STATIC const char *updatepwd(const char *);
-STATIC char *getpwd(void);
+STATIC const char *getpwd(void);
 STATIC int cdopt(void);
 
-STATIC char *curdir = nullstr;		/* current working directory */
-STATIC char *physdir = nullstr;		/* physical working directory */
+STATIC const char *curdir = nullstr;	/* current working directory */
+STATIC const char *physdir = nullstr;	/* physical working directory */
 
 STATIC int
 cdopt()
@@ -278,7 +278,7 @@ updatepwd(const char *dir)
  * directory, this routine returns immediately.
  */
 inline
-STATIC char *
+STATIC const char *
 getpwd()
 {
 #ifdef __GLIBC__
@@ -317,7 +317,7 @@ pwdcmd(int argc, char **argv)
 void
 setpwd(const char *val, int setold)
 {
-	char *oldcur, *dir;
+	const char *oldcur, *dir;
 
 	oldcur = dir = curdir;
 
@@ -327,18 +327,18 @@ setpwd(const char *val, int setold)
 	INTOFF;
 	if (physdir != nullstr) {
 		if (physdir != oldcur)
-			free(physdir);
+			free((void *) physdir);
 		physdir = nullstr;
 	}
 	if (oldcur == val || !val) {
-		char *s = getpwd();
+		const char *s = getpwd();
 		physdir = s;
 		if (!val)
 			dir = s;
 	} else
 		dir = savestr(val);
 	if (oldcur != dir && oldcur != nullstr) {
-		free(oldcur);
+		free((void *) oldcur);
 	}
 	curdir = dir;
 	INTON;

@@ -60,7 +60,7 @@
 struct procstat {
 	pid_t	pid;		/* process id */
  	int	status;		/* last process status from wait() */
- 	char	*cmd;		/* text of command being run */
+	const char *cmd;	/* text of command being run */
 };
 
 struct job {

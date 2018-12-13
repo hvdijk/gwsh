@@ -42,14 +42,14 @@
 #include <string.h>
 #include <unistd.h>
 
-static int	 conv_escape_str(char *, char **);
-static char	*conv_escape(char *, int *);
-static int	 getchr(void);
-static double	 getdouble(void);
-static uintmax_t getuintmax(int);
-static char	*getstr(void);
-static char	*mklong(const char *, const char *);
-static void      check_conversion(const char *, const char *);
+static int	   conv_escape_str(const char *, char **);
+static const char *conv_escape(const char *, int *);
+static int	   getchr(void);
+static double	   getdouble(void);
+static uintmax_t   getuintmax(int);
+static const char *getstr(void);
+static char	  *mklong(const char *, const char *);
+static void        check_conversion(const char *, const char *);
 
 static int	rval;
 static char  **gargv;
@@ -91,7 +91,7 @@ static char  **gargv;
 })
 
 
-static int print_escape_str(const char *f, int *param, int *array, char *s)
+static int print_escape_str(const char *f, int *param, int *array, const char *s)
 {
 	struct stackmark smark;
 	char *p, *q;
@@ -161,14 +161,14 @@ int printfcmd(int argc, char *argv[])
 
 		/* find next format specification */
 		for (fmt = format; (ch = *fmt++) ;) {
-			char *start;
+			const char *start;
 			char nextch;
 			int array[2];
 			int *param;
 
 			if (ch == '\\') {
 				int c_ch;
-				fmt = conv_escape(fmt, &c_ch);
+				fmt += conv_escape(fmt, &c_ch) - fmt;
 				ch = c_ch;
 				goto pc;
 			}
@@ -225,7 +225,7 @@ pc:
 				break;
 			}
 			case 's': {
-				char *p = getstr();
+				const char *p = getstr();
 				PF(start, p);
 				break;
 			}
@@ -275,7 +275,7 @@ out:
  *	Returns -1 otherwise.
  */
 static int
-conv_escape_str(char *str, char **sp)
+conv_escape_str(const char *str, char **sp)
 {
 	int c;
 	int ch;
@@ -316,8 +316,8 @@ conv_escape_str(char *str, char **sp)
 /*
  * Print "standard" escape characters 
  */
-static char *
-conv_escape(char *str, int *conv_ch)
+static const char *
+conv_escape(const char *str, int *conv_ch)
 {
 	int value;
 	int ch;
@@ -389,10 +389,10 @@ getchr(void)
 	return val;
 }
 
-static char *
+static const char *
 getstr(void)
 {
-	char *val = nullstr;
+	const char *val = nullstr;
 
 	if (*gargv)
 		val = *gargv++;
