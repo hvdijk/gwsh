@@ -105,7 +105,7 @@ rmaliases(void)
 	INTOFF;
 	for (i = 0; i < ATABSIZE; i++) {
 		app = &atab[i];
-		for (ap = *app; ap; ap = *app) {
+		while ((ap = *app)) {
 			*app = freealias(*app);
 			if (ap == *app) {
 				app = &ap->next;
