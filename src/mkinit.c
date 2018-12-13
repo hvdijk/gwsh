@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -113,6 +115,13 @@ char exitreset[] = "\
  * but prior to exitshell. \n\
  */\n";
 
+char envreset[] = "\
+/*\n\
+ * This routine is called when an error or an interrupt occurs in an\n\
+ * interactive shell and control is returned to the main command loop,\n\
+ * or when a subshell is started. \n\
+ */\n";
+
 char reset[] = "\
 /*\n\
  * This routine is called when an error or an interrupt occurs in an\n\
@@ -123,6 +132,7 @@ char reset[] = "\
 struct event event[] = {
 	{"INIT", "init", init},
 	{"EXITRESET", "exitreset", exitreset},
+	{"ENVRESET", "envreset", envreset},
 	{"RESET", "reset", reset},
 	{NULL, NULL}
 };

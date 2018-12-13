@@ -60,6 +60,7 @@
 #include "var.h"
 #include "memalloc.h"
 #include "error.h"
+#include "init.h"
 #include "show.h"
 #include "mystring.h"
 #ifndef SMALL
@@ -113,13 +114,13 @@ STATIC const struct builtincmd bltin = {
 
 
 /*
- * Called to reset things after an exception.
+ * Called to reset things in subshells and after an exception.
  */
 
 #ifdef mkinit
 INCLUDE "eval.h"
 
-EXITRESET {
+ENVRESET {
 	evalskip = 0;
 	loopnest = 0;
 	savestatus = -1;
@@ -485,11 +486,16 @@ evalsubshell(union node *n, int flags)
 	INTOFF;
 	jp = makejob(n, 1);
 	if (forkshell(jp, n, backgnd) == 0) {
+		struct jmploc jmploc;
 		INTON;
 		flags |= EV_EXIT;
 		if (backgnd)
 			flags &=~ EV_TESTED;
 nofork:
+		envreset();
+		if (setjmp(jmploc.loc))
+			exitshell();
+		handler = &jmploc;
 		redirect(n->nredir.redirect, 0);
 		evaltreenr(n->nredir.n, flags);
 		/* never returns */

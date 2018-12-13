@@ -109,6 +109,7 @@ main(int argc, char **argv)
 		int s;
 
 		exitreset();
+		envreset();
 
 		e = exception;
 
