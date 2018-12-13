@@ -164,14 +164,15 @@ static int evalcmd(int argc, char **argv, int flags)
  */
 
 int
-evalstring(char *s, int flags)
+evalstring(const char *s, int flags)
 {
+	char *p;
 	union node *n;
 	struct stackmark smark;
 	int status;
 
-	s = sstrdup(s);
-	setinputstring(s);
+	p = sstrdup(s);
+	setinputstring(p);
 	setstackmark(&smark);
 
 	status = 0;
@@ -187,7 +188,7 @@ evalstring(char *s, int flags)
 	}
 	popstackmark(&smark);
 	popfile();
-	stunalloc(s);
+	stunalloc(p);
 
 	return status;
 }
