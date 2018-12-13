@@ -478,9 +478,10 @@ ulimitcmd(int argc, char **argv)
 
 			while ((c = *p++) >= '0' && c <= '9')
 			{
-				val = (val * 10) + (long)(c - '0');
-				if (val < (rlim_t) 0)
+				rlim_t newval = (val * 10U) + (c - '0');
+				if (newval < val)
 					break;
+				val = newval;
 			}
 			if (c)
 				sh_error("bad number");
