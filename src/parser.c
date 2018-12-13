@@ -1090,7 +1090,7 @@ output:
 			}
 			break;
 		case '`':
-			if (flags & RT_SQSYNTAX)
+			if (flags & RT_SQSYNTAX || checkkwd & CHKEOFMARK)
 				goto word;
 			out = readtoken1_parsebackq(out, flags, 1);
 			break;
