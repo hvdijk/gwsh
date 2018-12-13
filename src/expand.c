@@ -189,13 +189,11 @@ expandarg(union node *arg, struct arglist *arglist, int flag)
 	argbackq = arg->narg.backquote;
 	STARTSTACKSTR(expdest);
 	argstr(arg->narg.text, flag);
-	p = _STPUTC('\0', expdest);
-	expdest = p - 1;
 	if (arglist == NULL) {
 		/* here document expanded */
 		goto out;
 	}
-	p = grabstackstr(p);
+	p = grabstackstr(expdest);
 	exparg.lastp = &exparg.list;
 	/*
 	 * TODO - EXP_REDIR
@@ -293,6 +291,7 @@ start:
 		case '\0':
 		case CTLENDVAR:
 		case CTLENDARI:
+			STPUTC('\0', expdest);
 			return p;
 		case '=':
 			if (flag & EXP_VARTILDE2) {
@@ -455,7 +454,6 @@ expari(char *start, int flag)
 
 	begoff = expdest - (char *) stackblock();
 	p = argstr(start, EXP_QUOTED);
-	STPUTC('\0', expdest);
 	endoff = expdest - (char *) stackblock();
 	expdest = (char *) stackblock() + begoff;
 	pushstackmark(&sm, endoff);
@@ -544,7 +542,6 @@ subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varfla
 
 	argstr(p, EXP_TILDE | (subtype != VSASSIGN && subtype != VSQUESTION ?
 			       EXP_CASE : 0));
-	STPUTC('\0', expdest);
 	argbackq = saveargbackq;
 	startp = stackblock() + startloc;
 
@@ -627,7 +624,9 @@ again:
 	if (subtype == VSMINUS) {
 vsplus:
 		if (varlen < 0) {
-			return argstr(p, flag | EXP_TILDE | EXP_WORD);
+			p = argstr(p, flag | EXP_TILDE | EXP_WORD);
+			expdest--;
+			return p;
 		}
 		goto record;
 	}
@@ -1729,7 +1728,6 @@ casematch(union node *pattern, char *val)
 	argbackq = pattern->narg.backquote;
 	STARTSTACKSTR(expdest);
 	argstr(pattern->narg.text, EXP_TILDE | EXP_CASE);
-	STACKSTRNUL(expdest);
 	ifsfree();
 	result = patmatch(stackblock(), val);
 	popstackmark(&smark);
