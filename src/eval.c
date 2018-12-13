@@ -177,9 +177,11 @@ evalstring(const char *s, int flags)
 
 	status = 0;
 	for (; (n = parsecmd(0)) != NEOF; popstackmark(&smark)) {
-		int i;
+		int i, eofmask;
 
-		i = evaltree(n, flags & ~(parser_eof() ? 0 : EV_EXIT));
+		eofmask = -!parser_eof();
+		tokpushback &= eofmask;
+		i = evaltree(n, flags & ~(EV_EXIT & eofmask));
 		if (n)
 			status = i;
 

@@ -117,5 +117,5 @@ isassignment(const char *p)
 
 static inline int parser_eof(void)
 {
-	return tokpushback && lasttoken == TEOF;
+	return tokpushback > lasttoken;
 }
