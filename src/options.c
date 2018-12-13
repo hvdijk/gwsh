@@ -83,6 +83,7 @@ static const char *const optnames[NOPTS] = {
 	"nounset",
 	"nolog",
 	"debug",
+	"pipefail",
 };
 
 const char optletters[NOPTS] = {
@@ -101,6 +102,7 @@ const char optletters[NOPTS] = {
 	'a',
 	'b',
 	'u',
+	0,
 	0,
 	0,
 };

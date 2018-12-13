@@ -785,6 +785,7 @@ makejob(union node *node, int nprocs)
 		break;
 	}
 	memset(jp, 0, sizeof(*jp));
+	jp->pipefail = optpipefail;
 #if JOBS
 	if (jobctl)
 		jp->jobctl = 1;
@@ -1508,25 +1509,35 @@ STATIC int
 getstatus(struct job *job) {
 	int status;
 	int retval;
+	int nproc = job->nprocs - 1;
+	struct procstat *ps = job->ps + nproc;
 
-	status = job->ps[job->nprocs - 1].status;
-	retval = WEXITSTATUS(status);
-	if (!WIFEXITED(status)) {
+	nproc &= -job->pipefail;
+
+	for (;;) {
+		status = ps->status;
+		retval = WEXITSTATUS(status);
+		if (!WIFEXITED(status)) {
 #if JOBS
-		retval = WSTOPSIG(status);
-		if (!WIFSTOPPED(status))
+			retval = WSTOPSIG(status);
+			if (!WIFSTOPPED(status))
 #endif
-		{
-			/* XXX: limits number of signals */
-			retval = WTERMSIG(status);
+			{
+				/* XXX: limits number of signals */
+				retval = WTERMSIG(status);
 #if JOBS
-			if (retval == SIGINT)
-				job->sigint = 1;
+				if (retval == SIGINT)
+					job->sigint = 1;
 #endif
+			}
+			retval += 128;
 		}
-		retval += 128;
+		TRACE(("getstatus: job %d, nproc %d, status %x, retval %x\n",
+			jobno(job), job->nprocs, status, retval));
+		if (retval || !nproc)
+			return retval;
+
+		nproc--;
+		ps--;
 	}
-	TRACE(("getstatus: job %d, nproc %d, status %x, retval %x\n",
-		jobno(job), job->nprocs, status, retval));
-	return retval;
 }

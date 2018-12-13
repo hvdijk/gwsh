@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2018
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -67,7 +69,7 @@ struct job {
 #if JOBS
 	int stopstatus;		/* status of a stopped job */
 #endif
-	uint32_t
+	unsigned
 		nprocs: 16,	/* number of processes */
 		state: 8,
 #define	JOBRUNNING	0	/* at least one proc running */
@@ -79,7 +81,8 @@ struct job {
 #endif
 		waited: 1,	/* true if this entry has been waited for */
 		used: 1,	/* true if this entry is in used */
-		changed: 1;	/* true if status has changed */
+		changed: 1,	/* true if status has changed */
+		pipefail: 1;	/* true if job was created under set -o pipefail */
 	struct job *prev_job;	/* previous job */
 };
 
