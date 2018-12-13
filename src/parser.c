@@ -1607,7 +1607,7 @@ setprompt(int which)
 }
 
 const char *
-expandstr(const char *ps)
+expandstr(const char *ps, int flags)
 {
 	union node n;
 	int saveprompt;
@@ -1628,7 +1628,7 @@ expandstr(const char *ps)
 	n.narg.text = wordtext;
 	n.narg.backquote = backquotelist;
 
-	expandarg(&n, NULL, EXP_QUOTED);
+	expandarg(&n, NULL, flags | EXP_QUOTED);
 	return stackblock();
 }
 
@@ -1656,7 +1656,7 @@ getprompt(void *unused)
 		break;
 	}
 
-	return expandstr(prompt);
+	return expandstr(prompt, 0);
 }
 
 const char *const *

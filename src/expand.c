@@ -485,7 +485,7 @@ expbackq(union node *cmd, int flag)
 	INTOFF;
 	startloc = expdest - (char *)stackblock();
 	pushstackmark(&smark, startloc);
-	evalbackcmd(cmd, (struct backcmd *) &in);
+	evalbackcmd(cmd, flag & EXP_XTRACE ? EV_XTRACE : 0, &in);
 	popstackmark(&smark);
 
 	p = in.buf;

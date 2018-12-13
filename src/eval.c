@@ -153,7 +153,7 @@ static int evalcmd(int argc, char **argv, int flags)
                         STPUTC('\0', concat);
                         p = grabstackstr(concat);
                 }
-                return evalstring(p, flags & EV_TESTED);
+                return evalstring(p, flags & ~EV_EXIT);
         }
         return 0;
 }
@@ -232,7 +232,8 @@ evaltree(union node *n, int flags)
 		break;
 #endif
 	case NNOT:
-		status = evaltree(n->nnot.com, EV_TESTED);
+		status = evaltree(n->nnot.com,
+				  (flags & ~EV_EXIT) | EV_TESTED);
 		if (!evalskip)
 			status = !status;
 		goto setstatus;
@@ -241,7 +242,8 @@ evaltree(union node *n, int flags)
 		expredir(n->nredir.redirect);
 		pushredir(n->nredir.redirect);
 		status = redirectsafe(n->nredir.redirect, REDIR_PUSH) ?:
-			 evaltree(n->nredir.n, flags & EV_TESTED);
+			 evaltree(n->nredir.n,
+				  (flags & ~EV_EXIT) | EV_TESTED);
 		if (n->nredir.redirect)
 			popredir(0);
 		goto setstatus;
@@ -286,7 +288,7 @@ checkexit:
 #endif
 		isor = n->type - NAND;
 		status = evaltree(n->nbinary.ch1,
-				  (flags | ((isor >> 1) - 1)) & EV_TESTED);
+				  (flags & ~EV_EXIT) | (~isor & EV_TESTED));
 		if ((!status) == isor || evalskip)
 			break;
 		n = n->nbinary.ch2;
@@ -296,7 +298,8 @@ calleval:
 		status = evalfn(n, flags);
 		goto setstatus;
 	case NIF:
-		status = evaltree(n->nif.test, EV_TESTED);
+		status = evaltree(n->nif.test,
+				  (flags & ~EV_EXIT) | EV_TESTED);
 		if (evalskip)
 			break;
 		if (!status) {
@@ -374,11 +377,12 @@ evalloop(union node *n, int flags)
 
 	loopnest++;
 	status = 0;
-	flags &= EV_TESTED;
+	flags &= ~EV_EXIT;
 	do {
 		int i;
 
-		i = evaltree(n->nbinary.ch1, EV_TESTED);
+		i = evaltree(n->nbinary.ch1,
+			     (flags & ~EV_EXIT) | EV_TESTED);
 		skip = skiploop();
 		if (skip == SKIPFUNC)
 			status = i;
@@ -418,7 +422,7 @@ evalfor(union node *n, int flags)
 
 	status = 0;
 	loopnest++;
-	flags &= EV_TESTED;
+	flags &= ~EV_EXIT;
 	for (sp = arglist.list ; sp ; sp = sp->next) {
 		setvar(n->nfor.var, sp->text, 0);
 		status = evaltree(n->nfor.body, flags);
@@ -493,7 +497,7 @@ evalsubshell(union node *n, int flags)
 		INTON;
 		flags |= EV_EXIT;
 		if (backgnd)
-			flags &=~ EV_TESTED;
+			flags &= ~EV_TESTED;
 nofork:
 		envreset();
 		if (setjmp(jmploc.loc))
@@ -620,7 +624,7 @@ evalpipe(union node *n, int flags)
  */
 
 void
-evalbackcmd(union node *n, struct backcmd *result)
+evalbackcmd(union node *n, int flags, struct backcmd *result)
 {
 	int pip[2];
 	struct job *jp;
@@ -644,7 +648,7 @@ evalbackcmd(union node *n, struct backcmd *result)
 			close(pip[1]);
 		}
 		ifsfree();
-		evaltreenr(n, EV_EXIT);
+		evaltreenr(n, EV_EXIT | flags);
 		/* NOTREACHED */
 	}
 	close(pip[1]);
@@ -798,12 +802,12 @@ evalcommand(union node *cmd, int flags)
 	}
 
 	/* Print the command if xflag is set. */
-	if (xflag) {
+	if (xflag && !(flags & EV_XTRACE)) {
 		struct output *out;
 		int sep;
 
 		out = &preverrout;
-		outstr(expandstr(ps4val()), out);
+		outstr(expandstr(ps4val(), EXP_XTRACE), out);
 		sep = eprintlist(out, varlist.list, EPL_START | EPL_ASSIGN);
 		eprintlist(out, arglist.list, sep | EPL_COMMAND);
 		outcslow('\n', out);
@@ -982,7 +986,7 @@ evalfun(struct funcnode *func, int argc, char **argv, int flags)
 	shellparam.p = argv + 1;
 	shellparam.optind = 1;
 	shellparam.optoff = -1;
-	evaltree(func->n.ndefun.body, flags & (EV_EXIT | EV_TESTED));
+	evaltree(func->n.ndefun.body, flags);
 funcdone:
 	INTOFF;
 	loopnest = saveloopnest;

@@ -50,11 +50,12 @@ struct backcmd {		/* result of evalbackcmd */
 /* flags in argument to evaltree */
 #define EV_EXIT 01		/* exit after evaluating tree */
 #define EV_TESTED 02		/* exit status is checked; ignore -e flag */
+#define EV_XTRACE 04		/* expanding xtrace prompt; ignore -x flag */
 
 int evalstring(const char *, int);
 union node;	/* BLETCH for ansi C */
 int evaltree(union node *, int);
-void evalbackcmd(union node *, struct backcmd *);
+void evalbackcmd(union node *, int, struct backcmd *);
 
 extern int evalskip;
 

@@ -59,6 +59,7 @@ struct arglist {
 #define EXP_WORD	0x80	/* expand word in parameter expansion */
 #define EXP_QUOTED	0x100	/* expand word in double quotes */
 #define EXP_DISCARD	0x200   /* discard result of expansion */
+#define EXP_XTRACE	0x400	/* expand xtrace prompt; disable xtrace */
 
 
 union node;

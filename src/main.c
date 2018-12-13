@@ -255,7 +255,7 @@ cmdloop(int top)
 STATIC void
 read_profile(const char *name)
 {
-	name = expandstr(name);
+	name = expandstr(name, 0);
 	if (setinputfile(name, INPUT_PUSH_FILE | INPUT_NOFILE_OK) < 0)
 		return;
 
