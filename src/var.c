@@ -428,7 +428,7 @@ showvars(const char *prefix, int on, int off)
 		p = strchrnul(*ep, '=');
 		q = nullstr;
 		if (*p)
-			q = single_quote(++p);
+			q = shell_quote(++p, 0);
 
 		out1fmt("%s%s%.*s%s\n", prefix, sep, (int)(p - *ep), *ep, q);
 	}

@@ -101,6 +101,11 @@ STATIC int eprintlist(struct output *, struct strlist *, int);
 STATIC int bltincmd(int, char **);
 
 
+#define EPL_START   0x01
+#define EPL_ASSIGN  0x02
+#define EPL_COMMAND 0x04
+
+
 STATIC const struct builtincmd bltin = {
 	name: nullstr,
 	builtin: bltincmd
@@ -793,9 +798,8 @@ evalcommand(union node *cmd, int flags)
 
 		out = &preverrout;
 		outstr(expandstr(ps4val()), out);
-		sep = 0;
-		sep = eprintlist(out, varlist.list, sep);
-		eprintlist(out, arglist.list, sep);
+		sep = eprintlist(out, varlist.list, EPL_START | EPL_ASSIGN);
+		eprintlist(out, arglist.list, sep | EPL_COMMAND);
 		outcslow('\n', out);
 #ifdef FLUSHERR
 		flushout(out);
@@ -1119,16 +1123,25 @@ execcmd(int argc, char **argv)
 
 
 STATIC int
-eprintlist(struct output *out, struct strlist *sp, int sep)
+eprintlist(struct output *out, struct strlist *sp, int flags)
 {
 	while (sp) {
-		const char *p;
+		const char *p, *q;
+		int style;
 
-		p = " %s" + (1 - sep);
-		sep |= 1;
-		outfmt(out, p, sp->text);
+		if (!(flags & EPL_START))
+			outc(' ', out);
+		p = sp->text;
+		if (flags & EPL_ASSIGN) {
+			q = p;
+			p = strchr(p, '=') + 1;
+			outmem(q, p - q, out);
+		}
+		style = flags & EPL_COMMAND && findkwd(p);
+		outstr(shell_quote(p, style), out);
 		sp = sp->next;
+		flags &= ~(EPL_START | EPL_COMMAND);
 	}
 
-	return sep;
+	return flags & EPL_START;
 }

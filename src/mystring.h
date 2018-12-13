@@ -56,7 +56,7 @@ intmax_t atomax(const char *, const char **, int);
 intmax_t atomax10(const char *);
 int number(const char *);
 int is_number(const char *);
-char *single_quote(const char *);
+const char *shell_quote(const char *, int);
 char *sstrdup(const char *);
 int pstrcmp(const void *, const void *);
 const char *const *findstring(const char *, const char *const *, size_t);

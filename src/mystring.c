@@ -44,15 +44,20 @@
  *	is_number(s)		Return true if s is a string of digits.
  */
 
+#include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#ifdef WITH_LOCALE
+#include <wctype.h>
+#endif
 #include "shell.h"
 #include "syntax.h"
 #include "error.h"
+#include "mylocale.h"
 #include "mystring.h"
 #include "memalloc.h"
 #include "parser.h"
@@ -187,48 +192,98 @@ is_number(const char *p)
 
 
 /*
- * Produce a possibly single quoted string suitable as input to the shell.
+ * Produce a possibly quoted string suitable as input to the shell.
+ * If force is set, the result will definitely be quoted.
  * The return string is allocated on the stack.
  */
 
-char *
-single_quote(const char *s) {
-	char *p;
+const char *
+shell_quote(const char *s, int force) {
+	const char *p, *q;
+	char *r;
+#ifdef WITH_LOCALE
+	int c;
+#else
+	char c;
+#endif
+	// 0: unquoted
+	// 1: single-quoted
+	// 2: dollar-single-quoted
+	int style = force || !*s;
+	int bs = 0;
 
-	STARTSTACKSTR(p);
+	const char *sqchars = " |&;<>()$`\\\"*?[#~=%";
+#define ESCSEQCH "\\\'abefnrtv"
+#define ESCCHARS "\\\'\a\b\e\f\n\r\t\v"
+	const char *dqchars = ESCSEQCH "\0" ESCCHARS + sizeof ESCSEQCH + 1;
 
-	do {
-		char *q;
-		size_t len;
+	STARTSTACKSTR(r);
 
-		len = strchrnul(s, '\'') - s;
+	r = makestrspace(4, r);
+	USTPUTC('$', r);
+	USTPUTC('\'', r);
 
-		q = p = makestrspace(len + 3, p);
+	for (p = s; *p; p = q) {
+#ifdef WITH_LOCALE
+		r = makestrspace((MB_LEN_MAX > 10 ? MB_LEN_MAX : 10) + 2, r);
+#else
+		r = makestrspace(6, r);
+#endif
+		c = *p;
+		if (strchr(sqchars, c)) {
+			style = 1;
+			bs |= c == '\\';
+		}
+		if ((q = strchr(dqchars, c))) {
+			c = q[-sizeof ESCSEQCH];
+			USTPUTC('\\', r);
+			USTPUTC(c, r);
+			q = p + 1;
+			goto dq;
+		}
+		q = p;
+		GETC(c, q);
+#ifdef WITH_LOCALE
+		if (c < 0) {
+			c = -c;
+#else
+		if (c < ' ' || c > '~') {
+#endif
+			r += sprintf(r, "\\%03o", (unsigned char) c);
+			goto dq;
+		} /* } */
+#ifdef WITH_LOCALE
+		if (!iswprint(c)) {
+			r += sprintf(r, c >= 0x10000 ? "\\U%08x" : "\\u%04x", c);
+			goto dq;
+		}
+		r = mempcpy(r, p, q - p);
+#else
+		USTPUTC(c, r);
+#endif
+		continue;
 
-		*q++ = '\'';
-		q = mempcpy(q, s, len);
-		*q++ = '\'';
-		s += len;
+dq:
+		if (style == 2)
+			continue;
+		style = 2;
+		sqchars = nullstr;
+		dqchars--;
 
-		STADJUST(q - p, p);
+		/* If any backslashes were seen before we committed
+		 * to a dollar-quoted string, they have not been
+		 * escaped yet. Restart from the beginning. */
+		if (bs) {
+			q = s;
+			r = stackblock() + 2;
+		}
+	}
 
-		len = strspn(s, "'");
-		if (!len)
-			break;
+	if (style)
+		USTPUTC('\'', r);
+	USTPUTC(0, r);
 
-		q = p = makestrspace(len + 3, p);
-
-		*q++ = '"';
-		q = mempcpy(q, s, len);
-		*q++ = '"';
-		s += len;
-
-		STADJUST(q - p, p);
-	} while (*s);
-
-	USTPUTC(0, p);
-
-	return stackblock();
+	return stackblock() + 2 - style;
 }
 
 /*
