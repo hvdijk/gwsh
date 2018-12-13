@@ -76,6 +76,7 @@
 #include "output.h"
 #include "memalloc.h"
 #include "error.h"
+#include "mylocale.h"
 #include "mystring.h"
 #include "show.h"
 #include "system.h"
@@ -807,51 +808,6 @@ strtodest(const char *p, int quotes)
 }
 
 
-#ifdef WITH_LOCALE
-STATIC size_t
-mbcget(const char *p, size_t len, int *c, int ctlesc)
-{
-	const char *q = p;
-	wchar_t wc;
-	mbstate_t mbs = {0};
-	for (;;) {
-		if (ctlesc && *q == (char)CTLESC)
-			q++;
-		switch (mbrtowc(&wc, q++, 1, &mbs)) {
-		case (size_t)-2:
-			if (q - p < len)
-				continue;
-			/* fall through */
-		case (size_t)-1:
-			if (c) {
-				q = p;
-				if (ctlesc && *q == (char)CTLESC)
-					q++;
-				*c = -(unsigned char) *q++;
-			}
-			return q - p;
-		default:
-			if (c)
-				*c = wc;
-			return q - p;
-		}
-	}
-}
-
-STATIC size_t
-mbccnt(const char *p)
-{
-	size_t count = 0;
-	while (*p) {
-		p += mbcget(p, -1, NULL, 0);
-		count++;
-	}
-	return count;
-}
-#endif
-
-
-
 /*
  * Add the value of a specialized variable to the stack string.
  */
@@ -1573,12 +1529,8 @@ pmatch(const char *pattern, const char *string, int flags)
 	const char *ap, *aq;
 #ifndef WITH_LOCALE
 	char c, chr;
-#define GETC(c, p)        ((void) ((c) = *(p)++))
-#define GETC_CTLESC(c, p) ((void) ((p) += flags & PM_CTLESC && *(p) == (char)CTLESC, (c) = *(p)++))
 #else
 	int c, chr;
-#define GETC(c, p)        ((void) ((p) += mbcget((p), -1, &(c), 0)))
-#define GETC_CTLESC(c, p) ((void) ((p) += mbcget((p), -1, &(c), flags & PM_CTLESC)))
 #endif
 
 	p = pattern;
@@ -1601,7 +1553,7 @@ pmatch(const char *pattern, const char *string, int flags)
 				if (flags & PM_MATCHMAX || ap == pattern)
 					return s;
 				r = s;
-				GETC_CTLESC(c, s);
+				GETC_CTLESC(c, s, flags & PM_CTLESC);
 				p = pattern;
 				q = s;
 				goto ast;
@@ -1613,7 +1565,7 @@ pmatch(const char *pattern, const char *string, int flags)
 			}
 			goto dft1;
 		case '?':
-			GETC_CTLESC(chr, q);
+			GETC_CTLESC(chr, q, flags & PM_CTLESC);
 			if (chr == '\0')
 				break;
 			continue;
@@ -1633,7 +1585,7 @@ ast:
 				p++;
 			}
 			found = 0;
-			GETC_CTLESC(chr, q);
+			GETC_CTLESC(chr, q, flags & PM_CTLESC);
 			if (chr == '\0')
 				break;
 			GETC(c, p);
@@ -1684,7 +1636,7 @@ ast:
 		}
 		default:
 dft1:
-			GETC_CTLESC(chr, q);
+			GETC_CTLESC(chr, q, flags & PM_CTLESC);
 dft2:
 			if (chr != c)
 				break;
@@ -1692,7 +1644,7 @@ dft2:
 		}
 
 		if (ap != NULL && *aq != '\0') {
-			GETC_CTLESC(c, aq);
+			GETC_CTLESC(c, aq, flags & PM_CTLESC);
 			p = ap;
 			q = aq;
 			if (ap == pattern)
