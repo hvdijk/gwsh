@@ -289,7 +289,7 @@ struct var *setvareq(char *s, int flags)
 out_free:
 			if ((flags & (VTEXTFIXED|VSTACK|VNOSAVE)) == VNOSAVE)
 				ckfree(s);
-			goto out;
+			return 0;
 		}
 
 		flags |= vp->flags & ~(VTEXTFIXED|VSTACK|VNOSAVE|VUNSET);
