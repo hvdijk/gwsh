@@ -291,7 +291,8 @@ start:
 		case '\0':
 		case CTLENDVAR:
 		case CTLENDARI:
-			STPUTC('\0', expdest);
+			if (!(flag & EXP_WORD))
+				STPUTC('\0', expdest);
 			return p;
 		case '=':
 			if (flag & EXP_VARTILDE2) {
@@ -624,9 +625,7 @@ again:
 	if (subtype == VSMINUS) {
 vsplus:
 		if (varlen < 0) {
-			p = argstr(p, flag | EXP_TILDE | EXP_WORD);
-			expdest--;
-			return p;
+			return argstr(p, flag | EXP_TILDE | EXP_WORD);
 		}
 		goto record;
 	}
