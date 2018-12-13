@@ -58,6 +58,8 @@ struct synclass is_entry[] = {
 	{ "ISDIGIT",	"a digit" },
 	{ "ISUPPER",	"an upper case letter" },
 	{ "ISLOWER",	"a lower case letter" },
+	{ "ISODIGIT",	"an octal digit" },
+	{ "ISXDIGIT",	"a hexadecimal digit" },
 	{ "ISUNDER",	"an underscore" },
 	{ "ISSPECL",	"the name of a special parameter" },
 	{ "ISSPACE",	"a space character" },
@@ -127,9 +129,12 @@ main(int argc, char **argv)
 	fputs("#include \"syntax.h\"\n\n", cfile);
 	filltable("0");
 	fputs("\n/* character classification table */\n", cfile);
-	add("0123456789", "ISDIGIT");
-	add("abcdefghijklmnopqrstucvwxyz", "ISLOWER");
-	add("ABCDEFGHIJKLMNOPQRSTUCVWXYZ", "ISUPPER");
+	add("01234567", "ISODIGIT | ISDIGIT | ISXDIGIT");
+	add("89", "ISDIGIT | ISXDIGIT");
+	add("abcdef", "ISLOWER | ISXDIGIT");
+	add("ABCDEF", "ISUPPER | ISXDIGIT");
+	add("ghijklmnopqrstuvwxyz", "ISLOWER");
+	add("GHIJKLMNOPQRSTUVWXYZ", "ISUPPER");
 	add("_", "ISUNDER");
 	add("#?$!-*@", "ISSPECL");
 	add(" \f\n\r\t\v", "ISSPACE");
@@ -175,24 +180,14 @@ static void
 print(char *name)
 {
 	int i;
-	int col;
 
 	fprintf(hfile, "extern const char %s[];\n", name);
-	fprintf(cfile, "const char %s[] = {\n", name);
-	col = 0;
-	for (i = 0 ; i < 258; i++) {
-		if (i == 0) {
-			fputs("      ", cfile);
-		} else if ((i & 03) == 0) {
-			fputs(",\n      ", cfile);
-			col = 0;
-		} else {
-			putc(',', cfile);
-			while (++col < 9 * (i & 03))
-				putc(' ', cfile);
-		}
+	fprintf(cfile, "const char %s[] = {\n      ", name);
+	for (i = 0 ;; i++) {
 		fputs(syntax[i], cfile);
-		col += strlen(syntax[i]);
+		if (i == 257)
+			break;
+		fputs(",\n      ", cfile);
 	}
 	fputs("\n};\n", cfile);
 }
@@ -205,13 +200,16 @@ print(char *name)
  */
 
 static char *macro[] = {
+	"#define ctype(c)\t((unsigned char) (is_type+SYNBASE)[(signed char)(c)])\n",
+	"#define is_odigit(c)\t((unsigned) ((c) - '0') <= 7)\n",
 	"#define is_digit(c)\t((unsigned) ((c) - '0') <= 9)\n",
-	"#define is_alpha(c)\t((is_type+SYNBASE)[(signed char)(c)] & (ISUPPER|ISLOWER))\n",
-	"#define is_alnum(c)\t((is_type+SYNBASE)[(signed char)(c)] & (ISUPPER|ISLOWER|ISDIGIT))\n",
-	"#define is_name(c)\t((is_type+SYNBASE)[(signed char)(c)] & (ISUPPER|ISLOWER|ISUNDER))\n",
-	"#define is_in_name(c)\t((is_type+SYNBASE)[(signed char)(c)] & (ISUPPER|ISLOWER|ISUNDER|ISDIGIT))\n",
-	"#define is_special(c)\t((is_type+SYNBASE)[(signed char)(c)] & (ISSPECL|ISDIGIT))\n",
-	"#define is_space(c)\t((is_type+SYNBASE)[(signed char)(c)] & ISSPACE)\n",
+	"#define is_xdigit(c)\t(ctype((c)) & ISXDIGIT)\n",
+	"#define is_alpha(c)\t(ctype((c)) & (ISUPPER|ISLOWER))\n",
+	"#define is_alnum(c)\t(ctype((c)) & (ISUPPER|ISLOWER|ISDIGIT))\n",
+	"#define is_name(c)\t(ctype((c)) & (ISUPPER|ISLOWER|ISUNDER))\n",
+	"#define is_in_name(c)\t(ctype((c)) & (ISUPPER|ISLOWER|ISUNDER|ISDIGIT))\n",
+	"#define is_special(c)\t(ctype((c)) & (ISSPECL|ISDIGIT))\n",
+	"#define is_space(c)\t(ctype((c)) & ISSPACE)\n",
 	NULL
 };
 
