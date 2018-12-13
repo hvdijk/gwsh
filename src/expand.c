@@ -1578,7 +1578,7 @@ pmatch(const char *pattern, const char *string, int flags)
 #ifndef WITH_LOCALE
 	char c, chr;
 #define GETC(c, p)        ((void) ((c) = *(p)++))
-#define GETC_CTLESC(c, p) ((void) ((p) += flags & CTLESC && *(p) == (char)CTLESC, (c) = *(p)++))
+#define GETC_CTLESC(c, p) ((void) ((p) += flags & PM_CTLESC && *(p) == (char)CTLESC, (c) = *(p)++))
 #else
 	wint_t c, chr;
 #define GETC(c, p)        ((void) ((p) += mbcget((p), -1, &(c), 0)))
