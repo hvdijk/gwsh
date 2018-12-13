@@ -36,13 +36,9 @@
 
 static inline void sigclearmask(void)
 {
-#if defined(HAVE_SIGEMPTYSET) && defined(HAVE_SIGPROCMASK)
 	sigset_t set;
 	sigemptyset(&set);
 	sigprocmask(SIG_SETMASK, &set, 0);
-#else
-	sigsetmask(0);
-#endif
 }
 
 #ifndef HAVE_MEMPCPY
