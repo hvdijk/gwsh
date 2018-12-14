@@ -208,8 +208,12 @@ evaltree(union node *n, int flags)
 {
 	int checkexit = 0;
 	int (*evalfn)(union node *, int);
+	struct stackmark smark;
 	unsigned isor;
 	int status = 0;
+
+	setstackmark(&smark);
+
 	if (n == NULL || nflag) {
 		if (n == NULL)
 			TRACE(("evaltree(NULL) called\n"));
@@ -329,6 +333,8 @@ exexit:
 		exraise(EXEXIT);
 	}
 
+	popstackmark(&smark);
+
 	return exitstatus;
 }
 
@@ -409,12 +415,10 @@ evalfor(union node *n, int flags)
 	struct arglist arglist;
 	union node *argp;
 	struct strlist *sp;
-	struct stackmark smark;
 	int status;
 
 	errlinno = lineno = n->nfor.linno;
 
-	setstackmark(&smark);
 	arglist.lastp = &arglist.list;
 	for (argp = n->nfor.args ; argp ; argp = argp->narg.next) {
 		expandarg(argp, &arglist, EXP_FULL | EXP_TILDE);
@@ -431,7 +435,6 @@ evalfor(union node *n, int flags)
 			break;
 	}
 	loopnest--;
-	popstackmark(&smark);
 
 	return status;
 }
@@ -444,12 +447,10 @@ evalcase(union node *n, int flags)
 	union node *cp;
 	union node *patp;
 	struct arglist arglist;
-	struct stackmark smark;
 	int status = 0;
 
 	errlinno = lineno = n->ncase.linno;
 
-	setstackmark(&smark);
 	arglist.lastp = &arglist.list;
 	expandarg(n->ncase.expr, &arglist, EXP_TILDE);
 	for (cp = n->ncase.cases ; cp && evalskip == 0 ; cp = cp->nclist.next) {
@@ -468,8 +469,6 @@ evalcase(union node *n, int flags)
 		}
 	}
 out:
-	popstackmark(&smark);
-
 	return status;
 }
 
@@ -709,7 +708,6 @@ evalcommand(union node *cmd, int flags)
 	struct localvar_list *localvar_stop;
 	struct parsefile *file_stop;
 	struct redirtab *redir_stop;
-	struct stackmark smark;
 	union node *argp;
 	struct arglist arglist;
 	struct arglist varlist;
@@ -733,7 +731,6 @@ evalcommand(union node *cmd, int flags)
 
 	/* First expand the arguments. */
 	TRACE(("evalcommand(0x%lx, %d) called\n", (long)cmd, flags));
-	setstackmark(&smark);
 	localvar_stop = pushlocalvars();
 	file_stop = parsefile;
 	back_exitstatus = 0;
@@ -922,7 +919,6 @@ out:
 		 * However I implemented that within libedit itself.
 		 */
 		setvar("_", lastarg, 0);
-	popstackmark(&smark);
 
 	return status;
 }
