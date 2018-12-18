@@ -77,15 +77,16 @@
 /* Flags for readtoken1(). */
 #define RT_HEREDOC   0x01
 #define RT_STRIPTABS 0x02
-#define RT_SQSYNTAX  0x04
-#define RT_DQSYNTAX  0x08
-#define RT_DSQSYNTAX 0x0C
-#define RT_QSYNTAX   0x0C
-#define RT_STRING    0x10
-#define RT_VARNEST   0x20
-#define RT_ARINEST   0x40
-#define RT_ARIPAREN  0x80
-#define RT_CHECKEND  0x100
+/* Reserved          0x04 */
+#define RT_SQSYNTAX  0x08
+#define RT_DQSYNTAX  0x10
+#define RT_DSQSYNTAX 0x18
+#define RT_QSYNTAX   0x18
+#define RT_STRING    0x20
+#define RT_VARNEST   0x40
+#define RT_ARINEST   0x80
+#define RT_ARIPAREN  0x100
+#define RT_CHECKEND  0x200
 
 
 
