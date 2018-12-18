@@ -102,6 +102,9 @@ struct heredoc {
 struct heredoc *heredoclist;	/* list of here documents to read */
 int doprompt;			/* if set, prompt the user */
 int needprompt;			/* true if interactive and at start of line */
+#ifndef SMALL
+const char *lastprompt;		/* the last prompt */
+#endif
 int lasttoken;			/* last token read */
 int tokpushback;		/* last token pushed back */
 char *wordtext;			/* text of last word returned by readtoken */
@@ -1598,6 +1601,7 @@ setprompt(int which)
 #ifdef SMALL
 	show = 1;
 #else
+	lastprompt = NULL;
 	show = !el;
 #endif
 	if (show) {
@@ -1642,6 +1646,11 @@ getprompt(void *unused)
 {
 	const char *prompt;
 
+#ifndef SMALL
+	if (lastprompt)
+		return lastprompt;
+#endif
+
 	switch (whichprompt) {
 	default:
 #ifdef DEBUG
@@ -1657,7 +1666,13 @@ getprompt(void *unused)
 		break;
 	}
 
-	return expandstr(prompt, 0);
+	prompt = expandstr(prompt, 0);
+
+#ifndef SMALL
+	lastprompt = prompt;
+#endif
+
+	return prompt;
 }
 
 const char *const *
