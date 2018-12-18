@@ -242,7 +242,7 @@ histcmd(int argc, char **argv)
 	      (ch = getopt(argc, argv, ":e:lnrs")) != -1)
 		switch ((char)ch) {
 		case 'e':
-			editor = optionarg;
+			editor = optarg;
 			break;
 		case 'l':
 			lflg = 1;
