@@ -996,7 +996,7 @@ funcdone:
 	shellparam = saveparam;
 	handler = savehandler;
 	INTON;
-	evalskip &= ~(SKIPFUNC | SKIPFUNCDEF);
+	evalskip &= ~SKIPFUNC;
 	return e;
 }
 
@@ -1082,7 +1082,6 @@ int
 returncmd(int argc, char **argv)
 {
 	const char *ns;
-	int skip;
 	int status;
 
 	ns = nextarg(0);
@@ -1092,14 +1091,13 @@ returncmd(int argc, char **argv)
 	 * If called outside a function, do what ksh does;
 	 * skip the rest of the file.
 	 */
-	if (ns) {
-		skip = SKIPFUNC;
+	if (ns)
 		status = number(ns);
-	} else {
-		skip = SKIPFUNCDEF;
+	else if (savestatus >= 0)
+		status = savestatus;
+	else
 		status = exitstatus;
-	}
-	evalskip = skip;
+	evalskip = SKIPFUNC;
 
 	return status;
 }

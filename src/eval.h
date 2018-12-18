@@ -63,4 +63,3 @@ extern int evalskip;
 #define SKIPBREAK	(1 << 0)
 #define SKIPCONT	(1 << 1)
 #define SKIPFUNC	(1 << 2)
-#define SKIPFUNCDEF	(1 << 3)

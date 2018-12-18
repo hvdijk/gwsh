@@ -238,7 +238,7 @@ cmdloop(int top)
 
 		skip = evalskip;
 		if (skip) {
-			evalskip &= ~(SKIPFUNC | SKIPFUNCDEF);
+			evalskip &= ~SKIPFUNC;
 			break;
 		}
 	}
