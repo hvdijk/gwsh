@@ -123,7 +123,6 @@ STATIC union node *simplecmd(void);
 STATIC union node *makename(void);
 STATIC void parsefname(void);
 STATIC void parseheredoc(void);
-STATIC int peektoken(void);
 STATIC int readtoken(void);
 STATIC int xxreadtoken(void);
 STATIC int pgetc_eatbnl(void);
@@ -163,7 +162,7 @@ list(int nlflag)
 	n1 = NULL;
 	for (;;) {
 		checkkwd = (nlflag & 1 ? 0 : CHKNL) | CHKKWD | CHKALIAS;
-		switch (tok = peektoken()) {
+		switch (readtoken()) {
 		case TNL:
 			parseheredoc();
 			return n1;
@@ -174,10 +173,13 @@ list(int nlflag)
 					n1 = NEOF;
 				parseheredoc();
 			}
+			tokpushback++;
+			lasttoken = TEOF;
 			return n1;
 		}
 
-		if (nlflag == 2 && tokendlist[tok])
+		tokpushback++;
+		if (nlflag == 2 && tokendlist[lasttoken])
 			return n1;
 		nlflag |= 2;
 
@@ -673,16 +675,6 @@ parseheredoc(void)
 		here->here->nhere.doc = n;
 		here = here->next;
 	}
-}
-
-STATIC int
-peektoken(void)
-{
-	int t;
-
-	t = readtoken();
-	tokpushback++;
-	return (t);
 }
 
 STATIC int
@@ -1645,6 +1637,7 @@ const char *
 getprompt(void *unused)
 {
 	const char *prompt;
+	struct nodelist *savebqlist;
 
 #ifndef SMALL
 	if (lastprompt)
@@ -1666,7 +1659,9 @@ getprompt(void *unused)
 		break;
 	}
 
+	savebqlist = backquotelist;
 	prompt = expandstr(prompt, 0);
+	backquotelist = savebqlist;
 
 #ifndef SMALL
 	lastprompt = prompt;
