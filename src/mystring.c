@@ -246,6 +246,7 @@ shell_quote(const char *s, int force) {
 #ifdef WITH_LOCALE
 		if (c < 0) {
 			c = -c;
+oct:
 #else
 		if (c < ' ' || c > '~') {
 #endif
@@ -254,6 +255,8 @@ shell_quote(const char *s, int force) {
 		} /* } */
 #ifdef WITH_LOCALE
 		if (!iswprint(c)) {
+			if (c < 128)
+				goto oct;
 			r += sprintf(r, c >= 0x10000 ? "\\U%08x" : "\\u%04x", c);
 			goto dq;
 		}
