@@ -71,27 +71,27 @@
 
 #ifdef USE_GLIBC_STDIO
 struct output output = {
-	stream: 0, nextc: 0, end: 0, buf: 0, bufsize: 0, fd: 1, flags: 0
+	stream: 0, nextc: 0, end: 0, buf: 0, bufsize: 0, fd: 1, error: 0
 };
 struct output errout = {
-	stream: 0, nextc: 0, end: 0, buf: 0, bufsize: 0, fd: 2, flags: 0
+	stream: 0, nextc: 0, end: 0, buf: 0, bufsize: 0, fd: 2, error: 0
 }
 #ifdef notyet
 struct output memout = {
-	stream: 0, nextc: 0, end: 0, buf: 0, bufsize: 0, fd: MEM_OUT, flags: 0
+	stream: 0, nextc: 0, end: 0, buf: 0, bufsize: 0, fd: MEM_OUT, error: 0
 };
 #endif
 #else
 struct output output = {
-	nextc: 0, end: 0, buf: 0, bufsize: OUTBUFSIZ, fd: 1, flags: 0
+	nextc: 0, end: 0, buf: 0, bufsize: OUTBUFSIZ, fd: 1, error: 0
 };
 struct output errout = {
-	nextc: 0, end: 0, buf: 0, bufsize: 0, fd: 2, flags: 0
+	nextc: 0, end: 0, buf: 0, bufsize: 0, fd: 2, error: 0
 };
 struct output preverrout;
 #ifdef notyet
 struct output memout = {
-	nextc: 0, end: 0, buf: 0, bufsize: 0, fd: MEM_OUT, flags: 0
+	nextc: 0, end: 0, buf: 0, bufsize: 0, fd: MEM_OUT, error: 0
 };
 #endif
 #endif
@@ -169,8 +169,10 @@ buffered:
 		} else {
 			bufsize += len;
 		}
-		if (bufsize < offset)
-			goto err;
+		if (bufsize < offset) {
+			dest->error = ENOSPC;
+			return;
+		}
 alloc:
 #endif
 		INTOFF;
@@ -187,12 +189,8 @@ alloc:
 	if (nleft > len)
 		goto buffered;
 
-	if ((xwrite(dest->fd, p, len))) {
-#ifdef notyet
-err:
-#endif
-		dest->flags |= OUTPUT_ERR;
-	}
+	if (xwrite(dest->fd, p, len) && !dest->error)
+		dest->error = errno;
 #endif
 }
 
@@ -249,8 +247,8 @@ flushout(struct output *dest)
 	if (!len || dest->fd < 0)
 		return;
 	dest->nextc = dest->buf;
-	if ((xwrite(dest->fd, dest->buf, len)))
-		dest->flags |= OUTPUT_ERR;
+	if (xwrite(dest->fd, dest->buf, len) && !dest->error)
+		dest->error = errno;
 #endif
 }
 

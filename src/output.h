@@ -51,7 +51,7 @@ struct output {
 	char *buf;
 	size_t bufsize;
 	int fd;
-	int flags;
+	int error;
 };
 
 extern struct output output;
@@ -93,10 +93,8 @@ static inline void
 freestdout()
 {
 	output.nextc = output.buf;
-	output.flags = 0;
+	output.error = 0;
 }
-
-#define OUTPUT_ERR 01		/* error occurred on output */
 
 #ifdef USE_GLIBC_STDIO
 static inline void outc(int ch, struct output *file)
@@ -120,7 +118,7 @@ static inline void outc(int ch, struct output *file)
 #define out1mem(s, l)	outmem((s), (l), out1)
 #define out1str(s)	outstr((s), out1)
 #define out2str(s)	outstr((s), out2)
-#define outerr(f)	(f)->flags
+#define outerr(f)	(f)->error
 
 #define OUTPUT_INCL
 #endif

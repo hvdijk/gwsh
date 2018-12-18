@@ -932,7 +932,7 @@ evalbltin(const struct builtincmd *cmd, int argc, char **argv, int flags)
 	char *volatile savecmdname;
 	struct jmploc *volatile savehandler;
 	struct jmploc jmploc;
-	int status;
+	int status, error;
 	int i;
 
 	savecmdname = commandname;
@@ -948,7 +948,10 @@ evalbltin(const struct builtincmd *cmd, int argc, char **argv, int flags)
 	else
 		status = (*cmd->builtin)(argc, argv);
 	flushall();
-	status |= outerr(out1);
+	if ((error = outerr(out1))) {
+		sh_warnx("%s", strerror(error));
+		status = 1;
+	}
 	exitstatus = status;
 cmddone:
 	freestdout();
