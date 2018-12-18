@@ -407,7 +407,6 @@ exitshell(void)
 	if (have_traps()) {
 		dotrap();
 		if ((p = trap[0])) {
-			trap[0] = NULL;
 			evalskip = 0;
 			evalstring(p, 0);
 		}
