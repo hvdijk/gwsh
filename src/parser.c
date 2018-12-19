@@ -666,7 +666,7 @@ parseheredoc(void)
 		if (needprompt) {
 			setprompt(2);
 		}
-		readtoken1(pgetc_eatbnl(), here->eofmark, here->striptabs | RT_HEREDOC | RT_CHECKEND | (here->here->type == NHERE ? RT_SQSYNTAX : RT_DQSYNTAX));
+		readtoken1(PEOA, here->eofmark, here->striptabs | RT_HEREDOC | RT_CHECKEND | (here->here->type == NHERE ? RT_SQSYNTAX : RT_DQSYNTAX));
 		n = (union node *)stalloc(sizeof (struct narg));
 		n->narg.type = NARG;
 		n->narg.next = NULL;
