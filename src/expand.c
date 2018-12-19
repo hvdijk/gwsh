@@ -1484,6 +1484,8 @@ pmatch(const char *pattern, const char *string, int flags)
 					return s;
 				r = s;
 				GETC_CTLESC(c, s, flags & PM_CTLESC);
+				if (!c)
+					return r;
 				p = pattern;
 				q = s;
 				goto ast;
