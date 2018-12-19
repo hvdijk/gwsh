@@ -118,7 +118,7 @@ exvwarning2(const char *msg, va_list ap)
 	const char *fmt;
 
 	errs = out2;
-	name = arg0 ? arg0 : "sh";
+	name = dotfile ? dotfile : arg0 ? arg0 : "sh";
 	if (!commandname)
 		fmt = "%s: %d: ";
 	else

@@ -322,6 +322,7 @@ dotcmd(int argc, char **argv)
 {
 	int status = 0;
 	char *name;
+	char *savedotfile;
 
 	nextopt(nullstr);
 	name = nextarg(1);
@@ -329,8 +330,11 @@ dotcmd(int argc, char **argv)
 
 	name = find_dot_file(name);
 	setinputfile(name, INPUT_PUSH_FILE);
-	commandname = name;
+	savedotfile = dotfile;
+	dotfile = name;
+	commandname = NULL;
 	status = cmdloop(0);
+	dotfile = savedotfile;
 	popfile();
 
 	return status;

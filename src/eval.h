@@ -34,6 +34,7 @@
  *	@(#)eval.h	8.2 (Berkeley) 5/4/95
  */
 
+extern char *dotfile;		/* currently executing . file */
 extern char *commandname;	/* currently executing command */
 extern int exitstatus;		/* exit status of last command */
 extern int back_exitstatus;	/* exit status of backquoted command */

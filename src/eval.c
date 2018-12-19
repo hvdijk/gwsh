@@ -74,6 +74,7 @@ MKINIT int loopnest;		/* current loop nesting level */
 static int funcnest;		/* depth of function calls */
 
 
+char *dotfile;
 char *commandname;
 int exitstatus;			/* exit status of last command */
 int back_exitstatus;		/* exit status of backquoted command */
