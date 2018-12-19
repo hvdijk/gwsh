@@ -102,6 +102,7 @@ trapcmd(int argc, char **argv)
 	char *action;
 	char **ap;
 	int signo;
+	int status = 0;
 
 	nextopt(nullstr);
 	ap = argptr;
@@ -140,8 +141,8 @@ trapcmd(int argc, char **argv)
 		action = *ap++;
 	while (*ap) {
 		if ((signo = decode_signal(*ap, 0)) < 0) {
-			outfmt(out2, "trap: %s: bad trap\n", *ap);
-			return 1;
+			sh_warnx("%s: bad trap", *ap);
+			status = 1;
 		}
 		INTOFF;
 		if (action) {
@@ -164,7 +165,7 @@ trapcmd(int argc, char **argv)
 		INTON;
 		ap++;
 	}
-	return 0;
+	return status;
 }
 
 
