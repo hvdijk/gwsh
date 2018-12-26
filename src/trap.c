@@ -143,26 +143,27 @@ trapcmd(int argc, char **argv)
 		if ((signo = decode_signal(*ap, 0)) < 0) {
 			sh_warnx("%s: bad trap", *ap);
 			status = 1;
-		}
-		INTOFF;
-		if (action) {
-			if (action[0] == '-' && action[1] == '\0')
-				action = NULL;
-			else {
-				if (*action)
-					trapcnt++;
-				action = savestr(action);
+		} else {
+			INTOFF;
+			if (action) {
+				if (action[0] == '-' && action[1] == '\0')
+					action = NULL;
+				else {
+					if (*action)
+						trapcnt++;
+					action = savestr(action);
+				}
 			}
+			if (trap[signo]) {
+				if (*trap[signo])
+					trapcnt--;
+				ckfree(trap[signo]);
+			}
+			trap[signo] = action;
+			if (signo != 0)
+				setsignal(signo);
+			INTON;
 		}
-		if (trap[signo]) {
-			if (*trap[signo])
-				trapcnt--;
-			ckfree(trap[signo]);
-		}
-		trap[signo] = action;
-		if (signo != 0)
-			setsignal(signo);
-		INTON;
 		ap++;
 	}
 	return status;
