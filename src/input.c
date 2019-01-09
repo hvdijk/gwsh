@@ -92,6 +92,7 @@ RESET {
 	/* clear rest of current line */
 	basepf.p.nextc += basepf.p.nleft;
 	basepf.p.nleft = 0;
+	basepf.p.unget = 0;
 	popallfiles();
 }
 #endif
