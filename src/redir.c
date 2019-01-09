@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -380,14 +380,20 @@ savefd(int from, int ofd)
 	int newfd;
 	int err;
 
+#ifdef F_DUPFD_CLOEXEC
+	newfd = fcntl(from, F_DUPFD_CLOEXEC, 10);
+#else
 	newfd = fcntl(from, F_DUPFD, 10);
+#endif
 	err = newfd < 0 ? errno : 0;
 	if (err != EBADF) {
 		close(ofd);
 		if (err)
 			sh_error("%d: %s", from, strerror(err));
+#ifndef F_DUPFD_CLOEXEC
 		else
 			fcntl(newfd, F_SETFD, FD_CLOEXEC);
+#endif
 	}
 
 	return newfd;
