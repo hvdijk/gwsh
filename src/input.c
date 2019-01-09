@@ -86,6 +86,9 @@ INCLUDE "error.h"
 INIT {
 	basepf.p.nextc = basepf.buf = basebuf;
 	basepf.linno = 1;
+#ifndef SMALL
+	basepf.hist = 1;
+#endif
 }
 
 RESET {
@@ -240,7 +243,7 @@ again:
 
 	/* delete nul characters */
 #ifndef SMALL
-	something = 0;
+	something = histop == H_APPEND;
 #endif
 	for (;;) {
 		int c;
@@ -283,11 +286,12 @@ again:
 	*q = '\0';
 
 #ifndef SMALL
-	if (parsefile->fd == 0 && hist && something) {
+	if (parsefile->hist && hist && something) {
 		HistEvent he;
 		INTOFF;
-		history(hist, &he, whichprompt == 1? H_ENTER : H_APPEND,
-			parsefile->p.nextc);
+		history(hist, &he, H_FIRST);
+		history(hist, &he, histop, parsefile->p.nextc, (void *) NULL);
+		histop = H_APPEND;
 		INTON;
 	}
 #endif
@@ -447,6 +451,9 @@ pushfile(void)
 	pf->strpush = NULL;
 	pf->basestrpush.prev = NULL;
 	pf->p.unget = 0;
+#ifndef SMALL
+	pf->hist = 0;
+#endif
 	parsefile = pf;
 }
 

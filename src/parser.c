@@ -149,6 +149,10 @@ parsecmd(int interact)
 		setprompt(doprompt);
 	}
 	needprompt = 0;
+#ifndef SMALL
+	if (histop == H_APPEND)
+		histop = H_ENTER;
+#endif
 	return list(1);
 }
 

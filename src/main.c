@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -76,7 +76,6 @@ extern int etext();
 
 STATIC void read_profile(const char *);
 STATIC char *find_dot_file(char *);
-static int cmdloop(int);
 int main(int, char **);
 
 /*
@@ -193,7 +192,7 @@ state4:
  * loop; it turns on prompting if the shell is interactive.
  */
 
-static int
+int
 cmdloop(int top)
 {
 	union node *n;

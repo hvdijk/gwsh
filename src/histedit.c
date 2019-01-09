@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -46,6 +46,7 @@
  * Editline and history functions (and glue).
  */
 #include "shell.h"
+#include "input.h"
 #include "parser.h"
 #include "var.h"
 #include "options.h"
@@ -64,6 +65,7 @@
 History *hist;	/* history cookie */
 EditLine *el;	/* editline cookie */
 int displayhist;
+int histop = H_ENTER;
 static FILE *el_in, *el_out;
 
 STATIC const char *fc_replace(const char *, char *, char *);
@@ -230,15 +232,14 @@ histcmd(int argc, char **argv)
 	if (hist == NULL)
 		sh_error("history not active");
 
-	if (argc == 1)
-		sh_error("missing history argument");
-
 #ifdef __GLIBC__
+#define OPTIND (optind ? optind : 1)
 	optind = 0;
 #else
+#define OPTIND (optind)
 	optreset = 1; optind = 1; /* initialize getopt */
 #endif
-	while (not_fcnumber(argv[optind]) &&
+	while (not_fcnumber(argv[OPTIND]) &&
 	      (ch = getopt(argc, argv, ":e:lnrs")) != -1)
 		switch ((char)ch) {
 		case 'e':
@@ -264,7 +265,7 @@ histcmd(int argc, char **argv)
 			sh_error("unknown option: -%c", optopt);
 			/* NOTREACHED */
 		}
-	argc -= optind, argv += optind;
+	argc -= OPTIND, argv += OPTIND;
 
 	/*
 	 * If executing...
@@ -308,7 +309,7 @@ histcmd(int argc, char **argv)
 	/*
 	 * If executing, parse [old=new] now
 	 */
-	if (lflg == 0 && argc > 0 &&
+	if (lflg == 0 && sflg && argc > 0 &&
 	     ((repl = strchr(argv[0], '=')) != NULL)) {
 		pat = argv[0];
 		*repl++ = '\0';
@@ -327,9 +328,11 @@ histcmd(int argc, char **argv)
 		laststr = lflg ? "-1" : argv[0];
 		break;
 	case 2:
-		firststr = argv[0];
-		laststr = argv[1];
-		break;
+		if (!sflg) {
+			firststr = argv[0];
+			laststr = argv[1];
+			break;
+		}
 	default:
 		sh_error("too many args");
 		/* NOTREACHED */
@@ -391,14 +394,10 @@ histcmd(int argc, char **argv)
 					out2str(s);
 				}
 
+				history(hist, &he, H_FIRST);
+				history(hist, &he, H_REPLACE, s, (void *) NULL);
 				evalstring(s, 0);
-				if (displayhist && hist) {
-					/*
-					 *  XXX what about recursive and
-					 *  relative histnums.
-					 */
-					history(hist, &he, H_ENTER, s);
-				}
+				break;
 			} else
 				fputs(s, efp);
 		}
@@ -418,8 +417,13 @@ histcmd(int argc, char **argv)
 		/* XXX - should use no JC command */
 		evalstring(editcmd, 0);
 		INTON;
-		readcmdfile(editfile);	/* XXX - should read back - quick tst */
-		unlink(editfile);
+		setinputfile(editfile, INPUT_PUSH_FILE);
+		parsefile->hist = 1;
+		histop = H_REPLACE;
+		cmdloop(0);
+		popfile();
+		if (*editfile)
+			unlink(editfile);
 	}
 
 	if (lflg == 0 && active > 0)
@@ -469,7 +473,10 @@ str_to_event(const char *str, int last)
 	int relative = 0;
 	int i, retval;
 
-	retval = history(hist, &he, H_FIRST);
+	history(hist, &he, H_FIRST);
+	retval = history(hist, &he, H_NEXT);
+	if (retval == -1)
+		sh_error("history empty");
 	switch (*s) {
 	case '-':
 		relative = 1;
@@ -480,25 +487,28 @@ str_to_event(const char *str, int last)
 	if (is_number(s)) {
 		i = atoi(s);
 		if (relative) {
-			while (retval != -1 && i--) {
+			while (retval != -1 && --i)
 				retval = history(hist, &he, H_NEXT);
-			}
 			if (retval == -1)
 				retval = history(hist, &he, H_LAST);
 		} else {
+			int savenum = he.num;
 			retval = history(hist, &he, H_NEXT_EVENT, i);
 			if (retval == -1) {
 				/*
 				 * the notion of first and last is
 				 * backwards to that of the history package
 				 */
-				retval = history(hist, &he,
-						last ? H_FIRST : H_LAST);
+				if (last)
+					return savenum;
+				retval = history(hist, &he, H_LAST);
 			}
 		}
+#if DEBUG
 		if (retval == -1)
 			sh_error("history number %s not found (internal error)",
 				 str);
+#endif
 	} else {
 		/*
 		 * pattern

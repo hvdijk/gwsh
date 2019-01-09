@@ -77,6 +77,9 @@ struct parsefile {
 	char *buf;		/* input buffer */
 	struct strpush *strpush; /* for pushing strings at this level */
 	struct strpush basestrpush; /* so pushing one is fast */
+#ifndef SMALL
+	int hist;		/* create history entries */
+#endif
 };
 
 extern struct parsefile *parsefile;

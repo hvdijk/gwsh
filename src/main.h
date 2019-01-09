@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -50,5 +52,6 @@ extern int *gwsh_errno;
 #endif
 
 void readcmdfile(char *);
+int cmdloop(int);
 int dotcmd(int, char **);
 int exitcmd(int, char **);

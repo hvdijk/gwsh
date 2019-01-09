@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,6 +38,7 @@
 extern History *hist;
 extern EditLine *el;
 extern int displayhist;
+extern int histop;
 
 void histedit(void);
 void sethistsize(const char *);
