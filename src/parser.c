@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -772,6 +772,7 @@ STATIC int
 xxreadtoken(void)
 {
 	int c;
+	int blank = 0;
 
 	if (tokpushback) {
 		tokpushback = 0;
@@ -784,7 +785,10 @@ xxreadtoken(void)
 		c = pgetc_eatbnl();
 		switch (c) {
 		case ' ': case '\t':
+			blank = CHKALIAS;
+			continue;
 		case PEOA:
+			checkkwd |= blank;
 			continue;
 		case '#':
 			while ((c = pgetc()) != '\n' && c != PEOF);

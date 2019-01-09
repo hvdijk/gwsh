@@ -214,9 +214,7 @@ static int preadbuffer(void)
 	if (unlikely(parsefile->strpush)) {
 		if (
 			parsefile->p.nleft == -1 &&
-			parsefile->strpush->ap &&
-			parsefile->p.nextc[-1] != ' ' &&
-			parsefile->p.nextc[-1] != '\t'
+			parsefile->strpush->ap
 		) {
 			return PEOA;
 		}
@@ -352,10 +350,6 @@ popstring(void)
 
 	INTOFF;
 	if (sp->ap) {
-		if (parsefile->p.nextc[-1] == ' ' ||
-		    parsefile->p.nextc[-1] == '\t') {
-			checkkwd |= CHKALIAS;
-		}
 		if (sp->string != sp->ap->val) {
 			ckfree(sp->string);
 		}
