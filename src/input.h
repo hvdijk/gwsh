@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -45,12 +45,9 @@ enum {
 
 struct alias;
 
-struct strpush {
-	struct strpush *prev;	/* preceding string on stack */
-	const char *prevstring;
-	int prevnleft;
-	struct alias *ap;	/* if push was associated with an alias */
-	char *string;		/* remember the string since it may change */
+struct parsefilepush {
+	int nleft;		/* number of chars left in this line */
+	const char *nextc;	/* next char in buffer */
 
 	/* Remember last two characters for pungetc. */
 	int lastc[2];
@@ -59,27 +56,27 @@ struct strpush {
 	int unget;
 };
 
+struct strpush {
+	struct parsefilepush p;
+	struct strpush *prev;	/* preceding string on stack */
+	struct alias *ap;	/* if push was associated with an alias */
+	char *string;		/* remember the string since it may change */
+};
+
 /*
  * The parsefile structure pointed to by the global variable parsefile
  * contains information about the current file being read.
  */
 
 struct parsefile {
+	struct parsefilepush p;
 	struct parsefile *prev;	/* preceding file on stack */
 	int linno;		/* current line */
 	int fd;			/* file descriptor (or -1 if string) */
-	int nleft;		/* number of chars left in this line */
 	int lleft;		/* number of chars left in this buffer */
-	const char *nextc;	/* next char in buffer */
 	char *buf;		/* input buffer */
 	struct strpush *strpush; /* for pushing strings at this level */
 	struct strpush basestrpush; /* so pushing one is fast */
-
-	/* Remember last two characters for pungetc. */
-	int lastc[2];
-
-	/* Number of outstanding calls to pungetc. */
-	int unget;
 };
 
 extern struct parsefile *parsefile;

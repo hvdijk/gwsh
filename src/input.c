@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -84,14 +84,14 @@ INCLUDE "input.h"
 INCLUDE "error.h"
 
 INIT {
-	basepf.nextc = basepf.buf = basebuf;
+	basepf.p.nextc = basepf.buf = basebuf;
 	basepf.linno = 1;
 }
 
 RESET {
 	/* clear rest of current line */
-	basepf.nextc += basepf.nleft;
-	basepf.nleft = 0;
+	basepf.p.nextc += basepf.p.nleft;
+	basepf.p.nleft = 0;
 	popallfiles();
 }
 #endif
@@ -107,16 +107,16 @@ pgetc(void)
 {
 	int c;
 
-	if (parsefile->unget)
-		return parsefile->lastc[--parsefile->unget];
+	if (parsefile->p.unget)
+		return parsefile->p.lastc[--parsefile->p.unget];
 
-	if (--parsefile->nleft >= 0)
-		c = (signed char)*parsefile->nextc++;
+	if (--parsefile->p.nleft >= 0)
+		c = (signed char)*parsefile->p.nextc++;
 	else
 		c = preadbuffer();
 
-	parsefile->lastc[1] = parsefile->lastc[0];
-	parsefile->lastc[0] = c;
+	parsefile->p.lastc[1] = parsefile->p.lastc[0];
+	parsefile->p.lastc[0] = c;
 
 	return c;
 }
@@ -142,7 +142,7 @@ preadfd(void)
 {
 	int nr;
 	char *buf =  parsefile->buf;
-	parsefile->nextc = buf;
+	parsefile->p.nextc = buf;
 
 retry:
 #ifndef SMALL
@@ -213,17 +213,17 @@ static int preadbuffer(void)
 
 	if (unlikely(parsefile->strpush)) {
 		if (
-			parsefile->nleft == -1 &&
+			parsefile->p.nleft == -1 &&
 			parsefile->strpush->ap &&
-			parsefile->nextc[-1] != ' ' &&
-			parsefile->nextc[-1] != '\t'
+			parsefile->p.nextc[-1] != ' ' &&
+			parsefile->p.nextc[-1] != '\t'
 		) {
 			return PEOA;
 		}
 		popstring();
 		return pgetc();
 	}
-	if (unlikely(parsefile->nleft == EOF_NLEFT ||
+	if (unlikely(parsefile->p.nleft == EOF_NLEFT ||
 		     parsefile->buf == NULL))
 		return PEOF;
 	flushall();
@@ -232,12 +232,12 @@ static int preadbuffer(void)
 	if (more <= 0) {
 again:
 		if ((more = preadfd()) <= 0) {
-			parsefile->lleft = parsefile->nleft = EOF_NLEFT;
+			parsefile->lleft = parsefile->p.nleft = EOF_NLEFT;
 			return PEOF;
 		}
 	}
 
-	q = parsefile->buf + (parsefile->nextc - parsefile->buf);
+	q = parsefile->buf + (parsefile->p.nextc - parsefile->buf);
 
 	/* delete nul characters */
 #ifndef SMALL
@@ -255,7 +255,7 @@ again:
 			q++;
 
 			if (c == '\n') {
-				parsefile->nleft = q - parsefile->nextc - 1;
+				parsefile->p.nleft = q - parsefile->p.nextc - 1;
 				break;
 			}
 
@@ -272,8 +272,8 @@ again:
 		}
 
 		if (more <= 0) {
-			parsefile->nleft = q - parsefile->nextc - 1;
-			if (parsefile->nleft < 0)
+			parsefile->p.nleft = q - parsefile->p.nextc - 1;
+			if (parsefile->p.nleft < 0)
 				goto again;
 			break;
 		}
@@ -288,13 +288,13 @@ again:
 		HistEvent he;
 		INTOFF;
 		history(hist, &he, whichprompt == 1? H_ENTER : H_APPEND,
-			parsefile->nextc);
+			parsefile->p.nextc);
 		INTON;
 	}
 #endif
 
 	if (vflag) {
-		out2str(parsefile->nextc);
+		out2str(parsefile->p.nextc);
 #ifdef FLUSHERR
 		flushout(out2);
 #endif
@@ -302,7 +302,7 @@ again:
 
 	*q = savec;
 
-	return (signed char)*parsefile->nextc++;
+	return (signed char)*parsefile->p.nextc++;
 }
 
 /*
@@ -313,7 +313,7 @@ again:
 void
 pungetc(void)
 {
-	parsefile->unget++;
+	parsefile->p.unget++;
 }
 
 /*
@@ -333,18 +333,15 @@ pushstring(char *s, size_t len, void *ap)
 		parsefile->strpush = sp;
 	} else
 		sp = parsefile->strpush = &(parsefile->basestrpush);
-	sp->prevstring = parsefile->nextc;
-	sp->prevnleft = parsefile->nleft;
-	sp->unget = parsefile->unget;
-	memcpy(sp->lastc, parsefile->lastc, sizeof(sp->lastc));
+	sp->p = parsefile->p;
 	sp->ap = (struct alias *)ap;
 	if (ap) {
 		((struct alias *)ap)->flag |= ALIASINUSE;
 		sp->string = s;
 	}
-	parsefile->nextc = s;
-	parsefile->nleft = len;
-	parsefile->unget = 0;
+	parsefile->p.nextc = s;
+	parsefile->p.nleft = len;
+	parsefile->p.unget = 0;
 	INTON;
 }
 
@@ -355,8 +352,8 @@ popstring(void)
 
 	INTOFF;
 	if (sp->ap) {
-		if (parsefile->nextc[-1] == ' ' ||
-		    parsefile->nextc[-1] == '\t') {
+		if (parsefile->p.nextc[-1] == ' ' ||
+		    parsefile->p.nextc[-1] == '\t') {
 			checkkwd |= CHKALIAS;
 		}
 		if (sp->string != sp->ap->val) {
@@ -367,10 +364,7 @@ popstring(void)
 			unalias(sp->ap->name);
 		}
 	}
-	parsefile->nextc = sp->prevstring;
-	parsefile->nleft = sp->prevnleft;
-	parsefile->unget = sp->unget;
-	memcpy(parsefile->lastc, sp->lastc, sizeof(sp->lastc));
+	parsefile->p = sp->p;
 /*dprintf("*** calling popstring: restoring to '%s'\n", parsenextc);*/
 	parsefile->strpush = sp->prev;
 	if (sp != &(parsefile->basestrpush))
@@ -419,7 +413,7 @@ setinputfd(int fd, int push)
 	parsefile->fd = fd;
 	if (parsefile->buf == NULL)
 		parsefile->buf = ckmalloc(IBUFSIZ);
-	parsefile->lleft = parsefile->nleft = 0;
+	parsefile->lleft = parsefile->p.nleft = 0;
 	plinno = 1;
 }
 
@@ -433,8 +427,8 @@ setinputstring(const char *string)
 {
 	INTOFF;
 	pushfile();
-	parsefile->nextc = string;
-	parsefile->nleft = strlen(string);
+	parsefile->p.nextc = string;
+	parsefile->p.nleft = strlen(string);
 	parsefile->buf = NULL;
 	plinno = 1;
 	INTON;
@@ -457,7 +451,7 @@ pushfile(void)
 	pf->fd = -1;
 	pf->strpush = NULL;
 	pf->basestrpush.prev = NULL;
-	pf->unget = 0;
+	pf->p.unget = 0;
 	parsefile = pf;
 }
 
