@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -55,6 +55,9 @@
 #include <wctype.h>
 #endif
 #include "shell.h"
+#ifdef WITH_PARSER_LOCALE
+#include "input.h"
+#endif
 #include "syntax.h"
 #include "error.h"
 #include "mylocale.h"
@@ -217,6 +220,10 @@ shell_quote(const char *s, int force) {
 #define ESCCHARS "\\\'\a\b\e\f\n\r\t\v"
 	const char *dqchars = ESCSEQCH "\0" ESCCHARS + sizeof ESCSEQCH + 1;
 
+#ifdef WITH_PARSER_LOCALE
+	uselocale(parselocale);
+#endif
+
 	STARTSTACKSTR(r);
 
 	r = makestrspace(4, r);
@@ -254,7 +261,7 @@ oct:
 			goto dq;
 		} /* } */
 #ifdef WITH_LOCALE
-		if (!iswprint(c)) {
+		if (!iswprint(c) || (c != ' ' && iswblank(c))) {
 			if (c < 128)
 				goto oct;
 			r += sprintf(r, c >= 0x10000 ? "\\U%08x" : "\\u%04x", c);
@@ -285,6 +292,10 @@ dq:
 	if (style)
 		USTPUTC('\'', r);
 	USTPUTC(0, r);
+
+#ifdef WITH_PARSER_LOCALE
+	uselocale(LC_GLOBAL_LOCALE);
+#endif
 
 	return stackblock() + 2 - style;
 }

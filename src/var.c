@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -129,6 +129,7 @@ INCLUDE <unistd.h>
 INCLUDE <sys/types.h>
 INCLUDE <sys/stat.h>
 INCLUDE "cd.h"
+INCLUDE "input.h"
 INCLUDE "output.h"
 INCLUDE "var.h"
 MKINIT char **environ;
@@ -158,6 +159,9 @@ INIT {
 		    st1.st_dev != st2.st_dev || st1.st_ino != st2.st_ino)
 			p = 0;
 	setpwd(p, 0);
+#ifdef WITH_PARSER_LOCALE
+	parselocale = duplocale(LC_GLOBAL_LOCALE);
+#endif
 }
 
 RESET {

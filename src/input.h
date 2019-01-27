@@ -36,6 +36,10 @@
  *	@(#)input.h	8.2 (Berkeley) 5/4/95
  */
 
+#ifdef WITH_LOCALE
+#include <locale.h>
+#endif
+
 /* PEOF (the end of file marker) is defined in syntax.h */
 
 enum {
@@ -48,6 +52,12 @@ struct alias;
 struct parsefilepush {
 	int nleft;		/* number of chars left in this line */
 	const char *nextc;	/* next char in buffer */
+
+#ifdef WITH_LOCALE
+	int mbt;		/* multi-byte character type (word or blank) */
+	char *mbp;		/* next byte in mbc to be returned */
+	char mbc[MB_LEN_MAX+1];	/* null-terminated multibyte character */
+#endif
 
 	/* Remember last two characters for pungetc. */
 	int lastc[2];
@@ -83,6 +93,9 @@ struct parsefile {
 };
 
 extern struct parsefile *parsefile;
+#ifdef WITH_PARSER_LOCALE
+extern locale_t parselocale;
+#endif
 
 /*
  * The input line number.  Input.c just defines this variable, and saves

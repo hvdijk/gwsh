@@ -174,6 +174,13 @@ AC_ARG_ENABLE([locale], AS_HELP_STRING([--disable-locale], \
 				     [Disable locale support]))
 if test "$enable_locale" != "no"; then
 	AC_DEFINE([WITH_LOCALE], 1, [Define if you want locale support.])
+	AC_ARG_ENABLE([parser-locale],
+		      AS_HELP_STRING([--disable-parser-locale],
+				     [Disable use of fixed locale during parsing.]))
+	if test "$enable_parser_locale" != "no"; then
+		AC_DEFINE([WITH_PARSER_LOCALE], 1,
+			  [Define if you want parsing to ignore LC_CTYPE changes after the shell starts.])
+	fi
 fi
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT

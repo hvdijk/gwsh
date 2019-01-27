@@ -35,6 +35,10 @@
  */
 
 #include <stdio.h>	/* defines BUFSIZ */
+#ifdef WITH_LOCALE
+#include <wchar.h>
+#include <wctype.h>
+#endif
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -67,6 +71,9 @@
 MKINIT struct parsefile basepf;	/* top level input file */
 MKINIT char basebuf[IBUFSIZ];	/* buffer for top level input file */
 struct parsefile *parsefile = &basepf;	/* current input file */
+#ifdef WITH_PARSER_LOCALE
+locale_t parselocale;		/* the locale to use during parsing */
+#endif
 int whichprompt;		/* 1 == PS1, 2 == PS2 */
 
 #ifndef SMALL
@@ -111,13 +118,82 @@ pgetc(void)
 {
 	int c;
 
+#ifdef WITH_LOCALE
+	mbstate_t mbs = {0};
+	wchar_t wc;
+	char *p;
+#endif
+
 	if (parsefile->p.unget)
 		return parsefile->p.lastc[--parsefile->p.unget];
 
-	if (--parsefile->p.nleft >= 0)
-		c = (signed char)*parsefile->p.nextc++;
-	else
-		c = preadbuffer();
+#ifdef WITH_LOCALE
+	if (parsefile->p.mbp) {
+		c = (signed char)*parsefile->p.mbp++;
+		if (!c) {
+			parsefile->p.mbp = NULL;
+			c = parsefile->p.mbt;
+		}
+		return c;
+	}
+
+	p = parsefile->p.mbc;
+	for (;;) {
+#endif
+		if (--parsefile->p.nleft >= 0)
+			c = (signed char)*parsefile->p.nextc++;
+		else {
+			c = preadbuffer();
+#ifdef WITH_LOCALE
+			if (c != (signed char)c)
+				break;
+#endif
+		}
+
+#ifdef WITH_LOCALE
+		if (likely(p == parsefile->p.mbc && c >= 0))
+			goto out;
+
+		*p = c;
+		switch (mbrtowc(&wc, p, 1, &mbs)) {
+		case (size_t)-2:
+			p++;
+			continue;
+		case (size_t)-1:
+			break;
+		default:
+			/* If we have a blank other than space or tab, wrap
+			 * it in PMBW/.../PMBW even if it is a single byte.
+			 * This allows avoiding isblank() later. */
+			if (iswblank(wc))
+				c = PMBB;
+			else if (p != parsefile->p.mbc)
+				c = PMBW;
+			else
+				goto out;
+			parsefile->p.mbt = c;
+			parsefile->p.mbp = parsefile->p.mbc;
+			*++p = '\0';
+			goto out;
+		}
+		break;
+	}
+
+	if (p != parsefile->p.mbc) {
+		/* Invalid multibyte character. As in the rest of the shell,
+		 * treat the first byte as a single character, then allow
+		 * the following characters to be interpreted as a multibyte
+		 * character, unless it is PEOF or PEOA. */
+		int sp = c != (signed char)c;
+		parsefile->p.lastc[1] = sp ? c : parsefile->p.lastc[0];
+		parsefile->p.lastc[0] = c = (signed char)parsefile->p.mbc[0];
+		parsefile->p.unget += sp;
+		pushstring(parsefile->p.mbc + 1, p - parsefile->p.mbc + sp, NULL);
+		return c;
+	}
+
+out:
+#endif
 
 	parsefile->p.lastc[1] = parsefile->p.lastc[0];
 	parsefile->p.lastc[0] = c;
@@ -342,6 +418,9 @@ pushstring(char *s, size_t len, void *ap)
 		((struct alias *)ap)->flag |= ALIASINUSE;
 		sp->string = s;
 	}
+#ifdef WITH_LOCALE
+	parsefile->p.mbp = NULL;
+#endif
 	parsefile->p.nextc = s;
 	parsefile->p.nleft = len;
 	parsefile->p.unget = 0;
@@ -450,6 +529,9 @@ pushfile(void)
 	pf->fd = -1;
 	pf->strpush = NULL;
 	pf->basestrpush.prev = NULL;
+#ifdef WITH_LOCALE
+	pf->p.mbp = NULL;
+#endif
 	pf->p.unget = 0;
 #ifndef SMALL
 	pf->hist = 0;

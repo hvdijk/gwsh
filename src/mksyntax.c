@@ -117,6 +117,10 @@ main(int argc, char **argv)
 		fprintf(hfile, "/* %s */\n", is_entry[i].comment);
 	}
 	putc('\n', hfile);
+	fputs("#ifdef WITH_LOCALE\n", hfile);
+	fprintf(hfile, "#define PMBW %d\n\n", -132);
+	fprintf(hfile, "#define PMBB %d\n\n", -131);
+	fputs("#endif\n\n", hfile);
 	fprintf(hfile, "#define SYNBASE %d\n", 128);
 	fprintf(hfile, "#define PEOF %d\n", -130);
 	fprintf(hfile, "#define PEOA %d\n\n", -129);

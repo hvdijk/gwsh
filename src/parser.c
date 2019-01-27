@@ -140,6 +140,11 @@ STATIC void setprompt(int);
 union node *
 parsecmd(int interact)
 {
+	union node *cmd;
+
+#ifdef WITH_PARSER_LOCALE
+	uselocale(parselocale);
+#endif
 	tokpushback = 0;
 	checkkwd = 0;
 	heredoclist = 0;
@@ -153,7 +158,11 @@ parsecmd(int interact)
 	if (histop == H_APPEND)
 		histop = H_ENTER;
 #endif
-	return list(1);
+	cmd = list(1);
+#ifdef WITH_PARSER_LOCALE
+	uselocale(LC_GLOBAL_LOCALE);
+#endif
+	return cmd;
 }
 
 
@@ -788,6 +797,10 @@ xxreadtoken(void)
 	for (;;) {	/* until token or start of word found */
 		c = pgetc_eatbnl();
 		switch (c) {
+#ifdef WITH_LOCALE
+		case PMBB:
+			while (pgetc() != PMBB);
+#endif
 		case ' ': case '\t':
 			blank = CHKALIAS;
 			continue;
@@ -880,6 +893,9 @@ readtoken1_loop(char *out, int c, char *eofmark, int flags)
 {
 	int qsyntax;
 	int ctoggle = 0;
+#ifdef WITH_LOCALE
+	int mbchar = 0;
+#endif
 
 	for (;;) {
 		if (eofmark && flags & RT_CHECKEND) {
@@ -888,7 +904,26 @@ readtoken1_loop(char *out, int c, char *eofmark, int flags)
 		}
 
 		CHECKSTRSPACE(4, out);	/* permit 4 calls to USTPUTC */
+
+#ifdef WITH_LOCALE
+		if (mbchar) {
+			if (c < PEOF) {
+				mbchar--;
+				goto nextchar;
+			}
+			goto control;
+		}
+#endif
+
 		switch(c) {
+#ifdef WITH_LOCALE
+		case PMBB:
+			if (!flags)
+				goto endword;
+		case PMBW:
+			mbchar++;
+			goto nextchar;
+#endif
 		case '\n':
 			if (!flags)
 				goto endword;	/* exit outer loop */
@@ -1110,7 +1145,11 @@ special:
 				goto word;
 		}
 nextchar:
-		c = flags & RT_SQSYNTAX ? pgetc() : pgetc_eatbnl();
+		c = flags & RT_SQSYNTAX
+#ifdef WITH_LOCALE
+			|| mbchar
+#endif
+			? pgetc() : pgetc_eatbnl();
 	}
 endword:
 	if (flags & RT_ARINEST)
@@ -1426,28 +1465,23 @@ readtoken1_parsebackq(char *out, int flags, int oldstyle)
 			if (needprompt) {
 				setprompt(2);
 			}
-			switch (pc = pgetc_eatbnl()) {
-			case '`':
-				goto done;
-
-			case '\\':
-				if ((pc = pgetc()) == '\n') {
-					nlprompt();
-					/*
-					 * If eating a newline, avoid putting
-					 * the newline into the new character
-					 * stream (via the STPUTC after the
-					 * switch).
-					 */
-					continue;
-				}
+			pc = pgetc_eatbnl();
+			if (pc == '`')
+				break;
+			if (pc == '\\') {
+				pc = pgetc_eatbnl();
                                 if (pc != '\\' && pc != '`' && pc != '$'
                                     && (!(flags & RT_DQSYNTAX) || pc != '"'))
                                         STPUTC('\\', pout);
-				if (pc > PEOA) {
-					break;
-				}
-				/* fall through */
+			}
+			switch (pc) {
+#ifdef WITH_LOCALE
+			case PMBB:
+			case PMBW:
+				while (pc = pgetc(), pc == (signed char)pc)
+					STPUTC(pc, pout);
+				continue;
+#endif
 
 			case PEOF:
 			case PEOA:
@@ -1462,7 +1496,6 @@ readtoken1_parsebackq(char *out, int flags, int oldstyle)
 			}
 			STPUTC(pc, pout);
                 }
-done:
                 STPUTC('\0', pout);
                 psavelen = pout - (char *)stackblock();
                 if (psavelen > 0) {
@@ -1584,6 +1617,9 @@ synexpect(int token)
 STATIC void
 synerror(const char *msg)
 {
+#ifdef WITH_PARSER_LOCALE
+	uselocale(LC_GLOBAL_LOCALE);
+#endif
 	errlinno = plinno;
 	sh_error("Syntax error: %s", msg);
 	/* NOTREACHED */
@@ -1668,7 +1704,13 @@ getprompt(void *unused)
 	}
 
 	savebqlist = backquotelist;
+#ifdef WITH_PARSER_LOCALE
+	uselocale(LC_GLOBAL_LOCALE);
+#endif
 	prompt = expandstr(prompt, 0);
+#ifdef WITH_PARSER_LOCALE
+	uselocale(parselocale);
+#endif
 	backquotelist = savebqlist;
 
 #ifndef SMALL
