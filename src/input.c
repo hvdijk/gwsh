@@ -202,21 +202,6 @@ out:
 }
 
 
-/*
- * Same as pgetc(), but ignores PEOA.
- */
-
-int
-pgetc2()
-{
-	int c;
-	do {
-		c = pgetc();
-	} while (c == PEOA);
-	return c;
-}
-
-
 static int
 preadfd(void)
 {
@@ -292,12 +277,6 @@ static int preadbuffer(void)
 	char savec;
 
 	if (unlikely(parsefile->strpush)) {
-		if (
-			parsefile->p.nleft == -1 &&
-			parsefile->strpush->ap
-		) {
-			return PEOA;
-		}
 		popstring();
 		return pgetc();
 	}
@@ -434,13 +413,20 @@ popstring(void)
 
 	INTOFF;
 	if (sp->ap) {
+		if (
+		    parsefile->p.lastc[0] == ' '
+		    || parsefile->p.lastc[0] == '\t'
+#ifdef WITH_LOCALE
+		    || parsefile->p.lastc[0] == PMBB
+#endif
+		) {
+			checkkwd |= CHKALIAS;
+		}
 		if (sp->string != sp->ap->val) {
 			ckfree(sp->string);
 		}
-		sp->ap->flag &= ~ALIASINUSE;
-		if (sp->ap->flag & ALIASDEAD) {
-			unalias(sp->ap->name);
-		}
+		sp->ap->nextdone = aliasdone;
+		aliasdone = sp->ap;
 	}
 	parsefile->p = sp->p;
 /*dprintf("*** calling popstring: restoring to '%s'\n", parsenextc);*/

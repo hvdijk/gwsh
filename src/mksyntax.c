@@ -118,12 +118,11 @@ main(int argc, char **argv)
 	}
 	putc('\n', hfile);
 	fputs("#ifdef WITH_LOCALE\n", hfile);
-	fprintf(hfile, "#define PMBW %d\n\n", -132);
-	fprintf(hfile, "#define PMBB %d\n\n", -131);
+	fprintf(hfile, "#define PMBW %d\n\n", -131);
+	fprintf(hfile, "#define PMBB %d\n\n", -130);
 	fputs("#endif\n\n", hfile);
 	fprintf(hfile, "#define SYNBASE %d\n", 128);
-	fprintf(hfile, "#define PEOF %d\n", -130);
-	fprintf(hfile, "#define PEOA %d\n\n", -129);
+	fprintf(hfile, "#define PEOF %d\n\n", -129);
 	putc('\n', hfile);
 	output_type_macros();		/* is_digit, etc. */
 	putc('\n', hfile);

@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -47,6 +47,8 @@
 #define ATABSIZE 39
 
 struct alias *atab[ATABSIZE];
+
+struct alias *aliasdone;
 
 STATIC void setalias(const char *, const char *);
 STATIC struct alias *freealias(struct alias *);
@@ -204,6 +206,21 @@ void
 printalias(const struct alias *ap) {
 	out1fmt("%s=%s\n", ap->name, shell_quote(ap->val, 0));
 }
+
+
+void
+endaliasuse(void) {
+	struct alias *ap = aliasdone;
+	while (ap) {
+		struct alias *nextdone = ap->nextdone;
+		ap->flag &= ~ALIASINUSE;
+		if (ap->flag & ALIASDEAD)
+			unalias(ap->name);
+		ap = nextdone;
+	}
+	aliasdone = NULL;
+}
+
 
 STATIC struct alias **
 __lookupalias(const char *name) {

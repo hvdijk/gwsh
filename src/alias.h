@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -39,10 +41,13 @@
 
 struct alias {
 	struct alias *next;
+	struct alias *nextdone;
 	char *name;
 	char *val;
 	int flag;
 };
+
+extern struct alias *aliasdone;
 
 struct alias *lookupalias(const char *, int);
 int aliascmd(int, char **);
@@ -50,3 +55,4 @@ int unaliascmd(int, char **);
 void rmaliases(void);
 int unalias(const char *);
 void printalias(const struct alias *);
+void endaliasuse(void);

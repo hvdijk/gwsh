@@ -530,7 +530,6 @@ simplecmd(void) {
 	savecheckkwd = CHKALIAS;
 	savelinno = plinno;
 	for (;;) {
-		checkkwd = savecheckkwd;
 		switch (readtoken()) {
 		case TWORD:
 			n = (union node *)stalloc(sizeof (struct narg));
@@ -582,6 +581,7 @@ simplecmd(void) {
 			tokpushback++;
 			goto out;
 		}
+		checkkwd = savecheckkwd;
 	}
 out:
 	*app = NULL;
@@ -679,7 +679,8 @@ parseheredoc(void)
 		if (needprompt) {
 			setprompt(2);
 		}
-		readtoken1(PEOA, here->eofmark, here->striptabs | RT_HEREDOC | RT_CHECKEND | (here->here->type == NHERE ? RT_SQSYNTAX : RT_DQSYNTAX));
+		readtoken1(0, here->eofmark, here->striptabs | RT_HEREDOC | RT_CHECKEND | (here->here->type == NHERE ? RT_SQSYNTAX : RT_DQSYNTAX));
+		endaliasuse();
 		n = (union node *)stalloc(sizeof (struct narg));
 		n->narg.type = NARG;
 		n->narg.next = NULL;
@@ -739,6 +740,7 @@ top:
 		}
 	}
 out:
+	endaliasuse();
 	checkkwd = 0;
 #ifdef DEBUG
 	if (!alreadyseen)
@@ -785,7 +787,6 @@ STATIC int
 xxreadtoken(void)
 {
 	int c;
-	int blank = 0;
 
 	if (tokpushback) {
 		tokpushback = 0;
@@ -802,10 +803,6 @@ xxreadtoken(void)
 			while (pgetc() != PMBB);
 #endif
 		case ' ': case '\t':
-			blank = CHKALIAS;
-			continue;
-		case PEOA:
-			checkkwd |= blank;
 			continue;
 		case '#':
 			while ((c = pgetc()) != '\n' && c != PEOF);
@@ -842,12 +839,13 @@ xxreadtoken(void)
 #undef RETURN
 }
 
-static int pgetc_eatbnl(void)
+static int
+pgetc_eatbnl(void)
 {
 	int c;
 
 	while ((c = pgetc()) == '\\') {
-		if (pgetc2() != '\n') {
+		if (pgetc() != '\n') {
 			pungetc();
 			break;
 		}
@@ -896,6 +894,9 @@ readtoken1_loop(char *out, int c, char *eofmark, int flags)
 #ifdef WITH_LOCALE
 	int mbchar = 0;
 #endif
+
+	if (!c)
+		goto nextchar;
 
 	for (;;) {
 		if (eofmark && flags & RT_CHECKEND) {
@@ -956,7 +957,7 @@ escape:
 				 * toggle sequences such as \c@. All such
 				 * sequences will be preceded by CTLESC. */
 				int markloc = out - 1 - (char *)stackblock();
-				readtoken1_loop(out, pgetc(), eofmark, flags);
+				readtoken1_loop(out, 0, eofmark, flags);
 				return (char *)stackblock() + markloc;
 			}
 output:
@@ -966,7 +967,7 @@ output:
 			if ((flags & RT_QSYNTAX) == RT_SQSYNTAX)
 				goto control;
 			quoteflag++;
-			c = pgetc2();
+			c = pgetc();
 			if (c == PEOF) {
 				pungetc();
 				c = '\\';
@@ -1000,7 +1001,7 @@ output:
 					} while (0);
 					p = buf;
 					do {
-						cc = pgetc2();
+						cc = pgetc();
 						if (!(ctype(cc) & lenbase)) {
 							pungetc();
 							break;
@@ -1092,8 +1093,7 @@ output:
 			}
 			if (quotemark)
 				USTPUTC(CTLQUOTEMARK, out);
-			c = qsyntax & RT_SQSYNTAX ? pgetc() : pgetc_eatbnl();
-			out = readtoken1_loop(out, c, eofmark, (flags & RT_STRIPTABS) | RT_STRING | qsyntax);
+			out = readtoken1_loop(out, 0, eofmark, (flags & RT_STRIPTABS) | RT_STRING | qsyntax);
 			if (quotemark)
 				USTPUTC(CTLQUOTEMARK, out);
 			break;
@@ -1106,7 +1106,7 @@ output:
 			if (!(flags & RT_ARINEST))
 				goto special;
 			USTPUTC(c, out);
-			out = readtoken1_loop(out, pgetc_eatbnl(), eofmark, flags | RT_ARIPAREN);
+			out = readtoken1_loop(out, 0, eofmark, flags | RT_ARIPAREN);
 			break;
 		case ')':
 			if (!(flags & RT_ARINEST))
@@ -1136,13 +1136,11 @@ output:
 		case PEOF:
 			goto endword;		/* exit outer loop */
 special:
-		case PEOA:
 		case '<': case '>': // case '(': case ')':
 		case ';': case '&': case '|': case ' ': case '\t':
 			if (!flags)
 				goto endword;	/* exit outer loop */
-			if (c != PEOA)
-				goto word;
+			goto word;
 		}
 nextchar:
 		c = flags & RT_SQSYNTAX
@@ -1203,12 +1201,9 @@ readtoken1_checkend(char *out, int *c, char *eofmark, int flags)
 	int markloc;
 	char *p;
 
-	if (*c == PEOA) {
-		*c = pgetc2();
-	}
 	if (flags & RT_STRIPTABS) {
 		while (*c == '\t') {
-			*c = pgetc2();
+			*c = pgetc();
 		}
 	}
 
@@ -1217,7 +1212,7 @@ readtoken1_checkend(char *out, int *c, char *eofmark, int flags)
 		if (*c != *p)
 			goto more_heredoc;
 
-		*c = pgetc2();
+		*c = pgetc();
 	}
 
 	if (*c == '\n' || *c == PEOF) {
@@ -1328,7 +1323,6 @@ readtoken1_parsesub(char *out, int c, char *eofmark, int flags)
 
 	if (
 		(checkkwd & CHKEOFMARK) ||
-		c <= PEOA  ||
 		(c != '(' && c != '{' && !is_name(c) && !is_special(c))
 	) {
 		USTPUTC('$', out);
@@ -1421,7 +1415,7 @@ badsub:
 		*((char *)stackblock() + typeloc) = subtype;
 		STPUTC('=', out);
 		if (subtype != VSNORMAL) {
-			out = readtoken1_loop(out, pgetc_eatbnl(), eofmark, (vsflags & (RT_STRIPTABS | RT_DQSYNTAX)) | RT_VARNEST);
+			out = readtoken1_loop(out, 0, eofmark, (vsflags & (RT_STRIPTABS | RT_DQSYNTAX)) | RT_VARNEST);
 		}
 	}
 	return out;
@@ -1469,7 +1463,7 @@ readtoken1_parsebackq(char *out, int flags, int oldstyle)
 			if (pc == '`')
 				break;
 			if (pc == '\\') {
-				pc = pgetc_eatbnl();
+				pc = pgetc();
                                 if (pc != '\\' && pc != '`' && pc != '$'
                                     && (!(flags & RT_DQSYNTAX) || pc != '"'))
                                         STPUTC('\\', pout);
@@ -1484,7 +1478,6 @@ readtoken1_parsebackq(char *out, int flags, int oldstyle)
 #endif
 
 			case PEOF:
-			case PEOA:
 				synerror("EOF in backquote substitution");
 
 			case '\n':
@@ -1561,7 +1554,7 @@ STATIC char *
 readtoken1_parsearith(char *out, char *eofmark, int flags)
 {
 	USTPUTC(CTLARI, out);
-	return readtoken1_loop(out, pgetc_eatbnl(), eofmark, (flags & RT_STRIPTABS) | RT_ARINEST);
+	return readtoken1_loop(out, 0, eofmark, (flags & RT_STRIPTABS) | RT_ARINEST);
 }
 
 
@@ -1658,7 +1651,7 @@ expandstr(const char *ps, int flags)
 	saveprompt = doprompt;
 	doprompt = 0;
 
-	readtoken1(pgetc_eatbnl(), NULL, RT_HEREDOC | RT_DQSYNTAX);
+	readtoken1(0, NULL, RT_HEREDOC | RT_DQSYNTAX);
 
 	doprompt = saveprompt;
 
