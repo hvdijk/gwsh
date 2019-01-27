@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -75,7 +75,7 @@ static char writer[] = "\
 
 static FILE *cfile;
 static FILE *hfile;
-static char *syntax[513];
+static char *syntax[256];
 
 static void filltable(char *);
 static void add(char *, char *);
@@ -117,8 +117,8 @@ main(int argc, char **argv)
 		fprintf(hfile, "/* %s */\n", is_entry[i].comment);
 	}
 	putc('\n', hfile);
-	fprintf(hfile, "#define SYNBASE %d\n", 130);
-	fprintf(hfile, "#define PEOF %d\n\n", -130);
+	fprintf(hfile, "#define SYNBASE %d\n", 128);
+	fprintf(hfile, "#define PEOF %d\n", -130);
 	fprintf(hfile, "#define PEOA %d\n\n", -129);
 	putc('\n', hfile);
 	output_type_macros();		/* is_digit, etc. */
@@ -154,7 +154,7 @@ filltable(char *dftval)
 {
 	int i;
 
-	for (i = 0 ; i < 258; i++)
+	for (i = 0 ; i < 256; i++)
 		syntax[i] = dftval;
 }
 
@@ -167,7 +167,7 @@ static void
 add(char *p, char *type)
 {
 	while (*p)
-		syntax[(signed char)*p++ + 130] = type;
+		syntax[(signed char)*p++ + 128] = type;
 }
 
 
@@ -185,7 +185,7 @@ print(char *name)
 	fprintf(cfile, "const char %s[] = {\n      ", name);
 	for (i = 0 ;; i++) {
 		fputs(syntax[i], cfile);
-		if (i == 257)
+		if (i == 255)
 			break;
 		fputs(",\n      ", cfile);
 	}
