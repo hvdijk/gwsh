@@ -39,6 +39,9 @@
 #ifdef WITH_LOCALE
 #include <locale.h>
 #endif
+#if defined(WITH_PARSER_LOCALE) && defined(HAVE_XLOCALE_H)
+#include <xlocale.h>
+#endif
 
 /* PEOF (the end of file marker) is defined in syntax.h */
 
