@@ -472,6 +472,8 @@ need_word:
 			switch (t) {
 			default:
 				synexpect(TENDCASE);
+			case TENDCASEFT:
+				cp->type++;
 			case TENDCASE:
 				goto next_case;
 			case TESAC:
@@ -845,12 +847,18 @@ xxreadtoken(void)
 			tok = TPIPE;
 			break;
 		case ';':
-			if (pgetc_eatbnl() == ';') {
+			switch (pgetc_eatbnl()) {
+			case '&':
+				tok = TENDCASEFT;
+				break;
+			case ';':
 				tok = TENDCASE;
 				break;
+			default:
+				pungetc();
+				tok = TSEMI;
+				break;
 			}
-			pungetc();
-			tok = TSEMI;
 			break;
 		case '(':
 			tok = TLP;

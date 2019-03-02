@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -453,20 +453,28 @@ evalcase(union node *n, int flags)
 
 	arglist.lastp = &arglist.list;
 	expandarg(n->ncase.expr, &arglist, EXP_TILDE);
-	for (cp = n->ncase.cases ; cp && evalskip == 0 ; cp = cp->nclist.next) {
-		for (patp = cp->nclist.pattern ; patp ; patp = patp->narg.next) {
-			if (casematch(patp, arglist.list->text)) {
-				/* Ensure body is non-empty as otherwise
-				 * EV_EXIT may prevent us from setting the
-				 * exit status.
-				 */
-				if (evalskip == 0 && cp->nclist.body) {
-					status = evaltree(cp->nclist.body,
-							  flags);
-				}
-				goto out;
-			}
+	for (cp = n->ncase.cases ; cp ; cp = cp->nclist.next)
+		for (patp = cp->nclist.pattern ; patp ; patp = patp->narg.next)
+			if (casematch(patp, arglist.list->text))
+				goto match;
+	goto out;
+match:
+	for (;;) {
+		/* Ensure body is non-empty as otherwise
+		 * EV_EXIT may prevent us from setting the
+		 * exit status.
+		 */
+		if (cp->nclist.body) {
+#if !(NCLIST & EV_EXIT && !(NCLISTFT & EV_EXIT))
+#error "!(NCLIST & EV_EXIT && !(NCLISTFT & EV_EXIT))"
+#endif
+			status = evaltree(cp->nclist.body, flags &
+					  (~EV_EXIT | cp->type));
+			if (evalskip)
+				break;
 		}
+		if (cp->type != NCLISTFT || !(cp = cp->nclist.next))
+			break;
 	}
 out:
 	return status;
