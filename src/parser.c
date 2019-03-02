@@ -701,16 +701,14 @@ readtoken(void)
 #endif
 
 top:
-	t = xxreadtoken();
+	lasttoken = t = xxreadtoken();
 
 	/*
 	 * eat newlines
 	 */
-	if (kwd & CHKNL) {
-		while (t == TNL) {
-			parseheredoc();
-			t = xxreadtoken();
-		}
+	if (kwd & CHKNL && t == TNL) {
+		parseheredoc();
+		goto top;
 	}
 
 	if (t != TWORD || quoteflag) {
@@ -781,13 +779,9 @@ static void nlnoprompt(void)
  *  have parseword (readtoken1?) handle both words and redirection.]
  */
 
-#define RETURN(token)	return lasttoken = token
-
 STATIC int
 xxreadtoken(void)
 {
-	int c;
-
 	if (tokpushback) {
 		tokpushback = 0;
 		return lasttoken;
@@ -796,7 +790,7 @@ xxreadtoken(void)
 		setprompt(2);
 	}
 	for (;;) {	/* until token or start of word found */
-		c = pgetc_eatbnl();
+		int c = pgetc_eatbnl(), tok;
 		switch (c) {
 #ifdef WITH_LOCALE
 		case PMBB:
@@ -810,33 +804,46 @@ xxreadtoken(void)
 			continue;
 		case '\n':
 			nlnoprompt();
-			RETURN(TNL);
+			tok = TNL;
+			break;
 		case PEOF:
-			RETURN(TEOF);
+			tok = TEOF;
+			break;
 		case '&':
-			if (pgetc_eatbnl() == '&')
-				RETURN(TAND);
+			if (pgetc_eatbnl() == '&') {
+				tok = TAND;
+				break;
+			}
 			pungetc();
-			RETURN(TBACKGND);
+			tok = TBACKGND;
+			break;
 		case '|':
-			if (pgetc_eatbnl() == '|')
-				RETURN(TOR);
+			if (pgetc_eatbnl() == '|') {
+				tok = TOR;
+				break;
+			}
 			pungetc();
-			RETURN(TPIPE);
+			tok = TPIPE;
+			break;
 		case ';':
-			if (pgetc_eatbnl() == ';')
-				RETURN(TENDCASE);
+			if (pgetc_eatbnl() == ';') {
+				tok = TENDCASE;
+				break;
+			}
 			pungetc();
-			RETURN(TSEMI);
+			tok = TSEMI;
+			break;
 		case '(':
-			RETURN(TLP);
+			tok = TLP;
+			break;
 		case ')':
-			RETURN(TRP);
+			tok = TRP;
+			break;
+		default:
+			return readtoken1(c, (char *)NULL, 0);
 		}
-		break;
+		return tok;
 	}
-	return readtoken1(c, (char *)NULL, 0);
-#undef RETURN
 }
 
 static int
@@ -1179,14 +1186,14 @@ readtoken1_endword(char *out, char *eofmark)
 		 && len <= 2
 		 && (*out == '\0' || is_digit(*out))) {
 			readtoken1_parseredir(out, c);
-			return lasttoken = TREDIR;
+			return TREDIR;
 		} else {
 			pungetc();
 		}
 	}
 	grabstackblock(len);
 	wordtext = out;
-	return lasttoken = TWORD;
+	return TWORD;
 }
 
 /*
