@@ -898,6 +898,7 @@ bail:
 		}
 		if (evalbltin(cmdentry.u.cmd, argc, argv, flags) &&
 		    !(exception == EXERROR && spclbltin <= 0)) {
+			exception &= ~EXEXT;
 raise:
 			longjmp(handler->loc, 1);
 		}
@@ -934,13 +935,18 @@ evalbltin(const struct builtincmd *cmd, int argc, char **argv, int flags)
 	char *volatile savecmdname;
 	struct jmploc *volatile savehandler;
 	struct jmploc jmploc;
+	struct parsefile *saveparsefile;
 	int status, error;
 	int i;
 
 	savecmdname = commandname;
 	savehandler = handler;
-	if ((i = setjmp(jmploc.loc)))
+	saveparsefile = parsefile;
+	if ((i = setjmp(jmploc.loc))) {
+		if (parsefile != saveparsefile)
+			exception |= EXEXT;
 		goto cmddone;
+	}
 	handler = &jmploc;
 	commandname = argv[0];
 	argptr = argv + 1;
