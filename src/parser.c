@@ -910,7 +910,7 @@ pgetc_eatbnl(void)
 
 STATIC char *readtoken1_loop(char *, int, char *, int);
 STATIC int readtoken1_endword(char *, char *);
-STATIC char *readtoken1_checkend(char *, int *, char *, int);
+STATIC void readtoken1_checkend(int *, char *, int);
 STATIC void readtoken1_parseredir(char *, int);
 STATIC char *readtoken1_parsesub(char *, int, char *, int);
 STATIC char *readtoken1_parsebackq(char *, int, int);
@@ -939,7 +939,7 @@ readtoken1_loop(char *out, int c, char *eofmark, int flags)
 	for (;;) {
 		if (eofmark && flags & RT_CHECKEND) {
 			flags &= ~RT_CHECKEND;
-			out = readtoken1_checkend(out, &c, eofmark, flags);	/* set c to PEOF if at end of here document */
+			readtoken1_checkend(&c, eofmark, flags);	/* set c to PEOF if at end of here document */
 		}
 
 		CHECKSTRSPACE(4, out);	/* permit 4 calls to USTPUTC */
@@ -1248,28 +1248,37 @@ readtoken1_endword(char *out, char *eofmark)
  * we are at the end of the here document, this routine sets the c to PEOF.
  */
 
-STATIC char *
-readtoken1_checkend(char *out, int *c, char *eofmark, int flags)
+STATIC void
+readtoken1_checkend(int *c, char *eofmark, int flags)
 {
-	int markloc;
 	char *p;
 
 	if (flags & RT_STRIPTABS) {
-		while (*c == '\t') {
+		while (*c == '\t')
 			*c = pgetc();
-		}
 	}
 
-	markloc = out - (char *)stackblock();
-	for (p = eofmark; STPUTC(*c, out), *p; p++) {
-		if (*c != *p)
+	for (p = eofmark;; p++) {
+#ifdef WITH_LOCALE
+		while (*c < PEOF) {
+			flags ^= RT_MBCHAR;
+			*c = pgetc();
+		}
+#endif
+		if (!*p)
+			break;
+		if (*c != *p) {
+#ifdef WITH_LOCALE
+			if (flags & RT_MBCHAR)
+				p -= parsefile->p.mbp - parsefile->p.mbc - 1;
+#endif
 			goto more_heredoc;
+		}
 
 		*c = pgetc();
 	}
 
 	switch (*c) {
-		int len;
 	case '\n':
 		nlnoprompt();
 		*c = PEOF;
@@ -1277,19 +1286,18 @@ readtoken1_checkend(char *out, int *c, char *eofmark, int flags)
 		break;
 	default:
 more_heredoc:
-		p = (char *)stackblock() + markloc + 1;
-		len = out - p;
-
-		if (len) {
-			*c = p[-1];
+#ifdef WITH_LOCALE
+		if (flags & RT_MBCHAR) {
+			parsefile->p.mbp = parsefile->p.mbc;
+			*c = parsefile->p.lastc[0] = parsefile->p.mbt;
+		}
+#endif
+		if (p != eofmark) {
 			pungetc();
-			if (--len)
-				pushstring(eofmark + 1, len, NULL);
+			pushstring(eofmark, p - eofmark, NULL);
+			*c = pgetc();
 		}
 	}
-
-	STADJUST((char *)stackblock() + markloc - out, out);
-	return out;
 }
 
 
