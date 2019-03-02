@@ -75,18 +75,27 @@
 
 
 /* Flags for readtoken1(). */
-#define RT_HEREDOC   0x01
-#define RT_STRIPTABS 0x02
-/* Reserved          0x04 */
-#define RT_SQSYNTAX  0x08
-#define RT_DQSYNTAX  0x10
-#define RT_DSQSYNTAX 0x18
-#define RT_QSYNTAX   0x18
-#define RT_STRING    0x20
-#define RT_VARNEST   0x40
-#define RT_ARINEST   0x80
-#define RT_ARIPAREN  0x100
-#define RT_CHECKEND  0x200
+#define RT_HEREDOC    0x01
+#define RT_STRIPTABS  0x02
+/* Reserved           0x04 */
+#define RT_SQSYNTAX   0x08
+#define RT_DQSYNTAX   0x10
+#define RT_DSQSYNTAX  0x18
+#define RT_QSYNTAX    0x18
+#define RT_STRING     0x20
+#define RT_VARNEST    0x40
+#define RT_ARINEST    0x80
+#define RT_ARIPAREN   0x100
+#define RT_CHECKEND   0x200
+#define RT_CTOGGLE1   0x400
+#define RT_CTOGGLE2   0x800
+#ifdef WITH_LOCALE
+#define RT_ESCAPE     0x1000
+#define RT_MBCHAR     0x2000
+#else
+#define RT_ESCAPE     0
+#define RT_MBCHAR     0
+#endif
 
 
 
@@ -924,10 +933,6 @@ STATIC char *
 readtoken1_loop(char *out, int c, char *eofmark, int flags)
 {
 	int qsyntax;
-	int ctoggle = 0;
-#ifdef WITH_LOCALE
-	int mbchar = 0;
-#endif
 
 	if (!c)
 		goto nextchar;
@@ -940,23 +945,17 @@ readtoken1_loop(char *out, int c, char *eofmark, int flags)
 
 		CHECKSTRSPACE(4, out);	/* permit 4 calls to USTPUTC */
 
-#ifdef WITH_LOCALE
-		if (mbchar) {
-			if (c < PEOF) {
-				mbchar--;
-				goto nextchar;
-			}
-			goto control;
-		}
-#endif
-
-		switch(c) {
+		switch (c) {
 #ifdef WITH_LOCALE
 		case PMBB:
 			if (!flags)
 				goto endword;
 		case PMBW:
-			mbchar++;
+#if RT_MBCHAR >> 1 != RT_ESCAPE
+#error RT_MBCHAR >> 1 != RT_ESCAPE
+#endif
+			flags ^= RT_MBCHAR;
+			flags &= ~RT_ESCAPE | (flags >> 1);
 			goto nextchar;
 #endif
 		case '\n':
@@ -966,23 +965,31 @@ readtoken1_loop(char *out, int c, char *eofmark, int flags)
 			flags |= RT_CHECKEND;
 word:
 		default:
-			if (ctoggle)
-				goto escape;
-			goto output;
+			if (!(flags & (RT_ESCAPE | RT_CTOGGLE1 | RT_CTOGGLE2 | RT_MBCHAR)))
+				goto output;
 control:
 		case '!': case '*': case '?': case '[': case '=':
 		case '~': case ':': case '/': case '-': case ']':
+#ifndef WITH_LOCALE
 		case CTLCHARS:
-			if ((flags & (RT_HEREDOC | RT_SQSYNTAX)) != (RT_HEREDOC | RT_SQSYNTAX)
-					&& (flags & RT_QSYNTAX || (c >= CTL_FIRST && c <= CTL_LAST))) {
+#endif
+			if ((flags & (RT_HEREDOC | RT_QSYNTAX)) == (RT_HEREDOC | RT_SQSYNTAX))
+				goto output;
+			if (flags & (RT_QSYNTAX | RT_ESCAPE)
+#ifndef WITH_LOCALE
+			    || (c >= CTL_FIRST && c <= CTL_LAST)
+#endif
+			) {
 escape:
+				if (!(flags & RT_MBCHAR))
+					flags &= ~RT_ESCAPE;
 				USTPUTC(CTLESC, out);
 			}
-			while (ctoggle) {
+			while (flags & (RT_CTOGGLE1 | RT_CTOGGLE2)) {
 				if (c >= 'a' && c <= 'z')
 					c ^= 'A' ^ 'a';
 				c ^= 0x40;
-				ctoggle--;
+				flags -= RT_CTOGGLE1;
 			}
 			if (!(c & 0xFF)) {
 				/* preadbuffer() removes physical null bytes,
@@ -998,7 +1005,10 @@ output:
 			USTPUTC(c, out);
 			break;
 		case '\\':
-			if ((flags & RT_QSYNTAX) == RT_SQSYNTAX)
+			if ((flags & (RT_HEREDOC | RT_QSYNTAX)) == (RT_HEREDOC | RT_SQSYNTAX))
+				goto word;
+			if ((flags & (RT_SQSYNTAX | RT_ESCAPE | RT_MBCHAR))
+			    && (flags & (RT_QSYNTAX | RT_ESCAPE | RT_MBCHAR)) != RT_DSQSYNTAX)
 				goto control;
 			quoteflag++;
 			c = pgetc();
@@ -1051,12 +1061,12 @@ output:
 						size_t buflen = wcrtomb(buf, val, &mbs);
 						if (buflen == (size_t) -1) {
 							USTPUTC(CTLESC, out);
-							USTPUTC(ctoggle & 1 ? '\\' ^ 0x40 : '\\', out);
+							USTPUTC(flags & RT_CTOGGLE1 ? '\\' ^ 0x40 : '\\', out);
 							USTPUTC(c, out);
 							buflen = p - buf;
-							ctoggle = 0;
+							flags &= ~(RT_CTOGGLE1 | RT_CTOGGLE2);
 						}
-						if (!ctoggle) {
+						if (!(flags & (RT_CTOGGLE1 | RT_CTOGGLE2))) {
 							CHECKSTRSPACE(buflen * 2, out);
 							p = buf;
 							while (--buflen) {
@@ -1068,14 +1078,18 @@ output:
 					}
 #endif
 					c = val;
+#ifdef WITH_LOCALE
+					flags |= RT_ESCAPE;
 					break;
+#else
+					goto escape;
+#endif
 				case 'c':
-					ctoggle++;
+					flags &= ~RT_CTOGGLE2;
+					flags += RT_CTOGGLE1;
 					goto nextchar;
 				}
-				goto escape;
-			}
-			if (flags & RT_DQSYNTAX) {
+			} else if (flags & RT_DQSYNTAX) {
 				if (
 					c != '\\' && c != '`' &&
 					c != '$' && (
@@ -1089,17 +1103,27 @@ output:
 					USTPUTC(CTLESC, out);
 					USTPUTC('\\', out);
 				}
-				goto escape;
 			}
-			if (c < CTL_FIRST || c > CTL_LAST)
+#ifdef WITH_LOCALE
+			flags |= RT_ESCAPE;
+			continue;
+		case CTLCHARS:
+			if ((flags & (RT_HEREDOC | RT_QSYNTAX)) == (RT_HEREDOC | RT_SQSYNTAX))
+				goto output;
+			if ((flags & (RT_QSYNTAX | RT_ESCAPE)) != RT_ESCAPE)
 				goto escape;
+			flags &= ~RT_ESCAPE;
+#else
+			if (flags & RT_QSYNTAX || c < CTL_FIRST || c > CTL_LAST)
+				goto escape;
+#endif
 			USTPUTC(CTLQUOTEMARK, out);
 			USTPUTC(CTLESC, out);
 			USTPUTC(c, out);
 			USTPUTC(CTLQUOTEMARK, out);
 			break;
 		case '$':
-			if (flags & RT_SQSYNTAX)
+			if (flags & (RT_SQSYNTAX | RT_ESCAPE))
 				goto word;
 			c = pgetc_eatbnl();
 			if (flags & RT_DQSYNTAX || c != '\'') {
@@ -1115,7 +1139,7 @@ output:
 				qsyntax = RT_DQSYNTAX;
 				break;
 			}
-			if (flags & ~(flags << 1) & (RT_HEREDOC | RT_QSYNTAX) & ~qsyntax)
+			if (flags & (~(flags << 1) | RT_ESCAPE) & (RT_HEREDOC | RT_QSYNTAX | RT_ESCAPE) & ~qsyntax)
 				goto word;
 			int quotemark = 1;
 			if (flags & qsyntax) {
@@ -1132,7 +1156,7 @@ output:
 				USTPUTC(CTLQUOTEMARK, out);
 			break;
 		case '}':
-			if (!(flags & RT_VARNEST))
+			if ((flags ^ RT_VARNEST) & (RT_VARNEST | RT_ESCAPE))
 				goto word;
 			USTPUTC(CTLENDVAR, out);
 			return out;
@@ -1163,7 +1187,7 @@ output:
 			}
 			break;
 		case '`':
-			if (flags & RT_SQSYNTAX || checkkwd & CHKEOFMARK)
+			if (flags & (RT_SQSYNTAX | RT_ESCAPE) || checkkwd & CHKEOFMARK)
 				goto word;
 			out = readtoken1_parsebackq(out, flags, 1);
 			break;
@@ -1177,11 +1201,7 @@ special:
 			goto word;
 		}
 nextchar:
-		c = flags & RT_SQSYNTAX
-#ifdef WITH_LOCALE
-			|| mbchar
-#endif
-			? pgetc() : pgetc_eatbnl();
+		c = flags & (RT_SQSYNTAX | RT_MBCHAR) ? pgetc() : pgetc_eatbnl();
 	}
 endword:
 	if (flags & RT_ARINEST)
