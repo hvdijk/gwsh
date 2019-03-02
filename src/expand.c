@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -313,7 +313,7 @@ addquote:
 			}
 			break;
 		case CTLESC:
-			if (!(flag & EXP_QUOTED) && (c >= CTL_FIRST && c <= CTL_LAST)) {
+			if (!(flag & EXP_QUOTED) && (*p >= CTL_FIRST && *p <= CTL_LAST)) {
 				length++;
 				if (flag & QUOTES_ESC) {
 					p--;
