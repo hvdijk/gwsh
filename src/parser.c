@@ -1260,14 +1260,10 @@ more_heredoc:
 		len = out - p;
 
 		if (len) {
-			len -= *c < 0;
 			*c = p[-1];
-
-			if (len) {
-				pungetc();
-				if (--len)
-					pushstring(eofmark + 1, len, NULL);
-			}
+			pungetc();
+			if (--len)
+				pushstring(eofmark + 1, len, NULL);
 		}
 	}
 
