@@ -67,6 +67,9 @@ struct parsefilepush {
 
 	/* Number of outstanding calls to pungetc. */
 	int unget;
+
+	int backq;		/* old-style cmdsubsts depth */
+	int dqbackq;		/* whether each cmdsubst was double-quoted */
 };
 
 struct strpush {
@@ -108,7 +111,6 @@ extern locale_t parselocale;
 #define plinno (parsefile->linno)
 
 int pgetc(void);
-int pgetc2(void);
 void pungetc(void);
 void pushstring(char *, size_t, void *);
 void popstring(void);

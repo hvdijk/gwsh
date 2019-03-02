@@ -96,6 +96,7 @@ INIT {
 #ifndef SMALL
 	basepf.hist = 1;
 #endif
+	basepf.p.backq = 1;
 }
 
 RESET {
@@ -103,6 +104,8 @@ RESET {
 	basepf.p.nextc += basepf.p.nleft;
 	basepf.p.nleft = 0;
 	basepf.p.unget = 0;
+	basepf.p.backq = 1;
+	basepf.p.dqbackq = 0;
 	popallfiles();
 }
 #endif
@@ -113,8 +116,8 @@ RESET {
  * Nul characters in the input are silently discarded.
  */
 
-int
-pgetc(void)
+STATIC int
+pgetc1(void)
 {
 	int c;
 
@@ -124,19 +127,7 @@ pgetc(void)
 	char *p;
 #endif
 
-	if (parsefile->p.unget)
-		return parsefile->p.lastc[--parsefile->p.unget];
-
 #ifdef WITH_LOCALE
-	if (parsefile->p.mbp) {
-		c = (signed char)*parsefile->p.mbp++;
-		if (!c) {
-			parsefile->p.mbp = NULL;
-			c = parsefile->p.mbt;
-		}
-		return c;
-	}
-
 	p = parsefile->p.mbc;
 	for (;;) {
 #endif
@@ -195,10 +186,69 @@ pgetc(void)
 out:
 #endif
 
-	parsefile->p.lastc[1] = parsefile->p.lastc[0];
-	parsefile->p.lastc[0] = c;
-
 	return c;
+}
+
+
+int
+pgetc(void)
+{
+	int c;
+
+	if (parsefile->p.unget)
+		return parsefile->p.lastc[--parsefile->p.unget];
+
+#ifdef WITH_LOCALE
+	if (parsefile->p.mbp) {
+		c = (signed char)*parsefile->p.mbp++;
+		if (!c) {
+			parsefile->p.mbp = NULL;
+			c = parsefile->p.mbt;
+		}
+		return c;
+	}
+#endif
+
+	for (;;) {
+		int len = 0;
+		while ((c = pgetc1()) == '\\' && ++len < parsefile->p.backq)
+			;
+		if (c == '`') {
+			len++;
+			goto eof;
+		} else if (c == PEOF) {
+eof:
+			if (len == parsefile->p.backq)
+				goto output;
+			if (len == parsefile->p.backq >> 1 && (!len || c >= 0)) {
+				c = PEOF;
+				goto output;
+			}
+			lasttoken = TEOF;
+			synexpect(TENDBQUOTE);
+		}
+		if (!len)
+			goto output;
+		if (c == '\n') {
+			nlprompt();
+			continue;
+		}
+		if (c == '$' || c == '\\' ||
+		    (c == '"' && len <= parsefile->p.dqbackq))
+			goto output;
+		goto escape;
+
+output:
+		parsefile->p.lastc[1] = parsefile->p.lastc[0];
+		parsefile->p.lastc[0] = c;
+		return c;
+
+escape:
+		parsefile->p.lastc[1] = '\\';
+		parsefile->p.lastc[0] = c;
+		parsefile->p.unget++;
+		return '\\';
+	}
 }
 
 
@@ -403,6 +453,8 @@ pushstring(char *s, size_t len, void *ap)
 	parsefile->p.nextc = s;
 	parsefile->p.nleft = len;
 	parsefile->p.unget = 0;
+	parsefile->p.backq = 1;
+	parsefile->p.dqbackq = 0;
 	INTON;
 }
 
@@ -427,6 +479,10 @@ popstring(void)
 		}
 		sp->ap->nextdone = aliasdone;
 		aliasdone = sp->ap;
+	}
+	if (unlikely(parsefile->p.backq)) {
+		sp->p.dqbackq |= parsefile->p.dqbackq * sp->p.backq;
+		sp->p.backq *= parsefile->p.backq;
 	}
 	parsefile->p = sp->p;
 /*dprintf("*** calling popstring: restoring to '%s'\n", parsenextc);*/
@@ -519,6 +575,8 @@ pushfile(void)
 	pf->p.mbp = NULL;
 #endif
 	pf->p.unget = 0;
+	pf->p.backq = 1;
+	pf->p.dqbackq = 0;
 #ifndef SMALL
 	pf->hist = 0;
 #endif

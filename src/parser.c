@@ -136,7 +136,6 @@ STATIC int readtoken(void);
 STATIC int xxreadtoken(void);
 STATIC int pgetc_eatbnl(void);
 STATIC int readtoken1(int, char *, int);
-STATIC void synexpect(int) __attribute__((__noreturn__));
 STATIC void synerror(const char *) __attribute__((__noreturn__));
 STATIC void setprompt(int);
 
@@ -779,7 +778,7 @@ out:
 	return (t);
 }
 
-static void nlprompt(void)
+void nlprompt(void)
 {
 	plinno++;
 	if (doprompt)
@@ -1226,8 +1225,8 @@ readtoken1_endword(char *out, char *eofmark)
 	len = out - (char *)stackblock();
 	out = stackblock();
 
-	c = pgetc();
 	if (eofmark == NULL) {
+		c = pgetc();
 		if ((c == '>' || c == '<')
 		 && quoteflag == 0
 		 && len <= 2
@@ -1269,12 +1268,14 @@ readtoken1_checkend(char *out, int *c, char *eofmark, int flags)
 		*c = pgetc();
 	}
 
-	if (*c == '\n' || *c == PEOF) {
-		*c = PEOF;
-		nlnoprompt();
-	} else {
+	switch (*c) {
 		int len;
-
+	case '\n':
+		nlnoprompt();
+		*c = PEOF;
+	case PEOF:
+		break;
+	default:
 more_heredoc:
 		p = (char *)stackblock() + markloc + 1;
 		len = out - p;
@@ -1494,94 +1495,37 @@ readtoken1_parsebackq(char *out, int flags, int oldstyle)
 		str = alloca(savelen);
 		memcpy(str, stackblock(), savelen);
 	}
-        if (oldstyle) {
-                /* We must read until the closing backquote, giving special
-                   treatment to some slashes, and then push the string and
-                   reread it as input, interpreting it normally.  */
-                char *pout;
-                int pc;
-                size_t psavelen;
-                char *pstr;
-
-
-                STARTSTACKSTR(pout);
-		for (;;) {
-			if (needprompt) {
-				setprompt(2);
-			}
-			pc = pgetc_eatbnl();
-			if (pc == '`')
-				break;
-			if (pc == '\\') {
-				pc = pgetc();
-                                if (pc != '\\' && pc != '`' && pc != '$'
-                                    && (!(flags & RT_DQSYNTAX) || pc != '"'))
-                                        STPUTC('\\', pout);
-			}
-			switch (pc) {
-#ifdef WITH_LOCALE
-			case PMBB:
-			case PMBW:
-				while (pc = pgetc(), pc == (signed char)pc)
-					STPUTC(pc, pout);
-				continue;
-#endif
-
-			case PEOF:
-				synerror("EOF in backquote substitution");
-
-			case '\n':
-				nlnoprompt();
-				break;
-
-			default:
-				break;
-			}
-			STPUTC(pc, pout);
-                }
-                STPUTC('\0', pout);
-                psavelen = pout - (char *)stackblock();
-                if (psavelen > 0) {
-			pstr = grabstackstr(pout);
-			setinputstring(pstr);
-                }
-        }
 	nlpp = &backquotelist;
 	while (*nlpp)
 		nlpp = &(*nlpp)->next;
 	*nlpp = (struct nodelist *)stalloc(sizeof (struct nodelist));
 	(*nlpp)->next = NULL;
-
 	if (oldstyle) {
-		saveprompt = doprompt;
-		doprompt = 0;
+		/* We can reasonably assume we will not have >30 levels of
+		 * nested old-style command substitutions: N levels
+		 * requires (2**N)-1 consecutive backslashes. */
+		if (flags & RT_DQSYNTAX)
+			parsefile->p.dqbackq |= parsefile->p.backq;
+		parsefile->p.backq <<= 1;
 	}
-
 	struct nodelist *savebqlist = backquotelist;
 	struct heredoc *saveheredoclist = heredoclist;
 	heredoclist = 0;
-	n = list(2 << oldstyle);
+	n = list(2);
 	backquotelist = savebqlist;
 	struct heredoc **here;
 	for (here = &heredoclist; *here; here = &(*here)->next)
 		;
 	*here = saveheredoclist;
-
-	if (oldstyle)
-		doprompt = saveprompt;
-	else {
+	(*nlpp)->n = n;
+	if (oldstyle) {
+		if (readtoken() != TEOF)
+			synexpect(TENDBQUOTE);
+		parsefile->p.backq >>= 1;
+		parsefile->p.dqbackq &= ~parsefile->p.backq;
+	} else {
 		if (readtoken() != TRP)
 			synexpect(TRP);
-	}
-
-	(*nlpp)->n = n;
-        if (oldstyle) {
-		/*
-		 * Start reading from old file again, ignoring any pushed back
-		 * tokens left from the backquote parsing
-		 */
-                popfile();
-		tokpushback = 0;
 	}
 	while (stackblocksize() <= savelen)
 		growstackblock();
@@ -1641,7 +1585,7 @@ endofname(const char *name)
  * occur at this point.
  */
 
-STATIC void
+void
 synexpect(int token)
 {
 	char msg[64];
