@@ -496,21 +496,18 @@ evalsubshell(union node *n, int flags)
 	errlinno = lineno = n->nredir.linno;
 
 	expredir(n->nredir.redirect);
-	if (!backgnd && flags & EV_EXIT && !have_traps())
+	if (!backgnd && flags & EV_EXIT && !have_traps()) {
+		envreset();
 		goto nofork;
+	}
 	INTOFF;
 	jp = makejob(n, 1);
 	if (forkshell(jp, n, backgnd) == 0) {
-		struct jmploc jmploc;
 		INTON;
 		flags |= EV_EXIT;
 		if (backgnd)
 			flags &= ~EV_TESTED;
 nofork:
-		envreset();
-		if (setjmp(jmploc.loc))
-			exitshell();
-		handler = &jmploc;
 		redirect(n->nredir.redirect, 0);
 		evaltreenr(n->nredir.n, flags);
 		/* never returns */

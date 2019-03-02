@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -69,6 +69,7 @@
 #include "output.h"
 #include "memalloc.h"
 #include "error.h"
+#include "init.h"
 #include "mystring.h"
 #include "system.h"
 
@@ -872,6 +873,7 @@ forkchild(struct job *jp, union node *n, int mode)
 	oldlvl = shlvl;
 	shlvl++;
 
+	envreset();
 	closescript();
 	clear_traps();
 #if JOBS
