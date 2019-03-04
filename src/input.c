@@ -213,7 +213,9 @@ pgetc(void)
 		int len = 0;
 		while ((c = pgetc1()) == '\\' && ++len < parsefile->p.backq)
 			;
-		if (c == '`') {
+		if (!c)
+			c = pgetc();
+		else if (c == '`') {
 			len++;
 			goto eof;
 		} else if (c == PEOF) {
@@ -328,7 +330,7 @@ static int preadbuffer(void)
 
 	if (unlikely(parsefile->strpush)) {
 		popstring();
-		return pgetc();
+		return 0;
 	}
 	if (unlikely(parsefile->p.nleft == EOF_NLEFT ||
 		     parsefile->buf == NULL))
