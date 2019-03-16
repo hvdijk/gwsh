@@ -313,7 +313,8 @@ addquote:
 			}
 			break;
 		case CTLESC:
-			if (!(flag & EXP_QUOTED) && (*p >= CTL_FIRST && *p <= CTL_LAST)) {
+			if (*p >= (char) CTL_FIRST && *p <= (char) CTL_LAST
+			    && !(flag & EXP_QUOTED)) {
 				length++;
 				if (flag & QUOTES_ESC) {
 					p--;
