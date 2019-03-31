@@ -1426,7 +1426,7 @@ cmdputs(const char *s)
 				str = "${";
 			goto dostr;
 		case CTLENDVAR:
-			str = "\"}" + !(quoted & 1);
+			str = &"\"}"[!(quoted & 1)];
 			quoted >>= 1;
 			subtype = 0;
 			goto dostr;

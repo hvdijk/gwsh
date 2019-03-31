@@ -218,7 +218,7 @@ shell_quote(const char *s, int force) {
 	const char *sqchars = " |&;<>()$`\\\"*?[#~=%";
 #define ESCSEQCH "\\\'abefnrtv"
 #define ESCCHARS "\\\'\a\b\e\f\n\r\t\v"
-	const char *dqchars = ESCSEQCH "\0" ESCCHARS + sizeof ESCSEQCH + 1;
+	const char *dqchars = &ESCSEQCH "\0" ESCCHARS [sizeof ESCSEQCH + 1];
 
 #ifdef WITH_PARSER_LOCALE
 	uselocale(parselocale);
