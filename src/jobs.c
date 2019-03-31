@@ -334,7 +334,8 @@ usage:
 				 * sending signals to some random other process that happens
 				 * to have received the same PID. */
 				struct procstat *ps = jp->ps;
-				for (int n = jp->nprocs; n; n--, ps++)
+				int n = jp->nprocs;
+				for (; n; n--, ps++)
 					if (ps->status && kill(ps->pid, signo) != 0)
 						goto err;
 				continue;
