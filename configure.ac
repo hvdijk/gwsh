@@ -1,10 +1,10 @@
-AC_INIT(gwsh, 0.5.9.1)
+AC_INIT([gwsh], [0.5.9.1])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/main.c])
 
-AC_CONFIG_HEADERS(config.h)
+AC_CONFIG_HEADERS([config.h])
 
-m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES(yes)])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -17,8 +17,8 @@ if test "$cross_compiling" = yes; then
 else
 	CC_FOR_BUILD=${CC}
 fi
-AC_MSG_RESULT(${CC_FOR_BUILD})
-AC_SUBST(CC_FOR_BUILD)
+AC_MSG_RESULT([${CC_FOR_BUILD}])
+AC_SUBST([CC_FOR_BUILD])
 
 AC_MSG_CHECKING([for __attribute__((__alias__()))])
 gwsh_cv_have_attribute_alias=no
@@ -26,37 +26,37 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([void t() {}
                                  void a() __attribute__((__alias__("t")));],
                                 [a();])],
                [gwsh_cv_have_attribute_alias=yes])
-AC_MSG_RESULT($gwsh_cv_have_attribute_alias)
+AC_MSG_RESULT([$gwsh_cv_have_attribute_alias])
 if test "x$gwsh_cv_have_attribute_alias" = xyes; then
-  AC_DEFINE([HAVE_ALIAS_ATTRIBUTE], 1,
-            [Define if __attribute__((__alias__())) is supported])
+	AC_DEFINE([HAVE_ALIAS_ATTRIBUTE], 1,
+	          [Define if __attribute__((__alias__())) is supported])
 fi
 
-AC_ARG_ENABLE(static, AS_HELP_STRING(--enable-static, \
-				     [Build statical linked program]))
+AC_ARG_ENABLE([static], [AS_HELP_STRING([--enable-static], \
+                                        [Build statical linked program])])
 if test "$enable_static" = "yes"; then
 	export LDFLAGS="-static -Wl,--fatal-warnings"
 fi
 
-AC_ARG_ENABLE(glob, AS_HELP_STRING(--enable-glob, [Use glob(3) from libc]))
+AC_ARG_ENABLE([glob], [AS_HELP_STRING([--enable-glob], [Use glob(3) from libc])])
 
 dnl Checks for libraries.
 
 dnl Checks for header files.
-AC_CHECK_HEADERS(alloca.h paths.h xlocale.h)
+AC_CHECK_HEADERS([alloca.h paths.h xlocale.h])
 
 dnl Check for declarations
-AC_CHECK_DECL([_PATH_BSHELL],,AC_DEFINE_UNQUOTED([_PATH_BSHELL], "/bin/sh", [Define to system shell path]),[
+AC_CHECK_DECL([_PATH_BSHELL],,[AC_DEFINE_UNQUOTED([_PATH_BSHELL], ["/bin/sh"], [Define to system shell path])],[
 #ifdef HAVE_PATHS_H
 #include <paths.h>
 #endif
 ])
-AC_CHECK_DECL([_PATH_DEVNULL],,AC_DEFINE_UNQUOTED([_PATH_DEVNULL], "/dev/null", [Define to devnull device node path]),[
+AC_CHECK_DECL([_PATH_DEVNULL],,[AC_DEFINE_UNQUOTED([_PATH_DEVNULL], ["/dev/null"], [Define to devnull device node path])],[
 #ifdef HAVE_PATHS_H
 #include <paths.h>
 #endif
 ])
-AC_CHECK_DECL([_PATH_TTY],,AC_DEFINE_UNQUOTED([_PATH_TTY], "/dev/tty", [Define to tty device node path]),[
+AC_CHECK_DECL([_PATH_TTY],,[AC_DEFINE_UNQUOTED([_PATH_TTY], ["/dev/tty"], [Define to tty device node path])],[
 #ifdef HAVE_PATHS_H
 #include <paths.h>
 #endif
@@ -78,16 +78,16 @@ fi
 
 dnl Check for PRIdMAX and define it to a fallback if not found
 AC_CHECK_DECL([PRIdMAX],,
-	[AC_DEFINE_UNQUOTED([PRIdMAX], "$intmax_fstr",
-				       [Define to printf format string for intmax_t])],
-        [
+	[AC_DEFINE_UNQUOTED([PRIdMAX], ["$intmax_fstr"],
+	                    [Define to printf format string for intmax_t])],
+	[
 #include <inttypes.h>
 ])
 
 dnl Checks for library functions.
-AC_CHECK_FUNCS(bsearch faccessat getpwnam getrlimit isalpha killpg \
-	       mempcpy stpcpy strchrnul strsignal strtod \
-	       strtoimax strtoumax sysconf)
+AC_CHECK_FUNCS([bsearch faccessat getpwnam getrlimit isalpha killpg \
+                mempcpy stpcpy strchrnul strsignal strtod \
+                strtoimax strtoumax sysconf])
 
 dnl Check whether it's worth working around FreeBSD PR kern/125009.
 dnl The traditional behavior of access/faccessat is crazy, but
@@ -103,8 +103,8 @@ dnl
 dnl Also worked around in Debian's libc0.1 2.13-19 when using
 dnl kFreeBSD 8.
 
-AC_ARG_ENABLE(test-workaround, AS_HELP_STRING(--enable-test-workaround, \
-	[Guard against faccessat(2) that tells root all files are executable]),,
+AC_ARG_ENABLE([test-workaround], [AS_HELP_STRING([--enable-test-workaround], \
+	[Guard against faccessat(2) that tells root all files are executable])],,
 	[enable_test_workaround=auto])
 
 if test "enable_test_workaround" = "auto" &&
@@ -117,35 +117,35 @@ if test "enable_test_workaround" = "auto" &&
 fi
 if test "$enable_test_workaround" = "yes"; then
 	AC_DEFINE([HAVE_TRADITIONAL_FACCESSAT], [1],
-		[Define if your faccessat tells root all files are executable])
+	          [Define if your faccessat tells root all files are executable])
 fi
 
 if test "$enable_fnmatch" = yes; then
 	use_fnmatch=
-	AC_CHECK_FUNCS(fnmatch, use_fnmatch=yes)
+	AC_CHECK_FUNCS([fnmatch], [use_fnmatch=yes])
 fi
 
 if test "$use_fnmatch" = yes && test "$enable_glob" = yes; then
-	AC_CHECK_FUNCS(glob)
+	AC_CHECK_FUNCS([glob])
 fi
 
 dnl Check for klibc signal.
-AC_CHECK_FUNC(signal)
+AC_CHECK_FUNC([signal])
 if test "$ac_cv_func_signal" != yes; then
-	AC_CHECK_FUNC(bsd_signal,
-		      [AC_DEFINE(signal, bsd_signal,
-				 [klibc has bsd_signal instead of signal])])
+	AC_CHECK_FUNC([bsd_signal],
+	              [AC_DEFINE([signal], [bsd_signal],
+	                         [klibc has bsd_signal instead of signal])])
 fi
 
 dnl Check for stat64 (dietlibc/klibc).
-AC_CHECK_FUNC(stat64,, [
-	AC_DEFINE(fstat64, fstat, [64-bit operations are the same as 32-bit])
-	AC_DEFINE(lstat64, lstat, [64-bit operations are the same as 32-bit])
-	AC_DEFINE(stat64, stat, [64-bit operations are the same as 32-bit])
+AC_CHECK_FUNC([stat64],, [
+	AC_DEFINE([fstat64], [fstat], [64-bit operations are the same as 32-bit])
+	AC_DEFINE([lstat64], [lstat], [64-bit operations are the same as 32-bit])
+	AC_DEFINE([stat64], [stat], [64-bit operations are the same as 32-bit])
 ])
 
-AC_CHECK_FUNC(open64,, [
-	AC_DEFINE(open64, open, [64-bit operations are the same as 32-bit])
+AC_CHECK_FUNC([open64],, [
+	AC_DEFINE([open64], [open], [64-bit operations are the same as 32-bit])
 ])
 
 AC_CHECK_MEMBER([struct stat.st_mtim], [
@@ -153,35 +153,34 @@ AC_CHECK_MEMBER([struct stat.st_mtim], [
 AC_CHECK_MEMBER([struct stat.st_mtimespec], [
 	AC_DEFINE([HAVE_ST_MTIMESPEC], [1], [Define to 1 if your `struct stat' has the member `st_mtimespec'.])])
 
-AC_ARG_WITH(libedit, AS_HELP_STRING(--with-libedit, [Compile with libedit support]))
+AC_ARG_WITH([libedit], [AS_HELP_STRING([--with-libedit], [Compile with libedit support])])
 use_libedit=
 if test "$with_libedit" = "yes"; then
-	AC_CHECK_LIB(edit, history_init, [
+	AC_CHECK_LIB([edit], [history_init], [
 		AC_CHECK_HEADER([histedit.h], [use_libedit="yes"],
-				AC_MSG_ERROR(
-					[Can't find required header files.]))])
+				[AC_MSG_ERROR([Can't find required header files.])])])
 fi
 if test "$use_libedit" != "yes"; then
-	AC_DEFINE([SMALL], 1, [Define if you build with -DSMALL])
+	AC_DEFINE([SMALL], [1], [Define if you build with -DSMALL])
 else
 	export LIBS="$LIBS -ledit"
-	AC_CHECK_FUNCS(_el_fn_complete _el_fn_sh_complete)
+	AC_CHECK_FUNCS([_el_fn_complete _el_fn_sh_complete])
 fi
-AC_ARG_ENABLE(lineno, AS_HELP_STRING(--disable-lineno, \
-				     [Disable LINENO support]))
+AC_ARG_ENABLE([lineno], [AS_HELP_STRING([--disable-lineno], \
+                                        [Disable LINENO support])])
 if test "$enable_lineno" != "no"; then
 	AC_DEFINE([WITH_LINENO], 1, [Define if you build with -DWITH_LINENO])
 fi
-AC_ARG_ENABLE([locale], AS_HELP_STRING([--disable-locale], \
-				     [Disable locale support]))
+AC_ARG_ENABLE([locale], [AS_HELP_STRING([--disable-locale], \
+                                        [Disable locale support])])
 if test "$enable_locale" != "no"; then
-	AC_DEFINE([WITH_LOCALE], 1, [Define if you want locale support.])
+	AC_DEFINE([WITH_LOCALE], [1], [Define if you want locale support.])
 	AC_ARG_ENABLE([parser-locale],
-		      AS_HELP_STRING([--disable-parser-locale],
-				     [Disable use of fixed locale during parsing.]))
+		      [AS_HELP_STRING([--disable-parser-locale],
+		                      [Disable use of fixed locale during parsing.])])
 	if test "$enable_parser_locale" != "no"; then
-		AC_DEFINE([WITH_PARSER_LOCALE], 1,
-			  [Define if you want parsing to ignore LC_CTYPE changes after the shell starts.])
+		AC_DEFINE([WITH_PARSER_LOCALE], [1],
+		          [Define if you want parsing to ignore LC_CTYPE changes after the shell starts.])
 	fi
 fi
 AC_CONFIG_FILES([Makefile src/Makefile])
