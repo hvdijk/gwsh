@@ -1,4 +1,5 @@
 AC_INIT([gwsh], [0.5.9.1])
+AC_CONFIG_MACRO_DIRS([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/main.c])
 
@@ -8,18 +9,10 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 dnl Checks for programs.
 AC_PROG_CC
+AX_PROG_CC_FOR_BUILD
 AC_USE_SYSTEM_EXTENSIONS
 AC_SYS_LARGEFILE
 AC_PROG_YACC
-
-AC_MSG_CHECKING([for build system compiler])
-if test "$cross_compiling" = yes; then
-	CC_FOR_BUILD=${CC_FOR_BUILD-cc}
-else
-	CC_FOR_BUILD=${CC}
-fi
-AC_MSG_RESULT([${CC_FOR_BUILD}])
-AC_SUBST([CC_FOR_BUILD])
 
 AC_MSG_CHECKING([for __attribute__((__alias__()))])
 gwsh_cv_have_attribute_alias=no
