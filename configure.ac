@@ -9,6 +9,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 dnl Checks for programs.
 AC_PROG_CC
 AC_USE_SYSTEM_EXTENSIONS
+AC_SYS_LARGEFILE
 AC_PROG_YACC
 
 AC_MSG_CHECKING([for build system compiler])
@@ -136,17 +137,6 @@ if test "$ac_cv_func_signal" != yes; then
 	              [AC_DEFINE([signal], [bsd_signal],
 	                         [klibc has bsd_signal instead of signal])])
 fi
-
-dnl Check for stat64 (dietlibc/klibc).
-AC_CHECK_FUNC([stat64],, [
-	AC_DEFINE([fstat64], [fstat], [64-bit operations are the same as 32-bit])
-	AC_DEFINE([lstat64], [lstat], [64-bit operations are the same as 32-bit])
-	AC_DEFINE([stat64], [stat], [64-bit operations are the same as 32-bit])
-])
-
-AC_CHECK_FUNC([open64],, [
-	AC_DEFINE([open64], [open], [64-bit operations are the same as 32-bit])
-])
 
 AC_CHECK_MEMBER([struct stat.st_mtim], [
 	AC_DEFINE([HAVE_ST_MTIM], [1], [Define to 1 if your `struct stat' has the member `st_mtim'.])])

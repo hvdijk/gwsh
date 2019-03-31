@@ -290,7 +290,7 @@ find_command(char *name, struct cmdentry *entry, int act, const char *path)
 	int idx;
 	int prev;
 	char *fullname;
-	struct stat64 statb;
+	struct stat statb;
 	int e;
 	int updatetbl;
 	struct builtincmd *bcmd;
@@ -300,7 +300,7 @@ find_command(char *name, struct cmdentry *entry, int act, const char *path)
 	if (strchr(name, '/') != NULL) {
 		entry->u.index = -1;
 		if (act & DO_ABS) {
-			while (stat64(name, &statb) < 0) {
+			while (stat(name, &statb) < 0) {
 #ifdef SYSV
 				if (errno == EINTR)
 					continue;
@@ -389,7 +389,7 @@ loop:
 			TRACE(("searchexec \"%s\": no change\n", name));
 			goto success;
 		}
-		while (stat64(fullname, &statb) < 0) {
+		while (stat(fullname, &statb) < 0) {
 #ifdef SYSV
 			if (errno == EINTR)
 				continue;
