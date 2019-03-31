@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 2007
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -95,24 +97,30 @@ static inline int higher_prec(int op1, int op2)
 static intmax_t do_binop(int op, intmax_t a, intmax_t b)
 {
 	switch (op) {
+		int neg;
 	default:
 	case ARITH_REM:
 	case ARITH_DIV:
 		if (!b)
 			yyerror("division by zero");
 		if (b == -1)
-			return op == ARITH_REM ? 0 : -a;
+			return op == ARITH_REM ? 0 : -(uintmax_t) a;
 		return op == ARITH_REM ? a % b : a / b;
 	case ARITH_MUL:
-		return a * b;
+		return (uintmax_t) a * b;
 	case ARITH_ADD:
-		return a + b;
+		return (uintmax_t) a + b;
 	case ARITH_SUB:
-		return a - b;
+		return (uintmax_t) a - b;
 	case ARITH_LSHIFT:
-		return a << b;
+		if ((uintmax_t) b >= INTMAX_WIDTH)
+			return 0;
+		return (uintmax_t) a << b;
 	case ARITH_RSHIFT:
-		return a >> b;
+		neg = -(a < 0);
+		if ((uintmax_t) b >= INTMAX_WIDTH)
+			return neg;
+		return ((uintmax_t) (a ^ neg) >> b) ^ neg;
 	case ARITH_LT:
 		return a < b;
 	case ARITH_LE:
@@ -161,7 +169,7 @@ again:
 		goto again;
 	case ARITH_SUB:
 		*val = yylval;
-		return -primary(op, val, yylex(), noeval);
+		return -(uintmax_t) primary(op, val, yylex(), noeval);
 	case ARITH_NOT:
 		*val = yylval;
 		return !primary(op, val, yylex(), noeval);

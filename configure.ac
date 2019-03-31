@@ -59,9 +59,14 @@ AC_CHECK_DECL([_PATH_TTY],,[AC_DEFINE_UNQUOTED([_PATH_TTY], ["/dev/tty"], [Defin
 dnl Some systems lack isblank
 AC_CHECK_DECLS([isblank],,,[#include <ctype.h>])
 
-dnl Check for sizes of types
+dnl Check for sizes and widths of types
+AC_CHECK_SIZEOF([size_t])
 AC_CHECK_SIZEOF([intmax_t])
-AC_CHECK_SIZEOF([long long int])
+AC_CHECK_DECL([INTMAX_WIDTH],,
+              [AC_DEFINE_UNQUOTED([INTMAX_WIDTH],[(sizeof(intmax_t)*CHAR_BIT)],
+                                  [Define to the width of intmax_t if your <stdint.h> does not provide it.])],[
+#include <stdint.h>
+])
 
 dnl Select a fallback format string for intmax_t in case we don't find PRIdMAX
 if test "x$ac_cv_sizeof_intmax_t" = "x$ac_cv_sizeof_long_long_int"; then
