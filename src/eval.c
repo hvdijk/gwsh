@@ -109,8 +109,8 @@ STATIC int bltincmd(int, char **);
 
 
 STATIC const struct builtincmd bltin = {
-	name: nullstr,
-	builtin: bltincmd
+	.name = nullstr,
+	.builtin = bltincmd
 };
 
 
