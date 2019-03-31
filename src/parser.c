@@ -1280,9 +1280,8 @@ readtoken1_checkend(int *c, char *eofmark, int flags)
 
 	switch (*c) {
 	case '\n':
-		nlnoprompt();
-		*c = PEOF;
 	case PEOF:
+		*c = PEOF;
 		break;
 	default:
 more_heredoc:
