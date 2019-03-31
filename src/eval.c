@@ -100,7 +100,7 @@ STATIC int evalbltin(const struct builtincmd *, int, char **, int);
 STATIC int evalfun(struct funcnode *, int, char **, int);
 STATIC void prehash(union node *);
 STATIC int eprintlist(struct output *, struct strlist *, int);
-STATIC int bltincmd(int, char **);
+STATIC int nullcmd(int, char **);
 
 
 #define EPL_START   0x01
@@ -108,9 +108,9 @@ STATIC int bltincmd(int, char **);
 #define EPL_COMMAND 0x04
 
 
-STATIC const struct builtincmd bltin = {
+STATIC const struct builtincmd null = {
 	.name = nullstr,
-	.builtin = bltincmd
+	.builtin = nullcmd,
 };
 
 
@@ -723,6 +723,7 @@ evalcommand(union node *cmd, int flags)
 	int pip[2];
 #endif
 	struct cmdentry cmdentry;
+	const struct builtincmd *bltin = COMMANDCMD;
 	struct job *jp;
 	char *lastarg;
 	const char *path;
@@ -741,7 +742,7 @@ evalcommand(union node *cmd, int flags)
 	back_exitstatus = 0;
 
 	cmdentry.cmdtype = CMDBUILTIN;
-	cmdentry.u.cmd = &bltin;
+	cmdentry.u.cmd = &null;
 	varlist.lastp = &varlist.list;
 	*varlist.lastp = NULL;
 	arglist.lastp = &arglist.list;
@@ -759,8 +760,8 @@ evalcommand(union node *cmd, int flags)
 			eflags = EXP_VARTILDE;
 		expandarg(argp, &arglist, eflags);
 		for (sp = *spp; sp; sp = sp->next) {
-			if (!argc || cmdflags & BUILTIN_REGULAR) {
-				struct builtincmd *bltin = find_builtin(sp->text);
+			if (bltin == COMMANDCMD) {
+				bltin = find_builtin(sp->text);
 				cmdflags = bltin ? bltin->flags : 0;
 			}
 			argc++;
@@ -1042,7 +1043,7 @@ prehash(union node *n)
  */
 
 STATIC int
-bltincmd(int argc, char **argv)
+nullcmd(int argc, char **argv)
 {
 	/*
 	 * Preserve exitstatus of a previous possible redirection

@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -60,7 +62,7 @@ histcmd		-u fc
 
 breakcmd	-s break -s continue
 cdcmd		-u cd chdir
-commandcmd	-au command
+commandcmd	-u command
 dotcmd		-s .
 echocmd		echo
 evalcmd		-ns eval
