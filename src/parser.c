@@ -1676,6 +1676,7 @@ getprompt(void *unused)
 {
 	const char *prompt;
 	struct nodelist *savebqlist;
+	int savecheckkwd;
 
 #ifndef SMALL
 	if (lastprompt)
@@ -1698,6 +1699,7 @@ getprompt(void *unused)
 	}
 
 	savebqlist = backquotelist;
+	savecheckkwd = checkkwd;
 #ifdef WITH_PARSER_LOCALE
 	uselocale(LC_GLOBAL_LOCALE);
 #endif
@@ -1705,6 +1707,7 @@ getprompt(void *unused)
 #ifdef WITH_PARSER_LOCALE
 	uselocale(parselocale);
 #endif
+	checkkwd = savecheckkwd;
 	backquotelist = savebqlist;
 
 #ifndef SMALL
