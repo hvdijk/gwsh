@@ -1445,7 +1445,7 @@ varname:
 			default:
 				p = strchr(types, c);
 				if (p == NULL)
-					break;
+					goto badsub;
 				subtype |= p - types + VSNORMAL;
 				break;
 			case '%':
