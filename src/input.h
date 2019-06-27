@@ -36,7 +36,14 @@
  *	@(#)input.h	8.2 (Berkeley) 5/4/95
  */
 
+#ifndef H_INPUT
+#define H_INPUT 1
+
+#include "config.h"
+
+#include <stddef.h>
 #ifdef WITH_LOCALE
+#include <limits.h>
 #include <locale.h>
 #endif
 #if defined(WITH_PARSER_LOCALE) && defined(HAVE_XLOCALE_H)
@@ -120,3 +127,5 @@ void popfile(void);
 void unwindfiles(struct parsefile *);
 void popallfiles(void);
 void closescript(void);
+
+#endif

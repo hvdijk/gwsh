@@ -26,6 +26,11 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef H_MISCBLTIN
+#define H_MISCBLTIN 1
+
 int readcmd(int, char **);
 int umaskcmd(int, char **);
 int ulimitcmd(int, char **);
+
+#endif

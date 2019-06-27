@@ -31,9 +31,12 @@
  *	@(#)show.h	1.1 (Berkeley) 5/4/95
  */
 
-#include <stdarg.h>
+#ifndef H_SHOW
+#define H_SHOW 1
 
 #ifdef DEBUG
+#include <stdarg.h>
+
 union node;
 void showtree(union node *);
 void trace(const char *, ...);
@@ -42,4 +45,6 @@ void trargs(char **);
 void trputc(int);
 void trputs(const char *);
 void opentrace(void);
+#endif
+
 #endif

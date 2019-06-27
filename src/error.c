@@ -32,6 +32,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 /*
  * Errors and exceptions.
  */

@@ -34,9 +34,10 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/param.h>	/* PIPE_BUF */
 #include <signal.h>
 #include <string.h>
 #include <fcntl.h>

@@ -34,6 +34,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <signal.h>
 #include <sys/stat.h>

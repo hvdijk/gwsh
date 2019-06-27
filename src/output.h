@@ -34,7 +34,8 @@
  *	@(#)output.h	8.2 (Berkeley) 5/4/95
  */
 
-#ifndef OUTPUT_INCL
+#ifndef H_OUTPUT
+#define H_OUTPUT 1
 
 #include <stdarg.h>
 #ifdef USE_GLIBC_STDIO
@@ -120,5 +121,4 @@ static inline void outc(int ch, struct output *file)
 #define out2str(s)	outstr((s), out2)
 #define outerr(f)	(f)->error
 
-#define OUTPUT_INCL
 #endif

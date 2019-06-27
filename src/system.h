@@ -26,6 +26,11 @@
  * SUCH DAMAGE.
  */
 
+#ifndef H_SYSTEM
+#define H_SYSTEM 1
+
+#include "config.h"
+
 #include <limits.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -103,3 +108,5 @@ int isblank(int c);
  * code
  */
 #define uninitialized_var(x) x = x
+
+#endif

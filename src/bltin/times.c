@@ -4,6 +4,8 @@
  * This file contains code for the times builtin.
  */
 
+#include "config.h"
+
 #include <sys/times.h>
 #include <unistd.h>
 #ifdef USE_GLIBC_STDIO

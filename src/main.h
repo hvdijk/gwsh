@@ -36,6 +36,9 @@
  *	@(#)main.h	8.2 (Berkeley) 5/4/95
  */
 
+#ifndef H_MAIN
+#define H_MAIN 1
+
 #include <errno.h>
 
 /* pid of main shell */
@@ -55,3 +58,5 @@ void readcmdfile(char *);
 int cmdloop(int);
 int dotcmd(int, char **);
 int exitcmd(int, char **);
+
+#endif

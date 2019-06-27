@@ -34,6 +34,9 @@
  *	@(#)expand.h	8.2 (Berkeley) 5/4/95
  */
 
+#ifndef H_EXPAND
+#define H_EXPAND 1
+
 #include <inttypes.h>
 
 struct strlist {
@@ -83,3 +86,5 @@ void arith_lex_reset(void);
 #define arith_lex_reset()
 #endif
 int yylex(void);
+
+#endif

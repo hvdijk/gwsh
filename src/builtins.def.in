@@ -36,6 +36,8 @@
  *	@(#)builtins.def	8.4 (Berkeley) 5/4/95
  */
 
+#include "config.h"
+
 /*
  * This file lists all the builtin commands.  The first column is the name
  * of a C routine.

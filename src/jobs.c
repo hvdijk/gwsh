@@ -34,6 +34,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
@@ -42,13 +44,11 @@
 #include <paths.h>
 #endif
 #include <sys/types.h>
-#include <sys/param.h>
 #ifdef BSD
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif
-#include <sys/ioctl.h>
 
 #include "shell.h"
 #if JOBS

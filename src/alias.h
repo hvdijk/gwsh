@@ -36,6 +36,9 @@
  *	@(#)alias.h	8.2 (Berkeley) 5/4/95
  */
 
+#ifndef H_ALIAS
+#define H_ALIAS 1
+
 #define ALIASINUSE	1
 #define ALIASDEAD	2
 
@@ -56,3 +59,5 @@ void rmaliases(void);
 int unalias(const char *);
 void printalias(const struct alias *);
 void endaliasuse(void);
+
+#endif

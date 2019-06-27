@@ -27,6 +27,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <signal.h>
 
 const char *const signal_names[] = {

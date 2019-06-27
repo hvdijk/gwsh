@@ -34,8 +34,11 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <inttypes.h>
 #include <stdlib.h>
+#include <limits.h>
 #include "arith_yacc.h"
 #include "expand.h"
 #include "shell.h"

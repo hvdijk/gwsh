@@ -36,6 +36,9 @@
  *	@(#)jobs.h	8.2 (Berkeley) 5/4/95
  */
 
+#ifndef H_JOBS
+#define H_JOBS 1
+
 #include <inttypes.h>
 #include <sys/types.h>
 
@@ -94,6 +97,8 @@ extern int jobctl;		/* true if doing job control */
 #define jobctl 0
 #endif
 
+union node;
+
 void setjobctl(int);
 int killcmd(int, char **);
 int fgcmd(int, char **);
@@ -109,4 +114,6 @@ int stoppedjobs(void);
 
 #if ! JOBS
 #define setjobctl(on) ((void)(on))	/* do nothing */
+#endif
+
 #endif

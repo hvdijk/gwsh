@@ -33,6 +33,9 @@
  *	@(#)myhistedit.h	8.2 (Berkeley) 5/4/95
  */
 
+#ifndef H_MYHISTEDIT
+#define H_MYHISTEDIT 1
+
 #include <histedit.h>
 
 extern History *hist;
@@ -47,3 +50,4 @@ int histcmd(int, char **);
 int not_fcnumber(char *);
 int str_to_event(const char *, int);
 
+#endif

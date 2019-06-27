@@ -26,6 +26,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #ifndef HAVE_ISALPHA
 #define isalnum _isalnum
 #define iscntrl _iscntrl

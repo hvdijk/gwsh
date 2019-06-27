@@ -32,6 +32,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 /*
  * Routines to check for mail.  (Perhaps make part of main.c?)
  */

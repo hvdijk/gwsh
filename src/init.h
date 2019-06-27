@@ -36,7 +36,12 @@
  *	@(#)init.h	8.2 (Berkeley) 5/4/95
  */
 
+#ifndef H_INIT
+#define H_INIT 1
+
 void init(void);
 void exitreset(void);
 void envreset(void);
 void reset(void);
+
+#endif

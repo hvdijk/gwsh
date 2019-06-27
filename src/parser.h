@@ -36,6 +36,9 @@
  *	@(#)parser.h	8.3 (Berkeley) 5/4/95
  */
 
+#ifndef H_PARSER
+#define H_PARSER 1
+
 #include "token.h"
 
 /* control characters in argument strings */
@@ -121,3 +124,5 @@ static inline int parser_eof(void)
 {
 	return tokpushback > lasttoken;
 }
+
+#endif

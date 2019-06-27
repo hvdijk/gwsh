@@ -27,6 +27,11 @@
  * SUCH DAMAGE.
  */
 
+#ifndef H_MYLOCALE
+#define H_MYLOCALE 1
+
+#include "config.h"
+
 #include <wchar.h>
 
 #ifdef WITH_LOCALE
@@ -38,4 +43,6 @@ size_t mbccnt(const char *p);
 #else
 #define GETC(c, p)           ((void) ((c) = *(p)++))
 #define GETC_CTLESC(c, p, f) ((void) ((p) += (f) && *(p) == (char)CTLESC, (c) = *(p)++))
+#endif
+
 #endif

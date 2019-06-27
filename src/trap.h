@@ -36,6 +36,9 @@
  *	@(#)trap.h	8.3 (Berkeley) 6/5/95
  */
 
+#ifndef H_TRAP
+#define H_TRAP 1
+
 #include <signal.h>
 
 extern int trapcnt;
@@ -57,3 +60,5 @@ static inline int have_traps(void)
 {
 	return trapcnt > 0;
 }
+
+#endif

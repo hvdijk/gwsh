@@ -34,6 +34,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,6 +44,9 @@
 #endif
 #ifdef WITH_LOCALE
 #include <locale.h>
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 #endif
 
 /*

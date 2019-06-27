@@ -34,12 +34,13 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 /*
  * Miscelaneous builtins.
  */
 
 #include <sys/types.h>		/* quad_t */
-#include <sys/param.h>		/* BSD4_4 */
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/resource.h>

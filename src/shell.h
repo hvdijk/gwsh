@@ -51,7 +51,8 @@
  * a quit signal will generate a core dump.
  */
 
-#include <sys/param.h>
+#ifndef H_SHELL
+#define H_SHELL 1
 
 #ifndef JOBS
 #define JOBS 1
@@ -104,3 +105,5 @@ static inline int max_int_length(int bytes)
 {
 	return (bytes * 8 - 1) * 0.30102999566398119521 + 14;
 }
+
+#endif // H_SHELL

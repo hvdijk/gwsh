@@ -34,6 +34,9 @@
  *	@(#)redir.h	8.2 (Berkeley) 5/4/95
  */
 
+#ifndef H_REDIR
+#define H_REDIR 1
+
 /* flags passed to redirect */
 #define REDIR_PUSH 01		/* save previous values of file descriptors */
 #ifdef notyet
@@ -51,3 +54,4 @@ int redirectsafe(union node *, int);
 void unwindredir(struct redirtab *stop);
 struct redirtab *pushredir(union node *redir);
 
+#endif

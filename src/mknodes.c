@@ -32,6 +32,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 /*
  * This program reads the nodetypes file and nodes.c.pat file.  It generates
  * the files nodes.h and nodes.c.

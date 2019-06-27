@@ -34,6 +34,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <stdio.h>	/* defines BUFSIZ */
 #ifdef WITH_LOCALE
 #include <wchar.h>

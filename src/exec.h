@@ -34,6 +34,9 @@
  *	@(#)exec.h	8.3 (Berkeley) 6/8/95
  */
 
+#ifndef H_EXEC
+#define H_EXEC 1
+
 /* values of cmdtype */
 #define CMDUNKNOWN	-1	/* no entry in table for command */
 #define CMDNORMAL	0	/* command is an executable program */
@@ -60,6 +63,8 @@ struct cmdentry {
 
 extern const char *pathopt;	/* set by padvance */
 
+union node;
+
 void shellexec(char **, const char *, int)
     __attribute__((__noreturn__));
 int padvance(const char **, const char *);
@@ -75,3 +80,5 @@ void defun(union node *);
 void unsetfunc(const char *);
 int typecmd(int, char **);
 int commandcmd(int, char **);
+
+#endif

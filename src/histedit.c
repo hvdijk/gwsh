@@ -34,7 +34,8 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/param.h>
+#include "config.h"
+
 #ifdef HAVE_PATHS_H
 #include <paths.h>
 #endif
@@ -211,7 +212,7 @@ histcmd(int argc, char **argv)
 	static int active = 0;
 	struct jmploc jmploc;
 	struct jmploc *volatile savehandler;
-	char editfile[MAXPATHLEN + 1];
+	char editfile[PATH_MAX + 1];
 	FILE *efp;
 #ifdef __GNUC__
 	/* Avoid longjmp clobbering */

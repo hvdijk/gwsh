@@ -1,12 +1,8 @@
 AM_YFLAGS = -d
 
-COMMON_CFLAGS = -Wall
-COMMON_CPPFLAGS = \
-	-DBSD=1 -DSHELL
+COMMON_CPPFLAGS = -DBSD -DSHELL
 
-AM_CFLAGS = $(COMMON_CFLAGS)
-AM_CPPFLAGS = -include $(top_builddir)/config.h $(COMMON_CPPFLAGS)
-AM_CFLAGS_FOR_BUILD = -g -O2 $(COMMON_CFLAGS) 
+AM_CPPFLAGS = $(COMMON_CPPFLAGS)
 AM_CPPFLAGS_FOR_BUILD = $(COMMON_CPPFLAGS)
 
 COMPILE_FOR_BUILD = \
@@ -34,8 +30,8 @@ HELPERS = mkinit mksyntax mknodes
 
 BUILT_SOURCES = builtins.h nodes.h syntax.h token.h token_vars.h
 CLEANFILES = \
-	$(BUILT_SOURCES) $(patsubst %.o,%.c,$(gwsh_LDADD)) \
-	$(HELPERS) builtins.def
+	builtins.def builtins.c builtins.h init.c nodes.c nodes.h \
+	syntax.c syntax.h token.h token_vars.h $(HELPERS)
 
 man_MANS = gwsh.1
 EXTRA_DIST = \
@@ -44,24 +40,30 @@ EXTRA_DIST = \
 	mknodes.c nodetypes nodes.c.pat mksyntax.c
 
 token.h token_vars.h: mktokens
-	$(AM_V_GEN)$(SHELL) $^
+	$(AM_V_GEN)$(SHELL) $(srcdir)/mktokens
 
 builtins.def: builtins.def.in $(top_builddir)/config.h
-	$(AM_V_CC)$(COMPILE) -E -x c -o $@ $<
+	$(AM_V_CC)$(CPP) $(DEFAULT_INCLUDES) - < $(srcdir)/builtins.def.in > $@.tmp && mv $@.tmp $@
 
 builtins.c builtins.h: mkbuiltins builtins.def
-	$(AM_V_GEN)$(SHELL) $^
+	$(AM_V_GEN)$(SHELL) $(srcdir)/mkbuiltins builtins.def
 
 init.c: mkinit $(gwsh_CFILES)
-	$(AM_V_GEN)./$^
+	$(AM_V_GEN)./mkinit `echo " $(gwsh_CFILES)" | sed -e 's: : $(srcdir)/:g'`
 
 nodes.c nodes.h: mknodes nodetypes nodes.c.pat
-	$(AM_V_GEN)./$^
+	$(AM_V_GEN)./mknodes $(srcdir)/nodetypes $(srcdir)/nodes.c.pat
 
 syntax.c syntax.h: mksyntax
-	$(AM_V_GEN)./$^
+	$(AM_V_GEN)./mksyntax
 
 mksyntax: token.h
 
-$(HELPERS): %: %.c
-	$(AM_V_CC)$(COMPILE_FOR_BUILD) -o $@ $<
+CCBUILD = $(AM_V_CC)$(COMPILE_FOR_BUILD) -o $@
+
+mkinit: mkinit.c
+	$(CCBUILD) $(srcdir)/mkinit.c
+mknodes: mknodes.c
+	$(CCBUILD) $(srcdir)/mknodes.c
+mksyntax: mksyntax.c
+	$(CCBUILD) $(srcdir)/mksyntax.c

@@ -32,6 +32,11 @@
  * SUCH DAMAGE.
  */
 
+#ifndef H_ARITH_YACC
+#define H_ARITH_YACC 1
+
+#include <stdint.h>
+
 #define ARITH_ASS 1
 
 #define ARITH_OR 2
@@ -87,3 +92,5 @@ union yystype {
 extern union yystype yylval;
 
 int yylex(void);
+
+#endif

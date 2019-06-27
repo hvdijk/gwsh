@@ -34,6 +34,8 @@
  *	@(#)nodes.c.pat	8.2 (Berkeley) 5/4/95
  */
 
+#include "config.h"
+
 #include <stdlib.h>
 /*
  * Routine for dealing with parsed shell commands.

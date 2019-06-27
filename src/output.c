@@ -32,6 +32,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 /*
  * Shell output routines.  We use our own output routines because:
  *	When a builtin command is interrupted we have to discard
@@ -44,8 +46,6 @@
  */
 
 #include <sys/types.h>		/* quad_t */
-#include <sys/param.h>		/* BSD4_4 */
-#include <sys/ioctl.h>
 
 #include <stdio.h>	/* defines BUFSIZ */
 #include <string.h>

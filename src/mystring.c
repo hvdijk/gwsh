@@ -34,6 +34,8 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 /*
  * String functions.
  *

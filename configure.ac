@@ -11,6 +11,7 @@ dnl Checks for programs.
 AC_PROG_CC
 AX_PROG_CC_FOR_BUILD
 AC_USE_SYSTEM_EXTENSIONS
+AX_CFLAGS_WARN_ALL
 AC_SYS_LARGEFILE
 AC_PROG_YACC
 
@@ -167,8 +168,12 @@ if test "$enable_locale" != "no"; then
 		      [AS_HELP_STRING([--disable-parser-locale],
 		                      [Disable use of fixed locale during parsing.])])
 	if test "$enable_parser_locale" != "no"; then
-		AC_DEFINE([WITH_PARSER_LOCALE], [1],
-		          [Define if you want parsing to ignore LC_CTYPE changes after the shell starts.])
+		AC_CHECK_FUNC([uselocale],
+			[AC_DEFINE([WITH_PARSER_LOCALE], [1],
+			          [Define if you want parsing to ignore LC_CTYPE changes after the shell starts.])],
+			[if test "$enable_parser_locale" = "yes"; then
+				AC_MSG_ERROR([--enable-parser-locale requires the uselocale() function.])
+			fi])
 	fi
 fi
 AC_CONFIG_FILES([Makefile src/Makefile])

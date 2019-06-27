@@ -34,6 +34,9 @@
  *	@(#)eval.h	8.2 (Berkeley) 5/4/95
  */
 
+#ifndef H_EVAL
+#define H_EVAL 1
+
 extern char *dotfile;		/* currently executing . file */
 extern char *commandname;	/* currently executing command */
 extern int exitstatus;		/* exit status of last command */
@@ -64,3 +67,5 @@ extern int evalskip;
 #define SKIPBREAK	(1 << 0)
 #define SKIPCONT	(1 << 1)
 #define SKIPFUNC	(1 << 2)
+
+#endif
