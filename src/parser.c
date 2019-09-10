@@ -982,8 +982,7 @@ control:
 #endif
 			) {
 escape:
-				if (!(flags & RT_MBCHAR))
-					flags &= ~RT_ESCAPE;
+				flags &= ~RT_ESCAPE | (flags >> 1);
 				USTPUTC(CTLESC, out);
 			}
 			while (flags & (RT_CTOGGLE1 | RT_CTOGGLE2)) {
@@ -1113,7 +1112,7 @@ output:
 				goto output;
 			if ((flags & (RT_QSYNTAX | RT_ESCAPE)) != RT_ESCAPE)
 				goto escape;
-			flags &= ~RT_ESCAPE;
+			flags &= ~RT_ESCAPE | (flags >> 1);
 #else
 			if (flags & RT_QSYNTAX || c < CTL_FIRST || c > CTL_LAST)
 				goto escape;
@@ -1124,7 +1123,7 @@ output:
 			USTPUTC(CTLQUOTEMARK, out);
 			break;
 		case '$':
-			if (flags & (RT_SQSYNTAX | RT_ESCAPE))
+			if (flags & (RT_SQSYNTAX | RT_ESCAPE | RT_MBCHAR))
 				goto word;
 			c = pgetc_eatbnl();
 			if (flags & RT_DQSYNTAX || c != '\'') {
@@ -1140,7 +1139,7 @@ output:
 				qsyntax = RT_DQSYNTAX;
 				break;
 			}
-			if (flags & (~(flags << 1) | RT_ESCAPE) & (RT_HEREDOC | RT_QSYNTAX | RT_ESCAPE) & ~qsyntax)
+			if (flags & (~(flags << 1) | RT_ESCAPE | RT_MBCHAR) & (RT_HEREDOC | RT_QSYNTAX | RT_ESCAPE | RT_MBCHAR) & ~qsyntax)
 				goto word;
 			int quotemark = 1;
 			if (flags & qsyntax) {
@@ -1157,7 +1156,7 @@ output:
 				USTPUTC(CTLQUOTEMARK, out);
 			break;
 		case '}':
-			if ((flags ^ RT_VARNEST) & (RT_VARNEST | RT_ESCAPE))
+			if ((flags ^ RT_VARNEST) & (RT_VARNEST | RT_ESCAPE | RT_MBCHAR))
 				goto word;
 			USTPUTC(CTLENDVAR, out);
 			return out;
@@ -1188,7 +1187,7 @@ output:
 			}
 			break;
 		case '`':
-			if (flags & (RT_SQSYNTAX | RT_ESCAPE) || checkkwd & CHKEOFMARK)
+			if (flags & (RT_SQSYNTAX | RT_ESCAPE | RT_MBCHAR) || checkkwd & CHKEOFMARK)
 				goto word;
 			out = readtoken1_parsebackq(out, flags, 1);
 			break;

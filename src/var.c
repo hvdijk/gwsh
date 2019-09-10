@@ -750,9 +750,6 @@ findvar(struct var **vpp, const char *name)
 STATIC
 void changelocale(const char *var) {
 	setlocale(LC_CTYPE, *lc_allval() ? lc_allval() : *lc_ctypeval() ? lc_ctypeval() : langval());
-	/* No support for state-dependent encodings. */
-	if (mblen(NULL, 0))
-		setlocale(LC_CTYPE, "C");
 	setlocale(LC_COLLATE, *lc_allval() ? lc_allval() : *lc_collateval() ? lc_collateval() : langval());
 }
 
