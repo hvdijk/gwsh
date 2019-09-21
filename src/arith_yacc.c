@@ -46,7 +46,7 @@
 #include "output.h"
 #include "var.h"
 
-#if ARITH_BOR + 11 != ARITH_BORASS || ARITH_ASS + 11 != ARITH_EQ
+#if ARITH_BOR + 14 != ARITH_BORASS || ARITH_ASS + 14 != ARITH_EQ || ARITH_NOT + 14 != ARITH_NE || ARITH_LT + 14 != ARITH_LE || ARITH_GT + 14 != ARITH_GE
 #error Arithmetic tokens are out of order.
 #endif
 
@@ -299,7 +299,7 @@ static intmax_t assignment(int var, int noeval)
 
 	return setvarint(val.name,
 			 op == ARITH_ASS ? result :
-			 do_binop(op - 11, lookupvarint(val.name), result), 0);
+			 do_binop(op - 14, lookupvarint(val.name), result), 0);
 }
 
 intmax_t arith(const char *s)

@@ -3,7 +3,7 @@
  *	Herbert Xu.
  * Copyright (c) 1993
  *	The Regents of the University of California.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -48,7 +48,7 @@
 #include "syntax.h"
 #include "system.h"
 
-#if ARITH_BOR + 11 != ARITH_BORASS || ARITH_ASS + 11 != ARITH_EQ
+#if ARITH_BOR + 14 != ARITH_BORASS || ARITH_ASS + 14 != ARITH_EQ || ARITH_NOT + 14 != ARITH_NE || ARITH_LT + 14 != ARITH_LE || ARITH_GT + 14 != ARITH_GE
 #error Arithmetic tokens are out of order.
 #endif
 
@@ -150,32 +150,26 @@ checkeq:
 checkeqcur:
 			if (*buf != '=')
 				goto out;
-			value += 11;
+			value += 14;
 			break;
 		case '>':
 			switch (*++buf) {
-			case '=':
-				value += ARITH_GE - '>';
-				break;
 			case '>':
 				value += ARITH_RSHIFT - '>';
 				goto checkeq;
 			default:
 				value += ARITH_GT - '>';
-				goto out;
+				goto checkeqcur;
 			}
 			break;
 		case '<':
 			switch (*++buf) {
-			case '=':
-				value += ARITH_LE - '<';
-				break;
 			case '<':
 				value += ARITH_LSHIFT - '<';
 				goto checkeq;
 			default:
 				value += ARITH_LT - '<';
-				goto out;
+				goto checkeqcur;
 			}
 			break;
 		case '|':
@@ -193,12 +187,8 @@ checkeqcur:
 			value += ARITH_AND - '&';
 			break;
 		case '!':
-			if (*++buf != '=') {
-				value += ARITH_NOT - '!';
-				goto out;
-			}
-			value += ARITH_NE - '!';
-			break;
+			value += ARITH_NOT - '!';
+			goto checkeq;
 		case 0:
 			goto out;
 		case '(':

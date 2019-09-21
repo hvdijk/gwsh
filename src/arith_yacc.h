@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 2007
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -37,32 +39,31 @@
 
 #include <stdint.h>
 
-#define ARITH_ASS 1
-
-#define ARITH_OR 2
-#define ARITH_AND 3
-#define ARITH_BAD 4
-#define ARITH_NUM 5
-#define ARITH_VAR 6
+#define ARITH_OR 1
+#define ARITH_AND 2
+#define ARITH_BAD 3
+#define ARITH_NUM 4
+#define ARITH_VAR 5
+#define ARITH_ASS 6
 #define ARITH_NOT 7
 
 #define ARITH_BINOP_MIN 8
-#define ARITH_LE 8
-#define ARITH_GE 9
-#define ARITH_LT 10
-#define ARITH_GT 11
-#define ARITH_EQ 12
-#define ARITH_REM 13
-#define ARITH_BAND 14
-#define ARITH_LSHIFT 15
-#define ARITH_RSHIFT 16
-#define ARITH_MUL 17
-#define ARITH_ADD 18
-#define ARITH_BOR 19
-#define ARITH_SUB 20
-#define ARITH_BXOR 21
-#define ARITH_DIV 22
-#define ARITH_NE 23
+#define ARITH_LT 8
+#define ARITH_GT 9
+#define ARITH_REM 10
+#define ARITH_BAND 11
+#define ARITH_LSHIFT 12
+#define ARITH_RSHIFT 13
+#define ARITH_MUL 14
+#define ARITH_ADD 15
+#define ARITH_BOR 16
+#define ARITH_SUB 17
+#define ARITH_BXOR 18
+#define ARITH_DIV 19
+#define ARITH_EQ 20
+#define ARITH_NE 21
+#define ARITH_LE 22
+#define ARITH_GE 23
 #define ARITH_BINOP_MAX 24
 
 #define ARITH_ASS_MIN 24
