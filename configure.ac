@@ -21,7 +21,14 @@ if test "$ax_cv___attribute__" = "yes"; then
 else
 	AC_DEFINE([attribute(x)], [])
 fi
-
+AC_CACHE_CHECK([for computed goto], [gwsh_cv_computed_goto],
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[void *l = &&label; goto *l; label:;])],
+                   [gwsh_cv_computed_goto=yes],
+                   [gwsh_cv_computed_goto=no])])
+if test "$gwsh_cv_computed_goto" = "yes"; then
+	AC_DEFINE_UNQUOTED([HAVE_COMPUTED_GOTO],[1],
+	                   [Define to 1 if your compiler supports the GNU C computed goto extension.])
+fi
 AC_ARG_ENABLE([static], [AS_HELP_STRING([--enable-static], \
                                         [Build statical linked program])])
 if test "$enable_static" = "yes"; then

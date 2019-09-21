@@ -99,7 +99,13 @@ int
 main(int argc, char **argv)
 {
 	char *shinit;
-	volatile int state;
+#if HAVE_COMPUTED_GOTO
+	void *volatile state = NULL;
+#define SET_STATE(s) (state = &&state##s)
+#else
+	volatile int state = 0;
+#define SET_STATE(s) (state = s)
+#endif
 	struct stackmark smark;
 	int login;
 
@@ -110,10 +116,13 @@ main(int argc, char **argv)
 #if PROFILE
 	monitor(4, etext, profile_buf, sizeof profile_buf, 50);
 #endif
-	state = 0;
 	if (unlikely(setjmp(main_handler.loc))) {
 		int e;
+#if HAVE_COMPUTED_GOTO
+		void *s;
+#else
 		int s;
+#endif
 
 		exitreset();
 		envreset();
@@ -121,7 +130,7 @@ main(int argc, char **argv)
 		e = exception;
 
 		s = state;
-		if (e == EXEXIT || s == 0 || iflag == 0 || shlvl)
+		if (e == EXEXIT || !s || iflag == 0 || shlvl)
 			exitshell();
 
 		reset();
@@ -134,14 +143,17 @@ main(int argc, char **argv)
 		}
 		popstackmark(&smark);
 		FORCEINTON;				/* enable interrupts */
-		if (s == 1)
-			goto state1;
-		else if (s == 2)
-			goto state2;
-		else if (s == 3)
-			goto state3;
-		else
-			goto state4;
+#if HAVE_COMPUTED_GOTO
+		goto *s;
+#else
+		switch (s) {
+		default:
+		case 4: goto state4;
+		case 3: goto state3;
+		case 2: goto state2;
+		case 1: goto state1;
+		}
+#endif
 	}
 	handler = &main_handler;
 #ifdef DEBUG
@@ -153,14 +165,14 @@ main(int argc, char **argv)
 	setstackmark(&smark);
 	login = procargs(argc, argv);
 	if (login) {
-		state = 1;
+		SET_STATE(1);
 		read_profile("/etc/profile");
 state1:
-		state = 2;
+		SET_STATE(2);
 		read_profile("$HOME/.profile");
 	}
 state2:
-	state = 3;
+	SET_STATE(3);
 	if (
 #ifndef linux
 		getuid() == geteuid() && getgid() == getegid() &&
@@ -173,7 +185,7 @@ state2:
 	}
 	popstackmark(&smark);
 state3:
-	state = 4;
+	SET_STATE(4);
 	if (minusc)
 		evalstring(minusc, sflag ? 0 : EV_EXIT);
 
