@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -288,7 +290,7 @@ fmtstr(char *outbuf, size_t length, const char *fmt, ...)
 }
 
 
-static int xvasprintf(char **sp, size_t size, const char *f, va_list ap)
+int xvasprintf(char **sp, size_t size, const char *f, va_list ap)
 {
 	char *s;
 	int len;
@@ -322,7 +324,7 @@ int xasprintf(char **sp, const char *f, ...)
 
 
 #ifndef USE_GLIBC_STDIO
-void
+int
 doformat(struct output *dest, const char *f, va_list ap)
 {
 	struct stackmark smark;
@@ -341,6 +343,7 @@ doformat(struct output *dest, const char *f, va_list ap)
 	outmem(s, len, dest);
 out:
 	popstackmark(&smark);
+	return len;
 }
 #endif
 

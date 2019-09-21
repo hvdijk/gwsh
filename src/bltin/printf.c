@@ -62,38 +62,29 @@ static char  **gargv;
 #include "bltin.h"
 #include "system.h"
 
-#define PF(f, func) { \
-	switch ((char *)param - (char *)array) { \
-	default: \
-		(void)printf(f, array[0], array[1], func); \
-		break; \
-	case sizeof(*param): \
-		(void)printf(f, array[0], func); \
-		break; \
-	case 0: \
-		(void)printf(f, func); \
-		break; \
-	} \
+static int printfield(char **sp, int skip, const char *f, ...) {
+	int ret;
+	va_list ap;
+	va_start(ap, f);
+	switch (skip) {
+	case 2:
+		va_arg(ap, int);
+		/* fall through */
+	case 1:
+		va_arg(ap, int);
+		/* fall through */
+	default:
+		break;
+	}
+	if (sp)
+		ret = xvasprintf(sp, 0, f, ap);
+	else
+		ret = vprintf(f, ap);
+	va_end(ap);
+	return ret;
 }
 
-#define ASPF(total, sp, f, func) do { \
-	int ret; \
-	switch ((char *)param - (char *)array) { \
-	default: \
-		ret = xasprintf(sp, f, array[0], array[1], func); \
-		break; \
-	case sizeof(*param): \
-		ret = xasprintf(sp, f, array[0], func); \
-		break; \
-	case 0: \
-		ret = xasprintf(sp, f, func); \
-		break; \
-	} \
-	total = ret; \
-} while (0)
-
-
-static int print_escape_str(const char *f, int *param, int *array, const char *s)
+static int print_escape_str(int skip, const char *f, int width, int prec, const char *s)
 {
 	struct stackmark smark;
 	char *p, *q;
@@ -118,7 +109,7 @@ static int print_escape_str(const char *f, int *param, int *array, const char *s
 	p[total] = 0;
 
 	q = stackblock();
-	ASPF(total, &p, f, p);
+	total = printfield(&p, skip, f, width, prec, p);
 
 	len = strchrnul(p, 'X') - p;
 	memcpy(p + len, q, strspn(p + len, "X"));
@@ -129,7 +120,6 @@ easy:
 	popstackmark(&smark);
 	return next;
 }
-
 
 int printfcmd(int argc, char *argv[])
 {
@@ -165,8 +155,7 @@ int printfcmd(int argc, char *argv[])
 		for (fmt = format; (ch = *fmt++) ;) {
 			const char *start;
 			char nextch;
-			int array[2];
-			int *param;
+			int width = 0, prec = 0, skip = 2;
 
 			if (ch == '\\') {
 				int c_ch;
@@ -183,13 +172,13 @@ pc:
 			/* Ok - we've found a format specification,
 			   Save its address for a later printf(). */
 			start = fmt - 1;
-			param = array;
 
 			/* skip to field width */
 			fmt += strspn(fmt, SKIP1);
 			if (*fmt == '*') {
 				++fmt;
-				*param++ = getuintmax(1);
+				width = prec = getuintmax(1);
+				skip--;
 			} else {
 				/* skip to possible '.',
 				 * get following precision
@@ -201,7 +190,8 @@ pc:
 				++fmt;
 				if (*fmt == '*') {
 					++fmt;
-					*param++ = getuintmax(1);
+					prec = getuintmax(1);
+					skip--;
 				} else
 					fmt += strspn(fmt, SKIP2);
 			}
@@ -217,25 +207,25 @@ pc:
 
 			case 'b':
 				/* escape if a \c was encountered */
-				if (!print_escape_str(start, param, array,
+				if (!print_escape_str(skip, start, width, prec,
 						      getstr()))
 					goto out;
 				break;
 			case 'c': {
 				int p = getchr();
-				PF(start, p);
+				printfield(NULL, skip, start, width, prec, p);
 				break;
 			}
 			case 's': {
 				const char *p = getstr();
-				PF(start, p);
+				printfield(NULL, skip, start, width, prec, p);
 				break;
 			}
 			case 'd':
 			case 'i': {
 				uintmax_t p = getuintmax(1);
 				start = mklong(start, fmt);
-				PF(start, p);
+				printfield(NULL, skip, start, width, prec, p);
 				break;
 			}
 			case 'o':
@@ -244,7 +234,7 @@ pc:
 			case 'X': {
 				uintmax_t p = getuintmax(0);
 				start = mklong(start, fmt);
-				PF(start, p);
+				printfield(NULL, skip, start, width, prec, p);
 				break;
 			}
 			case 'a':
@@ -256,7 +246,7 @@ pc:
 			case 'g':
 			case 'G': {
 				double p = getdouble();
-				PF(start, p);
+				printfield(NULL, skip, start, width, prec, p);
 				break;
 			}
 			default:
@@ -477,7 +467,7 @@ echocmd(int argc, char **argv)
 		if (!s || !*++argv)
 			fmt[2] = lastfmt;
 
-		next = print_escape_str(fmt, NULL, NULL, s ? s : nullstr);
+		next = print_escape_str(2, fmt, 0, 0, s ? s : nullstr);
 	} while (next && *argv);
 	return 0;
 }
