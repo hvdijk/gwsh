@@ -170,7 +170,7 @@ main(int argc, char **argv)
 state1:
 		SET_STATE(2);
 		if (!pflag) {
-			read_profile("$HOME/.profile");
+			read_profile("${HOME-}/.profile");
 		}
 	}
 state2:
