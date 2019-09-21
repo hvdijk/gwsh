@@ -115,6 +115,8 @@ cdcmd(int argc, char **argv)
 	}
 	if (!dest)
 		dest = nullstr;
+	if (!*dest)
+		goto err;
 	if (*dest == '/')
 		goto step6;
 	if (*dest == '.') {
@@ -130,8 +132,6 @@ dotdot:
 				goto dotdot;
 		}
 	}
-	if (!*dest)
-		dest = ".";
 	path = bltinlookup("CDPATH");
 	while (p = path, (len = padvance(&path, dest)) >= 0) {
 		c = *p;
