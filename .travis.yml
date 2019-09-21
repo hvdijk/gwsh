@@ -1,0 +1,36 @@
+branches:
+  only:
+  - master
+language: c
+os:
+- linux
+- osx
+dist:
+- bionic
+osx_image:
+- xcode11
+compiler:
+- clang
+- gcc
+env:
+- configure=--disable-locale
+- configure=--enable-locale
+install:
+- case $TRAVIS_OS_NAME:$TRAVIS_DIST:$TRAVIS_COMPILER in
+  linux:bionic:clang)
+    curl -d "token=$COVERITY_TOKEN&project=$COVERITY_PROJECT" -X POST https://scan.coverity.com/download/linux64 -o cov-analysis-linux64.tgz;
+    mkdir /opt/cov-analysis-linux64;
+    tar -C /opt/cov-analysis-linux64 --strip-components=1 -xf cov-analysis-linux64.tgz;;
+  esac
+before_script:
+- ./autogen.sh
+script:
+- ./configure $configure
+- case $TRAVIS_OS_NAME:$TRAVIS_DIST:$TRAVIS_COMPILER:$configure in
+  linux:bionic:clang:--enable-locale)
+    /opt/cov-analysis-linux64/bin/cov-build --dir cov-int make;
+    tar -czf cov-int.tgz cov-int;
+    curl --form token="$COVERITY_TOKEN" --form email="$COVERITY_EMAIL" --form file=@cov-int.tgz --form version="$TRAVIS_COMMIT" --form description="$TRAVIS_BRANCH" "https://scan.coverity.com/builds?project=$COVERITY_PROJECT";;
+  *)
+    make;;
+  esac
