@@ -151,8 +151,7 @@ procargs(int argc, char **argv)
 	if (mflag == 2)
 		mflag = iflag;
 	for (i = 0; i < NOPTS; i++)
-		if (optlist[i] == 2)
-			optlist[i] = 0;
+		optlist[i] &= 1;
 #if DEBUG == 2
 	debug = 1;
 #endif
