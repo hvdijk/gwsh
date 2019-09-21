@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -58,6 +58,7 @@
 #include "myhistedit.h"
 #endif
 #include "show.h"
+#include "priv.h"
 
 char *arg0;			/* value of $0 */
 struct shparam shellparam;	/* current positional parameters */
@@ -83,6 +84,7 @@ static const char *const optnames[NOPTS] = {
 	"allexport",
 	"notify",
 	"nounset",
+	"privileged",
 	"nolog",
 	"debug",
 	"pipefail",
@@ -104,6 +106,7 @@ const char optletters[NOPTS] = {
 	'a',
 	'b',
 	'u',
+	'p',
 	0,
 	0,
 	0,
@@ -136,7 +139,7 @@ procargs(int argc, char **argv)
 	if (argc > 0)
 		xargv++;
 	for (i = 0; i < NOPTS; i++)
-		optlist[i] = 2;
+		optlist[i] |= 2;
 	argptr = xargv;
 	login |= options(1);
 	xargv = argptr;
@@ -191,6 +194,7 @@ optschanged(void)
 	histedit();
 #endif
 	setjobctl(mflag);
+	setprivileged(pflag);
 }
 
 /*

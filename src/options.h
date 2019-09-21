@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -59,16 +59,17 @@ struct shparam {
 #define xflag optlist[7]
 #define vflag optlist[8]
 #define Vflag optlist[9]
-#define	Eflag optlist[10]
-#define	Cflag optlist[11]
-#define	aflag optlist[12]
-#define	bflag optlist[13]
-#define	uflag optlist[14]
-#define	nolog optlist[15]
-#define	debug optlist[16]
-#define	optpipefail optlist[17]
+#define Eflag optlist[10]
+#define Cflag optlist[11]
+#define aflag optlist[12]
+#define bflag optlist[13]
+#define uflag optlist[14]
+#define pflag optlist[15]
+#define nolog optlist[16]
+#define debug optlist[17]
+#define optpipefail optlist[18]
 
-#define NOPTS	18
+#define NOPTS	19
 
 extern const char optletters[NOPTS];
 extern char optlist[NOPTS];

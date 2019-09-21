@@ -85,6 +85,7 @@ MKINIT struct localvar_list *localvar_stack;
 
 const char defpathvar[] =
 	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
+char defps1var[] = "PS1=$ ";
 char defifsvar[] = "IFS= \t\n";
 MKINIT char defoptindvar[] = "OPTIND=1";
 
@@ -100,7 +101,7 @@ struct var varinit[] = {
 	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAIL\0",	changemail },
 	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAILPATH\0",	changemail },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defpathvar,	changepath },
-	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS1=$ ",	0 },
+	{ 0,	VSTRFIXED|VTEXTFIXED,		defps1var,	0 },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS2=> ",	0 },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS4=+ ",	0 },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defoptindvar,	getoptsreset },
@@ -194,11 +195,6 @@ initvar(void)
 		vp->next = *vpp;
 		*vpp = vp;
 	} while (++vp < end);
-	/*
-	 * PS1 depends on uid
-	 */
-	if (!geteuid())
-		vps1.text = "PS1=# ";
 }
 
 /*

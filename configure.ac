@@ -36,6 +36,12 @@ if test "$enable_static" = "yes"; then
 fi
 
 AC_ARG_ENABLE([glob], [AS_HELP_STRING([--enable-glob], [Use glob(3) from libc])])
+AC_ARG_ENABLE([default-privileged],
+              [AS_HELP_STRING([--enable-default-privileged], [Keep extra privileges when started with effective UID/GID unequal to real UID/GID.])])
+if test "$enable_default_privileged" != "no"; then
+	AC_DEFINE_UNQUOTED([ENABLE_DEFAULT_PRIVILEGED], [1],
+	                   [Define to 1 to keep extra privileges when started with effective UID/GID unequal to real UID/GID.])
+fi
 
 dnl Checks for libraries.
 

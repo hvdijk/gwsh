@@ -169,16 +169,13 @@ main(int argc, char **argv)
 		read_profile("/etc/profile");
 state1:
 		SET_STATE(2);
-		read_profile("$HOME/.profile");
+		if (!pflag) {
+			read_profile("$HOME/.profile");
+		}
 	}
 state2:
 	SET_STATE(3);
-	if (
-#ifndef linux
-		getuid() == geteuid() && getgid() == getegid() &&
-#endif
-		iflag
-	) {
+	if (!pflag && iflag) {
 		if ((shinit = lookupvar("ENV")) != NULL && *shinit != '\0') {
 			read_profile(shinit);
 		}
