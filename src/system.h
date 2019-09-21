@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2004
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -96,17 +98,11 @@ static inline int killpg(pid_t pid, int signal)
 
 #ifndef HAVE_SYSCONF
 #define _SC_CLK_TCK 2
-long sysconf(int) __attribute__((__noreturn__));
+long sysconf(int) attribute((noreturn));
 #endif
 
 #if !HAVE_DECL_ISBLANK
 int isblank(int c);
 #endif
-
-/*
- * A trick to suppress uninitialized variable warning without generating any
- * code
- */
-#define uninitialized_var(x) x = x
 
 #endif

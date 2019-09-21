@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,13 +38,24 @@ const char *const signal_names[] = {
 	 * If they turn out to be an alias, the later initialiser for the
 	 * preferred signal name will override it. */
 #ifdef SIGCLD
+#if SIGCLD != SIGCHLD
 	[SIGCLD]    = "CLD",
 #endif
+#endif
 #ifdef SIGINFO
+#if SIGINFO != SIGPWR
 	[SIGINFO]   = "INFO",
 #endif
+#endif
+#ifdef SIGIO
+#if SIGIO != SIGPOLL
+	[SIGIO]     = "IO",
+#endif
+#endif
 #ifdef SIGIOT
+#if SIGIOT != SIGABRT
 	[SIGIOT]    = "IOT",
+#endif
 #endif
 
 #ifdef SIGABRT
@@ -76,9 +87,6 @@ const char *const signal_names[] = {
 #endif
 #ifdef SIGINT
 	[SIGINT]    = "INT",
-#endif
-#ifdef SIGIO
-	[SIGIO]     = "IO",
 #endif
 #ifdef SIGKILL
 	[SIGKILL]   = "KILL",

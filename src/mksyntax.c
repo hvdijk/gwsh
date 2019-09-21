@@ -206,7 +206,7 @@ print(char *name)
  */
 
 static char *macro[] = {
-	"#define ctype(c)\t((unsigned char) (is_type+SYNBASE)[(signed char)(c)])\n",
+	"#define ctype(c)\t((unsigned char) *(is_type+SYNBASE+(signed char)(c)))\n",
 	"#define is_odigit(c)\t((unsigned) ((c) - '0') <= 7)\n",
 	"#define is_digit(c)\t((unsigned) ((c) - '0') <= 9)\n",
 	"#define is_xdigit(c)\t(ctype((c)) & ISXDIGIT)\n",

@@ -39,6 +39,8 @@
 #ifndef H_PARSER
 #define H_PARSER 1
 
+#include "config.h"
+
 #include "token.h"
 
 /* control characters in argument strings */
@@ -103,7 +105,7 @@ const char *const *findkwd(const char *);
 char *endofname(const char *);
 const char *expandstr(const char *, int);
 void nlprompt(void);
-void synexpect(int) __attribute__((__noreturn__));
+void synexpect(int) attribute((noreturn));
 
 static inline int
 goodname(const char *p)

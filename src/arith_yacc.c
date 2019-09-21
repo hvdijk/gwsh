@@ -80,7 +80,7 @@ static const char prec[ARITH_BINOP_MAX - ARITH_BINOP_MIN] = {
 
 #define ARITH_MAX_PREC 8
 
-static void yyerror(const char *s) __attribute__ ((noreturn));
+static void yyerror(const char *s) attribute ((noreturn));
 static void yyerror(const char *s)
 {
 	sh_error("arithmetic expression: %s: \"%s\"", s, arith_startbuf);

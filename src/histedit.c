@@ -42,7 +42,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <getopt.h>
 /*
  * Editline and history functions (and glue).
  */
@@ -278,6 +277,7 @@ histcmd(int argc, char **argv)
 		 * Catch interrupts to reset active counter and
 		 * cleanup temp files.
 		 */
+		savehandler = handler;
 		if (setjmp(jmploc.loc)) {
 			active = 0;
 			if (*editfile)
@@ -285,7 +285,6 @@ histcmd(int argc, char **argv)
 			handler = savehandler;
 			longjmp(handler->loc, 1);
 		}
-		savehandler = handler;
 		handler = &jmploc;
 		if (++active > MAXHISTLOOPS) {
 			active = 0;
@@ -310,7 +309,7 @@ histcmd(int argc, char **argv)
 	/*
 	 * If executing, parse [old=new] now
 	 */
-	if (lflg == 0 && sflg && argc > 0 &&
+	if (lflg == 0 && sflg && argv[0] &&
 	     ((repl = strchr(argv[0], '=')) != NULL)) {
 		pat = argv[0];
 		*repl++ = '\0';
@@ -509,6 +508,8 @@ str_to_event(const char *str, int last)
 		if (retval == -1)
 			sh_error("history number %s not found (internal error)",
 				 str);
+#else
+		(void) retval;
 #endif
 	} else {
 		/*

@@ -53,7 +53,7 @@ struct alias *atab[ATABSIZE];
 struct alias *aliasdone;
 
 STATIC void setalias(const char *, const char *);
-STATIC struct alias *freealias(struct alias *);
+STATIC void freealias(struct alias ***);
 STATIC struct alias **__lookupalias(const char *);
 
 STATIC
@@ -92,7 +92,7 @@ unalias(const char *name)
 
 	if (*app) {
 		INTOFF;
-		*app = freealias(*app);
+		freealias(&app);
 		INTON;
 		return (0);
 	}
@@ -103,18 +103,14 @@ unalias(const char *name)
 void
 rmaliases(void)
 {
-	struct alias *ap, **app;
+	struct alias **app;
 	int i;
 
 	INTOFF;
 	for (i = 0; i < ATABSIZE; i++) {
 		app = &atab[i];
-		while ((ap = *app)) {
-			*app = freealias(*app);
-			if (ap == *app) {
-				app = &ap->next;
-			}
-		}
+		while (*app)
+			freealias(&app);
 	}
 	INTON;
 }
@@ -188,20 +184,19 @@ unaliascmd(int argc, char **argv)
 	return (i);
 }
 
-STATIC struct alias *
-freealias(struct alias *ap) {
-	struct alias *next;
+STATIC void
+freealias(struct alias ***appp) {
+	struct alias **app = *appp, *ap = *app;
 
 	if (ap->flag & ALIASINUSE) {
 		ap->flag |= ALIASDEAD;
-		return ap;
+		*appp = &ap->next;
+	} else {
+		*app = ap->next;
+		ckfree(ap->name);
+		ckfree(ap->val);
+		ckfree(ap);
 	}
-
-	next = ap->next;
-	ckfree(ap->name);
-	ckfree(ap->val);
-	ckfree(ap);
-	return next;
 }
 
 void

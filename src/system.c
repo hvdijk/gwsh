@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2004
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -66,7 +68,7 @@
 #ifndef HAVE_MEMPCPY
 void *mempcpy(void *dest, const void *src, size_t n)
 {
-	return memcpy(dest, src, n) + n;
+	return (char *) memcpy(dest, src, n) + n;
 }
 #endif
 

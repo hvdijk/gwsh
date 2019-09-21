@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -102,7 +102,6 @@ union node;
 void setjobctl(int);
 int killcmd(int, char **);
 int fgcmd(int, char **);
-int bgcmd(int, char **);
 int jobscmd(int, char **);
 struct output;
 void showjobs(struct output *, int);

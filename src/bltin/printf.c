@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,7 @@ static char  **gargv;
 	} \
 }
 
-#define ASPF(sp, f, func) ({ \
+#define ASPF(total, sp, f, func) do { \
 	int ret; \
 	switch ((char *)param - (char *)array) { \
 	default: \
@@ -89,8 +89,8 @@ static char  **gargv;
 		ret = xasprintf(sp, f, func); \
 		break; \
 	} \
-	ret; \
-})
+	total = ret; \
+} while (0)
 
 
 static int print_escape_str(const char *f, int *param, int *array, const char *s)
@@ -118,7 +118,7 @@ static int print_escape_str(const char *f, int *param, int *array, const char *s
 	p[total] = 0;
 
 	q = stackblock();
-	total = ASPF(&p, f, p);
+	ASPF(total, &p, f, p);
 
 	len = strchrnul(p, 'X') - p;
 	memcpy(p + len, q, strspn(p + len, "X"));
@@ -477,7 +477,7 @@ echocmd(int argc, char **argv)
 		if (!s || !*++argv)
 			fmt[2] = lastfmt;
 
-		next = print_escape_str(fmt, NULL, NULL, s ?: nullstr);
+		next = print_escape_str(fmt, NULL, NULL, s ? s : nullstr);
 	} while (next && *argv);
 	return 0;
 }

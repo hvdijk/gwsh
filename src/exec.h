@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -37,6 +39,8 @@
 #ifndef H_EXEC
 #define H_EXEC 1
 
+#include "config.h"
+
 /* values of cmdtype */
 #define CMDUNKNOWN	-1	/* no entry in table for command */
 #define CMDNORMAL	0	/* command is an executable program */
@@ -66,7 +70,7 @@ extern const char *pathopt;	/* set by padvance */
 union node;
 
 void shellexec(char **, const char *, int)
-    __attribute__((__noreturn__));
+    attribute((noreturn));
 int padvance(const char **, const char *);
 int hashcmd(int, char **);
 void find_command(char *, struct cmdentry *, int, const char *);

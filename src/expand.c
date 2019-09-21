@@ -246,7 +246,8 @@ argstr(char *p, int flag)
 		0
 	};
 	const char *reject = spclchars + 2;
-	int prev, c = 0;
+	char prev;
+	int c = 0;
 	int breakall = (flag & (EXP_WORD | EXP_QUOTED)) == EXP_WORD;
 	size_t length;
 	int startloc;
@@ -544,7 +545,7 @@ subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varfla
 	argstr(p, EXP_TILDE | (subtype != VSASSIGN && subtype != VSQUESTION ?
 			       EXP_CASE : 0));
 	argbackq = saveargbackq;
-	startp = stackblock() + startloc;
+	startp = (char *) stackblock() + startloc;
 
 	switch (subtype) {
 	case VSASSIGN:
@@ -563,7 +564,7 @@ subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varfla
 		abort();
 #endif
 
-	str = stackblock() + strloc;
+	str = (char *) stackblock() + strloc;
 	preglob(str, 0);
 
 	loc = (char *)pmatch(str, startp, (quotes ? PM_CTLESC : 0) | (subtype & (PM_MATCHLEFT | PM_MATCHRIGHT | PM_MATCHMAX)));
@@ -912,8 +913,6 @@ ifsbreakup(char *string, int maxargs, struct arglist *arglist)
 
 	start = string;
 	if (ifslastp != NULL) {
-		ifsspc = 0;
-		nulonly = 0;
 		realifs = ifsset() ? ifsval() : defifs;
 #ifdef WITH_LOCALE
 		realifslen = strlen(realifs);

@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -233,7 +233,7 @@ updatepwd(const char *dir)
 		new = stputs(curdir, new);
 	}
 	new = makestrspace(strlen(dir) + 2, new);
-	lim = stackblock() + 1;
+	lim = (char *) stackblock() + 1;
 	if (*dir != '/') {
 		if (new[-1] != '/')
 			USTPUTC('/', new);

@@ -39,6 +39,8 @@
 #ifndef H_ERROR
 #define H_ERROR 1
 
+#include "config.h"
+
 #include <setjmp.h>
 #include <signal.h>
 
@@ -85,50 +87,48 @@ extern int exception;
 extern int suppressint;
 extern volatile sig_atomic_t intpending;
 
-#define barrier() ({ __asm__ __volatile__ ("": : :"memory"); })
+static inline void barrier() {
+	__asm__ volatile ("": : :"memory");
+}
 #define INTOFF \
-	({ \
-		suppressint++; \
-		barrier(); \
-		0; \
-	})
+	( \
+		suppressint++, \
+		barrier() \
+	)
 #ifdef REALLY_SMALL
 void __inton(void);
 #define INTON __inton()
 #else
 #define INTON \
-	({ \
-		barrier(); \
-		if (--suppressint == 0 && intpending) onint(); \
-		0; \
-	})
+	( \
+		barrier(), \
+		--suppressint == 0 && intpending ? onint() : (void)0 \
+	)
 #endif
 #define FORCEINTON \
-	({ \
-		barrier(); \
-		suppressint = 0; \
-		if (intpending) onint(); \
-		0; \
-	})
+	( \
+		barrier(), \
+		suppressint = 0, \
+		intpending ? onint() : (void)0 \
+	)
 #define SAVEINT(v) ((v) = suppressint)
 #define RESTOREINT(v) \
-	({ \
-		barrier(); \
-		if ((suppressint = (v)) == 0 && intpending) onint(); \
-		0; \
-	})
+	( \
+		barrier(), \
+		((suppressint = (v)) == 0 && intpending) ? onint() : (void)0 \
+	)
 #define CLEAR_PENDING_INT intpending = 0
 #define int_pending() intpending
 
-void exraise(int) __attribute__((__noreturn__));
+void exraise(int) attribute((noreturn));
 #ifdef USE_NORETURN
-void onint(void) __attribute__((__noreturn__));
+void onint(void) attribute((noreturn));
 #else
 void onint(void);
 #endif
 extern int errlinno;
-void sh_error(const char *, ...) __attribute__((__noreturn__));
-void exerror(int, const char *, ...) __attribute__((__noreturn__));
+void sh_error(const char *, ...) attribute((noreturn));
+void exerror(int, const char *, ...) attribute((noreturn));
 const char *errmsg(int, int);
 
 void sh_warnx(const char *, ...);

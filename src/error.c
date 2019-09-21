@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -68,7 +70,7 @@ int errlinno;
 
 
 static void exverror(int, const char *, va_list)
-    __attribute__((__noreturn__));
+    attribute((noreturn));
 
 /*
  * Called to raise an exception.  Since C doesn't include exceptions, we

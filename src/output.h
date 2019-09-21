@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -36,6 +38,8 @@
 
 #ifndef H_OUTPUT
 #define H_OUTPUT 1
+
+#include "config.h"
 
 #include <stdarg.h>
 #ifdef USE_GLIBC_STDIO
@@ -72,11 +76,11 @@ void outcslow(int, struct output *);
 void flushall(void);
 void flushout(struct output *);
 void outfmt(struct output *, const char *, ...)
-    __attribute__((__format__(__printf__,2,3)));
+    attribute((format(printf,2,3)));
 void out1fmt(const char *, ...)
-    __attribute__((__format__(__printf__,1,2)));
+    attribute((format(printf,1,2)));
 int fmtstr(char *, size_t, const char *, ...)
-    __attribute__((__format__(__printf__,3,4)));
+    attribute((format(printf,3,4)));
 int xasprintf(char **, const char *, ...);
 #ifndef USE_GLIBC_STDIO
 void doformat(struct output *, const char *, va_list);

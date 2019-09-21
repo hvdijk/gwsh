@@ -42,7 +42,6 @@
 #ifdef notyet
 #define REDIR_BACKQ 02		/* save the command output in memory */
 #endif
-#define REDIR_SAVEFD2 03	/* set preverrout */
 
 struct redirtab;
 union node;

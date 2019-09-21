@@ -43,7 +43,7 @@ token.h token_vars.h: mktokens
 	$(AM_V_GEN)$(SHELL) $(srcdir)/mktokens
 
 builtins.def: builtins.def.in $(top_builddir)/config.h
-	$(AM_V_CC)$(CPP) $(DEFAULT_INCLUDES) - < $(srcdir)/builtins.def.in > $@.tmp && mv $@.tmp $@
+	$(AM_V_GEN)echo '#include "builtins.def.in"' > $@.c && $(CPP) $(DEFAULT_INCLUDES) $@.c > $@.tmp && rm $@.c && mv $@.tmp $@
 
 builtins.c builtins.h: mkbuiltins builtins.def
 	$(AM_V_GEN)$(SHELL) $(srcdir)/mkbuiltins builtins.def

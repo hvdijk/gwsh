@@ -82,11 +82,7 @@ int exitstatus;			/* exit status of last command */
 int back_exitstatus;		/* exit status of backquoted command */
 int savestatus = -1;		/* exit status of last command outside traps */
 
-
-#if !defined(__alpha__) || (defined(__GNUC__) && __GNUC__ >= 3)
-STATIC
-#endif
-void evaltreenr(union node *, int) __attribute__ ((__noreturn__));
+STATIC void evaltreenr(union node *, int) attribute((noreturn));
 STATIC int evalloop(union node *, int);
 STATIC int evalfor(union node *, int);
 STATIC int evalcase(union node *, int);
@@ -248,9 +244,10 @@ evaltree(union node *n, int flags)
 		errlinno = lineno = n->nredir.linno;
 		expredir(n->nredir.redirect);
 		pushredir(n->nredir.redirect);
-		status = redirectsafe(n->nredir.redirect, REDIR_PUSH) ?:
-			 evaltree(n->nredir.n,
-				  (flags & ~EV_EXIT) | EV_TESTED);
+		status = redirectsafe(n->nredir.redirect, REDIR_PUSH);
+		if (!status)
+			status = evaltree(
+			    n->nredir.n, (flags & ~EV_EXIT) | EV_TESTED);
 		if (n->nredir.redirect)
 			popredir(0);
 		goto setstatus;
@@ -340,20 +337,12 @@ exexit:
 	return exitstatus;
 }
 
-
-#if !defined(__alpha__) || (defined(__GNUC__) && __GNUC__ >= 3)
-STATIC
-#endif
-void evaltreenr(union node *n, int flags)
-#ifdef HAVE_ATTRIBUTE_ALIAS
-	__attribute__ ((alias("evaltree")));
-#else
+STATIC void
+evaltreenr(union node *n, int flags)
 {
 	evaltree(n, flags);
 	abort();
 }
-#endif
-
 
 static int skiploop(void)
 {
@@ -584,7 +573,7 @@ evalpipe(union node *n, int flags)
 	prevfd = -1;
 	for (lp = n->npipe.cmdlist ; lp ; lp = lp->next) {
 		prehash(lp->n);
-		pip[1] = -1;
+		pip[0] = pip[1] = -1;
 		if (lp->next) {
 			if (pipe(pip) < 0) {
 				close(prevfd);
@@ -610,7 +599,8 @@ evalpipe(union node *n, int flags)
 		if (prevfd >= 0)
 			close(prevfd);
 		prevfd = pip[0];
-		close(pip[1]);
+		if (pip[1] >= 0)
+			close(pip[1]);
 	}
 	if (n->npipe.backgnd == 0) {
 		status = waitforjob(jp);
@@ -786,7 +776,7 @@ evalcommand(union node *cmd, int flags)
 	preverrout.fd = 2;
 	expredir(cmd->ncmd.redirect);
 	redir_stop = pushredir(cmd->ncmd.redirect);
-	status = redirectsafe(cmd->ncmd.redirect, REDIR_PUSH|REDIR_SAVEFD2);
+	status = redirectsafe(cmd->ncmd.redirect, REDIR_PUSH);
 
 	path = vpath.text;
 	for (argp = cmd->ncmd.assign; argp; argp = argp->narg.next) {

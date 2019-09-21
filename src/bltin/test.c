@@ -351,7 +351,7 @@ binop(void)
 	struct t_op const *op;
 
 	opnd1 = *t_wp;
-	(void) t_lex(++t_wp);
+	++t_wp;
 	op = t_wp_op;
 
 	if ((opnd2 = *++t_wp) == (char *)0)

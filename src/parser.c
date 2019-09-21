@@ -138,7 +138,7 @@ STATIC int readtoken(void);
 STATIC int xxreadtoken(void);
 STATIC int pgetc_eatbnl(void);
 STATIC int readtoken1(int, char *, int);
-STATIC void synerror(const char *) __attribute__((__noreturn__));
+STATIC void synerror(const char *) attribute((noreturn));
 STATIC void setprompt(int);
 
 
@@ -951,6 +951,7 @@ readtoken1_loop(char *out, int c, char *eofmark, int flags)
 		case PMBB:
 			if (!flags)
 				goto endword;
+			/* fall through */
 		case PMBW:
 #if RT_MBCHAR >> 1 != RT_ESCAPE
 #error RT_MBCHAR >> 1 != RT_ESCAPE
@@ -964,10 +965,12 @@ readtoken1_loop(char *out, int c, char *eofmark, int flags)
 				goto endword;	/* exit outer loop */
 			nlprompt();
 			flags |= RT_CHECKEND;
+			/* fall through */
 word:
 		default:
 			if (!(flags & (RT_ESCAPE | RT_CTOGGLE1 | RT_CTOGGLE2 | RT_MBCHAR)))
 				goto output;
+			/* fall through */
 control:
 		case '!': case '*': case '?': case '[': case '=':
 		case '~': case ':': case '/': case '-': case ']':
@@ -1495,7 +1498,6 @@ readtoken1_parsebackq(char *out, int flags, int oldstyle)
 	union node *n;
 	char *str;
 	size_t savelen;
-	int uninitialized_var(saveprompt);
 
 	str = NULL;
 	savelen = out - (char *)stackblock();

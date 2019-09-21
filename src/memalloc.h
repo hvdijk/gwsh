@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -73,7 +75,8 @@ static inline void grabstackblock(size_t len)
 	stalloc(len);
 }
 
-static inline char *_STPUTC(int c, char *p) {
+static inline char *_STPUTC(int c, char *p)
+{
 	if (p == sstrend)
 		p = growstackstr();
 	*p++ = c;
@@ -84,15 +87,13 @@ static inline char *_STPUTC(int c, char *p) {
 #define stackblocksize() stacknleft
 #define STARTSTACKSTR(p) ((p) = stackblock())
 #define STPUTC(c, p) ((p) = _STPUTC((c), (p)))
-#define CHECKSTRSPACE(n, p) \
-	({ \
-		char *q = (p); \
-		size_t l = (n); \
-		size_t m = sstrend - q; \
-		if (l > m) \
-			(p) = makestrspace(l, q); \
-		0; \
-	})
+static inline attribute((always_inline)) char *_CHECKSTRSPACE(size_t n, char *p)
+{
+	if (n > sstrend - p)
+		p = makestrspace(n, p);
+	return p;
+}
+#define CHECKSTRSPACE(n, p) ((p) = _CHECKSTRSPACE((n), (p)))
 #define USTPUTC(c, p)	(*p++ = (c))
 #define STACKSTRNUL(p)	((p) == sstrend? (p = growstackstr(), *p = '\0') : (*p = '\0'))
 #define STUNPUTC(p)	(--p)

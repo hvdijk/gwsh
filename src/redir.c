@@ -145,7 +145,7 @@ redirect(union node *redir, int flags)
 	if (memory[2])
 		out2 = &memout;
 #endif
-	if (flags & REDIR_SAVEFD2 && sv->renamed[2] >= 0)
+	if (sv && sv->renamed[2] >= 0)
 		preverrout.fd = sv->renamed[2];
 }
 

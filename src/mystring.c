@@ -287,7 +287,7 @@ dq:
 		 * escaped yet. Restart from the beginning. */
 		if (bs) {
 			q = s;
-			r = stackblock() + 2;
+			r = (char *) stackblock() + 2;
 		}
 	}
 
@@ -299,7 +299,7 @@ dq:
 	uselocale(LC_GLOBAL_LOCALE);
 #endif
 
-	return stackblock() + 2 - style;
+	return (char *) stackblock() + 2 - style;
 }
 
 /*

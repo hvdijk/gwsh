@@ -385,15 +385,6 @@ fgcmd(int argc, char **argv)
 	return retval;
 }
 
-int bgcmd(int argc, char **argv)
-#ifdef HAVE_ALIAS_ATTRIBUTE
-	__attribute__((__alias__("fgcmd")));
-#else
-{
-	return fgcmd(argc, argv);
-}
-#endif
-
 
 STATIC int
 restartjob(struct job *jp, int mode)
@@ -447,7 +438,7 @@ sprint_status(char *s, int status, int sigonly)
 				goto out;
 #endif
 		}
-		col = fmtstr(s, 32, strsignal(st));
+		col = fmtstr(s, 32, "%s", strsignal(st));
 #ifdef WCOREDUMP
 		if (WCOREDUMP(status)) {
 			col += fmtstr(s + col, 16, " (core dumped)");

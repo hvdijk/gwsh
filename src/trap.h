@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -39,6 +39,8 @@
 #ifndef H_TRAP
 #define H_TRAP 1
 
+#include "config.h"
+
 #include <signal.h>
 
 extern int trapcnt;
@@ -53,7 +55,7 @@ void ignoresig(int);
 void onsig(int);
 void dotrap(void);
 void setinteractive(int);
-void exitshell(void) __attribute__((__noreturn__));
+void exitshell(void) attribute((noreturn));
 int decode_signal(const char *, int);
 
 static inline int have_traps(void)

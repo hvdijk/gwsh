@@ -54,8 +54,7 @@
 #endif
 
 #if JOBS
-bgcmd		-u bg
-fgcmd		-u fg
+fgcmd		-u fg -u bg
 #endif
 
 #ifndef SMALL

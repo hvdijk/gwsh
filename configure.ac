@@ -15,16 +15,11 @@ AX_CFLAGS_WARN_ALL
 AC_SYS_LARGEFILE
 AC_PROG_YACC
 
-AC_MSG_CHECKING([for __attribute__((__alias__()))])
-gwsh_cv_have_attribute_alias=no
-AC_LINK_IFELSE([AC_LANG_PROGRAM([void t() {}
-                                 void a() __attribute__((__alias__("t")));],
-                                [a();])],
-               [gwsh_cv_have_attribute_alias=yes])
-AC_MSG_RESULT([$gwsh_cv_have_attribute_alias])
-if test "x$gwsh_cv_have_attribute_alias" = xyes; then
-	AC_DEFINE([HAVE_ALIAS_ATTRIBUTE], 1,
-	          [Define if __attribute__((__alias__())) is supported])
+AX_C___ATTRIBUTE__
+if test "$ax_cv___attribute__" = "yes"; then
+	AC_DEFINE([attribute(x)], [__attribute__(x)], [Define to __attribute__(x) if the compiler supports GNU attribute syntax.])
+else
+	AC_DEFINE([attribute(x)], [])
 fi
 
 AC_ARG_ENABLE([static], [AS_HELP_STRING([--enable-static], \

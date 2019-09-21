@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2019
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -36,6 +38,8 @@
 
 #ifndef H_EXPAND
 #define H_EXPAND 1
+
+#include "config.h"
 
 #include <inttypes.h>
 
@@ -75,7 +79,7 @@ void removerecordregions(int);
 void ifsbreakup(char *, int, struct arglist *);
 void ifsfree(void);
 void varunset(const char *, const char *, const char *, int)
-	__attribute__((__noreturn__));
+	attribute((noreturn));
 
 /* From arith.y */
 intmax_t arith(const char *);
