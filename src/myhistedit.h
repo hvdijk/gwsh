@@ -44,8 +44,10 @@ extern int displayhist;
 extern int histop;
 
 void histedit(void);
+void read_histfile(void);
 void sethistsize(const char *);
 void setterm(const char *);
+void write_histfile(void);
 int histcmd(int, char **);
 int not_fcnumber(char *);
 int str_to_event(const char *, int);

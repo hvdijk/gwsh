@@ -168,6 +168,35 @@ bad:
 	}
 }
 
+static int
+readwrite_histfile(int cmd)
+{
+	const char *histfile;
+	HistEvent he;
+
+	if (pflag || !hist)
+		return 0;
+	histfile = lookupvar("HISTFILE");
+	if (!histfile)
+		histfile = expandstr("${HOME-}/.sh_history", 0);
+	else if (!*histfile)
+		return 0;
+	history(hist, &he, cmd, histfile);
+	return 1;
+}
+
+void
+read_histfile(void)
+{
+	if (readwrite_histfile(H_LOAD))
+		sethistsize(histsizeval());
+}
+
+void
+write_histfile(void)
+{
+	readwrite_histfile(H_SAVE);
+}
 
 void
 sethistsize(const char *hs)
@@ -178,7 +207,7 @@ sethistsize(const char *hs)
 	if (hist != NULL) {
 		if (hs == NULL || *hs == '\0' ||
 		   (histsize = atoi(hs)) < 0)
-			histsize = 100;
+			histsize = 128;
 		history(hist, &he, H_SETSIZE, histsize);
 	}
 }

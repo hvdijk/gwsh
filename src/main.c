@@ -61,6 +61,9 @@
 #include "error.h"
 #include "init.h"
 #include "mystring.h"
+#ifndef SMALL
+#include "myhistedit.h"
+#endif
 #include "exec.h"
 #include "cd.h"
 
@@ -183,6 +186,9 @@ state2:
 	popstackmark(&smark);
 state3:
 	SET_STATE(4);
+#ifndef SMALL
+	read_histfile();
+#endif
 	if (minusc)
 		evalstring(minusc, sflag ? 0 : EV_EXIT);
 
@@ -190,6 +196,9 @@ state4:
 	if (sflag || minusc == NULL) {
 		cmdloop(1);
 	}
+#ifndef SMALL
+	write_histfile();
+#endif
 #if PROFILE
 	monitor(0);
 #endif
