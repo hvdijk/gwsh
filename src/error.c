@@ -205,6 +205,11 @@ sh_warnx(const char *fmt, ...)
 	va_end(ap);
 }
 
+const char *
+errnomsg(void)
+{
+	return strerror(errno);
+}
 
 /*
  * Return a string describing an error.  The returned string may be a

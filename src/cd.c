@@ -295,7 +295,7 @@ getpwd()
 		return savestr(buf);
 #endif
 
-	sh_warnx("getcwd() failed: %s", strerror(errno));
+	sh_warnx("getcwd() failed: %s", errnomsg());
 	return nullstr;
 }
 

@@ -204,7 +204,7 @@ openredirect(union node *redir)
 	case NFROMFD:
 		f = redir->ndup.dupfd;
 		if (f >= 0 && fcntl(f, F_GETFD) < 0)
-			sh_error("%d: %s", f, strerror(errno));
+			sh_error("%d: %s", f, errnomsg());
 		break;
 	default:
 #ifdef DEBUG
@@ -238,7 +238,7 @@ dupredirect(redir, f)
 #endif
 	{
 	int fd = redir->nfile.fd;
-	int err = 0;
+	const char *errmsg = NULL;
 
 #ifdef notyet
 	memory[fd] = 0;
@@ -252,23 +252,23 @@ dupredirect(redir, f)
 			else
 #endif
 				if (dup2(f, fd) < 0) {
-					err = errno;
+					errmsg = errnomsg();
 					goto err;
 				}
 			return;
 		}
 		f = fd;
 	} else if (dup2(f, fd) < 0)
-		err = errno;
+		errmsg = errnomsg();
 
 	close(f);
-	if (err)
+	if (errmsg)
 		goto err;
 
 	return;
 
 err:
-	sh_error("%d: %s", fd, strerror(err));
+	sh_error("%d: %s", fd, errmsg);
 }
 
 

@@ -129,6 +129,7 @@ void onint(void);
 extern int errlinno;
 void sh_error(const char *, ...) attribute((noreturn));
 void exerror(int, const char *, ...) attribute((noreturn));
+const char *errnomsg(void);
 const char *errmsg(int, int);
 
 void sh_warnx(const char *, ...);

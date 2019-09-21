@@ -345,7 +345,7 @@ usage:
 				-number(*argv + 1) : number(*argv);
 		if (kill(pid, signo) != 0) {
 err:
-			sh_warnx("%s\n", strerror(errno));
+			sh_warnx("%s\n", errnomsg());
 			i = 1;
 		}
 	} while (*++argv);
@@ -1494,7 +1494,7 @@ STATIC void
 xtcsetpgrp(int fd, pid_t pgrp)
 {
 	if (tcsetpgrp(fd, pgrp))
-		sh_error("Cannot set tty process group (%s)", strerror(errno));
+		sh_error("Cannot set tty process group (%s)", errnomsg());
 }
 #endif
 
