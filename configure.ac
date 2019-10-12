@@ -35,7 +35,6 @@ if test "$enable_static" = "yes"; then
 	export LDFLAGS="-static -Wl,--fatal-warnings"
 fi
 
-AC_ARG_ENABLE([glob], [AS_HELP_STRING([--enable-glob], [Use glob(3) from libc])])
 AC_ARG_ENABLE([default-privileged],
               [AS_HELP_STRING([--enable-default-privileged], [Keep extra privileges when started with effective UID/GID unequal to real UID/GID.])])
 if test "$enable_default_privileged" != "no"; then
@@ -126,15 +125,6 @@ fi
 if test "$enable_test_workaround" = "yes"; then
 	AC_DEFINE([HAVE_TRADITIONAL_FACCESSAT], [1],
 	          [Define if your faccessat tells root all files are executable])
-fi
-
-if test "$enable_fnmatch" = yes; then
-	use_fnmatch=
-	AC_CHECK_FUNCS([fnmatch], [use_fnmatch=yes])
-fi
-
-if test "$use_fnmatch" = yes && test "$enable_glob" = yes; then
-	AC_CHECK_FUNCS([glob])
 fi
 
 dnl Check for klibc signal.

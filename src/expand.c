@@ -49,9 +49,6 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
-#ifdef HAVE_GLOB
-#include <glob.h>
-#endif
 #ifdef WITH_LOCALE
 #include <wchar.h>
 #include <wctype.h>
@@ -138,13 +135,9 @@ STATIC size_t strtodest(const char *, int);
 STATIC void memtodest(const char *, size_t, int);
 STATIC ssize_t varvalue(char *, int, int);
 STATIC void expandmeta(struct strlist *, int);
-#ifdef HAVE_GLOB
-STATIC void addglob(const glob_t *);
-#else
 STATIC void expmeta(char *);
 STATIC struct strlist *expsort(struct strlist *);
 STATIC struct strlist *msort(struct strlist *, int);
-#endif
 STATIC void addfname(char *);
 STATIC int patmatch(char *, const char *);
 STATIC const char *pmatch(const char *, const char *, int);
@@ -1074,68 +1067,6 @@ out:
  * should be escapes.  The results are stored in the list exparg.
  */
 
-#ifdef HAVE_GLOB
-STATIC void
-expandmeta(str, flag)
-	struct strlist *str;
-	int flag;
-{
-	/* TODO - EXP_REDIR */
-
-	while (str) {
-		const char *p;
-		glob_t pglob;
-		int i;
-
-		if (fflag)
-			goto nometa;
-		INTOFF;
-		p = preglob(str->text, RMESCAPE_ALLOC | RMESCAPE_META);
-		if (p == NULL)
-			goto nometa2;
-		i = glob(p, 0, 0, &pglob);
-		if (p != str->text)
-			ckfree(p);
-		switch (i) {
-		case 0:
-			addglob(&pglob);
-			globfree(&pglob);
-			INTON;
-			break;
-		case GLOB_NOMATCH:
-			globfree(&pglob);
-nometa2:
-			INTON;
-nometa:
-			*exparg.lastp = str;
-			rmescapes(str->text);
-			exparg.lastp = &str->next;
-			break;
-		default:	/* GLOB_NOSPACE */
-			sh_error("Out of space");
-		}
-		str = str->next;
-	}
-}
-
-
-/*
- * Add the result of glob(3) to the list.
- */
-
-STATIC void
-addglob(pglob)
-	const glob_t *pglob;
-{
-	char **p = pglob->gl_pathv;
-
-	do {
-		addfname(*p);
-	} while (*++p);
-}
-
-
-#else	/* HAVE_GLOB */
 STATIC void
 expandmeta(struct strlist *str, int flag)
 {
@@ -1311,7 +1242,6 @@ expmeta(char *name)
 	char expdir[PATH_MAX];
 	expmeta1(expdir, expdir, name);
 }
-#endif	/* HAVE_GLOB */
 
 
 /*
@@ -1330,7 +1260,6 @@ addfname(char *name)
 }
 
 
-#ifndef HAVE_GLOB
 /*
  * Sort the results of file name expansion.  It calculates the number of
  * strings to sort and then calls msort (short for merge sort) to do the
@@ -1394,7 +1323,6 @@ msort(struct strlist *list, int len)
 	}
 	return list;
 }
-#endif
 
 
 /*
