@@ -88,15 +88,6 @@
 #define PM_MATCHLEFT  0x04 /* Match a prefix, not the full string. Return the end of the prefix. */
 #define PM_CTLESC     0x08 /* Skip over CTLESC characters. */
 
-/*
- * _rmescape() flags
- */
-#define RMESCAPE_ALLOC	0x1	/* Allocate a new string */
-#define RMESCAPE_GLOB	0x2	/* Add backslashes for glob */
-#define RMESCAPE_NOMETA1 0x4
-#define RMESCAPE_NOMETA2 0x8
-#define RMESCAPE_NOMETA	0xc /* Return NULL if no metacharacters were found */
-
 /* Add CTLESC when necessary. */
 #define QUOTES_ESC	(EXP_FULL | EXP_CASE)
 /* Do not skip NUL characters. */
@@ -140,20 +131,19 @@ STATIC struct strlist *expsort(struct strlist *);
 STATIC struct strlist *msort(struct strlist *, int);
 STATIC void addfname(char *);
 STATIC int patmatch(char *, const char *);
-STATIC const char *pmatch(const char *, const char *, int);
+STATIC const char *pmatch(char *, const char *, int);
 STATIC int cvtnum(intmax_t, int);
 
 
 /*
- * Prepare a pattern for a glob(3) call.
+ * Prepare a pattern for a glob operation.
  *
  * Returns an stalloced string.
  */
 
 STATIC inline char *
-preglob(const char *pattern, int flag) {
-	flag |= RMESCAPE_GLOB;
-	return _rmescapes((char *)pattern, flag);
+preglob(char *pattern) {
+	return _rmescapes(pattern, 1);
 }
 
 
@@ -558,7 +548,7 @@ subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varfla
 #endif
 
 	str = (char *) stackblock() + strloc;
-	preglob(str, 0);
+	preglob(str);
 
 	loc = (char *)pmatch(str, startp, (quotes ? PM_CTLESC : 0) | (subtype & (PM_MATCHLEFT | PM_MATCHRIGHT | PM_MATCHMAX)));
 	if (loc) {
@@ -1075,19 +1065,14 @@ expandmeta(struct strlist *str, int flag)
 	while (str) {
 		struct strlist **savelastp;
 		struct strlist *sp;
-		char *p;
 
 		if (fflag)
 			goto nometa;
 		savelastp = exparg.lastp;
 
 		INTOFF;
-		p = preglob(str->text, RMESCAPE_ALLOC | RMESCAPE_NOMETA);
-		if (p != NULL) {
-			expmeta(p);
-			if (p != str->text)
-				ckfree(p);
-		}
+		preglob(str->text);
+		expmeta(str->text);
 		INTON;
 		if (exparg.lastp == savelastp) {
 			/*
@@ -1114,65 +1099,93 @@ nometa:
  */
 
 STATIC void
-expmeta1(char *expdir, char *enddir, char *name)
+expmeta1(char *expdir, char *enddir, char *name, int force)
 {
 	char *p;
 	const char *cp;
 	char *start;
-	char *endname;
+	char *endname, saveendname, *startnext;
 	int metaflag;
 	struct stat statb;
 	DIR *dirp;
 	struct dirent *dp;
 	int atend;
 	int matchdot;
-	int esc;
 
 	metaflag = 0;
 	start = name;
-	for (p = name; esc = 0, *p; p += esc + 1) {
-		if (*p == '*' || *p == '?')
+	for (p = name; *p;) {
+		switch (*p) {
+			int c;
+			char *q, *r;
+		case '\0':
+			break;
+		case '*':
+		case '?':
+			p++;
 			metaflag = 1;
-		else if (*p == '[') {
-			char *q = p + 1;
-			if (*q == '!')
-				q++;
-			for (;;) {
-				if (*q == '\\')
-					q++;
-				if (*q == '/' || *q == '\0')
-					break;
-				if (*++q == ']') {
-					metaflag = 1;
-					break;
-				}
+			continue;
+		case '[':
+			p++;
+			if (!metaflag) {
+				metaflag = -1;
+				if (*p == '!')
+					p++;
+				if (*p == ']')
+					p++;
 			}
-		} else {
-			if (*p == '\\') {
-				esc++;
-				if (p[esc] == '\0')
+			continue;
+		case ']':
+			p++;
+			if (metaflag)
+				metaflag = 1;
+			continue;
+			do {
+		default:
+				q = p;
+				break;
+		case '\\':
+				q = p + 1;
+				force = 1;
+				break;
+			} while (0);
+			r = q;
+			if (*r == (char)CTLESC)
+				r++;
+			if (*r == '/') {
+				if (metaflag > 0)
 					break;
+				start = p = r + 1;
+				metaflag = 0;
+				continue;
 			}
-			if (p[esc] == '/') {
-				if (metaflag)
-					break;
-				start = p + esc + 1;
-			}
+			p = q;
+			if (!*p)
+				break;
+			GETC_CTLESC(c, p, 1);
+			continue;
 		}
+		break;
 	}
-	if (metaflag == 0) {	/* we've reached the end of the file name */
-		p = name;
-		do {
-			if (enddir == expdir + PATH_MAX)
-				return;
-			if (*p == '\\')
-				p++;
-			*enddir++ = *p;
-		} while (*p++);
-		if (lstat(expdir, &statb) >= 0)
-			addfname(expdir);
+
+	if (metaflag <= 0) { /* we've reached the end of the file name */
+		if (force) {
+			p = name;
+			do {
+				if (enddir == expdir + PATH_MAX)
+					return;
+				if (*p == '\\' && p[1] != '\0')
+					p++;
+				if (*p == (char)CTLESC)
+					p++;
+				*enddir++ = *p;
+				} while (*p++);
+			if (lstat(expdir, &statb) >= 0)
+				addfname(expdir);
+		}
 		return;
 	}
+
 	endname = p;
 	if (name < start) {
 		p = name;
@@ -1180,6 +1193,8 @@ expmeta1(char *expdir, char *enddir, char *name)
 			if (enddir == expdir + PATH_MAX)
 				return;
 			if (*p == '\\')
+				p++;
+			if (*p == (char)CTLESC)
 				p++;
 			*enddir++ = *p++;
 		} while (p < start);
@@ -1200,12 +1215,20 @@ expmeta1(char *expdir, char *enddir, char *name)
 		atend = 1;
 	} else {
 		atend = 0;
+		startnext = endname;
+		if (*startnext == '\\')
+			startnext++;
+		if (*startnext == (char)CTLESC)
+			startnext++;
+		startnext++;
+		saveendname = *endname;
 		*endname = '\0';
-		endname += esc + 1;
 	}
 	matchdot = 0;
 	p = start;
 	if (*p == '\\')
+		p++;
+	if (*p == (char)CTLESC)
 		p++;
 	if (*p == '.')
 		matchdot++;
@@ -1225,14 +1248,14 @@ expmeta1(char *expdir, char *enddir, char *name)
 				addfname(expdir);
 			} else {
 				p[-1] = '/';
-				expmeta1(expdir, p, endname);
+				expmeta1(expdir, p, startnext, 1);
 			}
 		}
 toolong: ;
 	}
 	closedir(dirp);
 	if (! atend)
-		endname[-esc - 1] = esc ? '\\' : '/';
+		*endname = saveendname;
 }
 
 
@@ -1240,7 +1263,7 @@ STATIC void
 expmeta(char *name)
 {
 	char expdir[PATH_MAX];
-	expmeta1(expdir, expdir, name);
+	expmeta1(expdir, expdir, name, 0);
 }
 
 
@@ -1332,44 +1355,46 @@ msort(struct strlist *list, int len)
 STATIC inline int
 patmatch(char *pattern, const char *string)
 {
-	return !!pmatch(preglob(pattern, 0), string, 0);
+	return !!pmatch(preglob(pattern), string, 0);
 }
 
 
-STATIC int ccmatch(const char *p, int chr, const char **r)
+STATIC int
+ccmatch(char *p, int chr, char **r)
 {
+	char *q;
+#ifndef WITH_LOCALE
 	static const struct class {
 		char name[10];
-#ifdef WITH_LOCALE
-		int (*fn)(wint_t);
-#else
 		int (*fn)(int);
-#endif
 	} classes[] = {
-#ifdef WITH_LOCALE
-#define IS(x) isw##x
-#else
-#define IS(x) is##x
-#endif
-		{ .name = ":alnum:]", .fn = IS(alnum) },
-		{ .name = ":cntrl:]", .fn = IS(cntrl) },
-		{ .name = ":lower:]", .fn = IS(lower) },
-		{ .name = ":space:]", .fn = IS(space) },
-		{ .name = ":alpha:]", .fn = IS(alpha) },
-		{ .name = ":digit:]", .fn = IS(digit) },
-		{ .name = ":print:]", .fn = IS(print) },
-		{ .name = ":upper:]", .fn = IS(upper) },
-		{ .name = ":blank:]", .fn = IS(blank) },
-		{ .name = ":graph:]", .fn = IS(graph) },
-		{ .name = ":punct:]", .fn = IS(punct) },
-		{ .name = ":xdigit:]", .fn = IS(xdigit) },
-#undef IS
+		{ .name = "alnum:]",  .fn = isalnum  },
+		{ .name = "cntrl:]",  .fn = iscntrl  },
+		{ .name = "lower:]",  .fn = islower  },
+		{ .name = "space:]",  .fn = isspace  },
+		{ .name = "alpha:]",  .fn = isalpha  },
+		{ .name = "digit:]",  .fn = isdigit  },
+		{ .name = "print:]",  .fn = isprint  },
+		{ .name = "upper:]",  .fn = isupper  },
+		{ .name = "blank:]",  .fn = isblank  },
+		{ .name = "graph:]",  .fn = isgraph  },
+		{ .name = "punct:]",  .fn = ispunct  },
+		{ .name = "xdigit:]", .fn = isxdigit },
 	};
 	const struct class *class, *end;
+#else
+	wctype_t class;
+	int result;
+#endif
 
+	p++;
+	if (*p++ != ':')
+		return 0;
+
+#ifndef WITH_LOCALE
 	end = classes + sizeof(classes) / sizeof(classes[0]);
 	for (class = classes; class < end; class++) {
-		const char *q;
+		char *q;
 
 		q = prefix(p, class->name);
 		if (!q)
@@ -1377,16 +1402,36 @@ STATIC int ccmatch(const char *p, int chr, const char **r)
 		*r = q;
 		return class->fn(chr);
 	}
+#endif
 
-	*r = 0;
+	q = p;
+	for (;;) {
+		int c;
+		if (!*q)
+			return 0;
+		if (*q == ':' && q[1] == ']')
+			break;
+		GETC_CTLESC(c, q, 1);
+	}
+	*r = q + 2;
+#ifndef WITH_LOCALE
 	return 0;
+#else
+	*q = '\0';
+	class = wctype(p);
+	result = class && iswctype(chr, class);
+	*q = ':';
+	return result;
+#endif
 }
 
 STATIC const char *
-pmatch(const char *pattern, const char *string, int flags)
+pmatch(char *pattern, const char *string, int flags)
 {
-	const char *p, *q, *r, *s;
-	const char *ap, *aq;
+	char *p;
+	const char *q, *r, *s;
+	char *ap;
+	const char *aq;
 #ifndef WITH_LOCALE
 	char c, chr;
 #else
@@ -1396,13 +1441,14 @@ pmatch(const char *pattern, const char *string, int flags)
 	p = pattern;
 	q = s = string;
 	r = NULL;
-	ap = aq = NULL;
+	ap = NULL;
+	aq = NULL;
 	if (flags & PM_MATCHRIGHT)
 		goto ast;
 	for (;;) {
-		GETC(c, p);
-		switch (c) {
+		switch (c = *p) {
 		case '\0':
+			p++;
 			if (*q == '\0' || flags & PM_MATCHLEFT) {
 				if (!(flags & (PM_MATCHRIGHT | PM_MATCHMAX)))
 					return q;
@@ -1422,24 +1468,27 @@ pmatch(const char *pattern, const char *string, int flags)
 			}
 			break;
 		case '\\':
-			if (*p) {
-				GETC(c, p);
-			}
-			goto dft1;
+			if (*++p)
+				goto dft0;
+			else
+				goto dft1;
 		case '?':
+			p++;
 			GETC_CTLESC(chr, q, flags & PM_CTLESC);
 			if (chr == '\0')
 				break;
 			continue;
 		case '*':
+			p++;
 ast:
 			ap = p;
 			aq = q;
 			continue;
 		case '[': {
-			const char *startp;
+			char *startp;
 			int invert, found;
 
+			p++;
 			startp = p;
 			invert = 0;
 			if (*p == '!') {
@@ -1450,23 +1499,24 @@ ast:
 			GETC_CTLESC(chr, q, flags & PM_CTLESC);
 			if (chr == '\0')
 				break;
-			GETC(c, p);
 			do {
-				if (!c) {
+				if (!*p) {
 					p = startp;
 					c = '[';
 					goto dft2;
 				}
-				if (c == '[') {
-					const char *r;
+				if (*p == '[') {
+					char *r = NULL;
 
 					found |= !!ccmatch(p, chr, &r);
 					if (r) {
 						p = r;
 						continue;
 					}
-				} else if (c == '\\')
-					GETC(c, p);
+				}
+				if (*p == '\\')
+					p++;
+				GETC_CTLESC(c, p, 1);
 				if (*p == '-' && p[1] != ']') {
 #ifndef WITH_LOCALE
 					char c2;
@@ -1476,7 +1526,7 @@ ast:
 					p++;
 					if (*p == '\\')
 						p++;
-					GETC(c2, p);
+					GETC_CTLESC(c2, p, 1);
 #ifndef WITH_LOCALE
 					if (chr >= c && chr <= c2)
 						found = 1;
@@ -1491,12 +1541,15 @@ ast:
 					if (chr == c)
 						found = 1;
 				}
-			} while (GETC(c, p), c != ']');
+			} while (*p != ']');
+			p++;
 			if (found == invert)
 				break;
 			continue;
 		}
 		default:
+dft0:
+			GETC_CTLESC(c, p, 1);
 dft1:
 			GETC_CTLESC(chr, q, flags & PM_CTLESC);
 dft2:
@@ -1521,108 +1574,33 @@ dft2:
 
 
 /*
- * Remove any CTLESC characters from a string.
+ * Remove CTLESC and CTLQUOTEMARK characters from a string.
+ * If glob is set, only CTLESC characters known not to be needed for
+ * globbing are removed.
  */
 
 char *
-_rmescapes(char *str, int flag)
+_rmescapes(char *str, int glob)
 {
-	char *p, *q, *r;
-	unsigned inquotes;
-	int notescaped;
-	int globbing;
-#ifdef WITH_LOCALE
-	char *qs;
-	mbstate_t mbs;
-	int escape;
-#endif
-	if (!(flag & RMESCAPE_NOMETA)) {
-		p = strpbrk(str, qchars);
-		if (!p)
-			return str;
-	}
-#ifndef WITH_LOCALE
-	else
-#endif
-	p = str;
-	q = p;
-	r = str;
-	if (flag & RMESCAPE_ALLOC) {
-		size_t len = p - str;
-		size_t fulllen = len + strlen(p) + 1;
-		r = ckmalloc(fulllen);
-		q = r;
-#ifndef WITH_LOCALE
-		if (len > 0) {
-			q = mempcpy(q, str, len);
-		}
-#endif
-	}
-	inquotes = 0;
-	globbing = flag & RMESCAPE_GLOB;
-	notescaped = globbing;
-#ifdef WITH_LOCALE
-	qs = q;
-	escape = 0;
-#endif
-	while (*p) {
-		switch (*p) {
+	char *p, *q, c;
+	for (p = str, q = p;;) {
+		switch (c = *p) {
 		case (char)CTLQUOTEMARK:
-			inquotes = ~inquotes;
 			p++;
-			notescaped = globbing;
 			continue;
 		case (char)CTLESC:
 			p++;
-			if (notescaped)
-#ifdef WITH_LOCALE
-				escape = 1;
-#else
-				*q++ = '\\';
-#endif
-			goto dft;
-		case '[':
-			flag &= ~RMESCAPE_NOMETA1;
-			goto dft;
-		case ']':
-			flag &= ~RMESCAPE_NOMETA2;
-			goto dft;
-		case '?':
-		case '*':
-			flag &= ~RMESCAPE_NOMETA;
-			goto dft;
+			if (glob && !is_in_name(*p))
+				*q++ = c;
+			c = *p;
+			/* fall through */
 		default:
-dft:
-			notescaped = globbing;
-			break;
-		case '\\':
-			/* naked back slash */
-			notescaped = 0;
-			flag &= ~RMESCAPE_NOMETA;
-			break;
+			p++;
+			*q++ = c;
+			if (!c)
+				return str;
 		}
-		*q++ = *p++;
-
-#ifdef WITH_LOCALE
-		memset(&mbs, 0, sizeof mbs);
-		if (mbrlen(qs, q - qs, &mbs) == -2)
-			continue;
-		if (escape) {
-			memmove(qs + 1, qs, q - qs);
-			*qs = '\\';
-			q++;
-			escape = 0;
-		}
-		qs = q;
-#endif
 	}
-	if (flag & RMESCAPE_NOMETA) {
-		if (flag & RMESCAPE_ALLOC)
-			ckfree(r);
-		return NULL;
-	}
-	*q = '\0';
-	return r;
 }
 
 
