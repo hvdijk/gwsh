@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2018
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,31 +37,35 @@
 size_t
 mbcget(const char *p, size_t len, int *c, int ctlesc)
 {
-	const char *q = p;
-	wchar_t wc;
-	mbstate_t mbs = {0};
-	for (;;) {
-		if (ctlesc && *q == (char)CTLESC)
-			q++;
-		switch (mbrtowc(&wc, q++, 1, &mbs)) {
-		case (size_t)-2:
-			if (q - p < len)
-				continue;
-			/* fall through */
-		case (size_t)-1:
-			if (c) {
-				q = p;
-				if (ctlesc && *q == (char)CTLESC)
-					q++;
-				*c = -(unsigned char) *q++;
+	const char *pc = p + (ctlesc && *p == (char)CTLESC), *q = pc;
+	int ch = (signed char) *q;
+	if (ch >= 0)
+		q++;
+	else {
+		wchar_t wc;
+		mbstate_t mbs = { 0 };
+		for (;;) {
+			switch (mbrtowc(&wc, q++, 1, &mbs)) {
+			case (size_t) -2:
+				if (q - p < len) {
+					q += ctlesc && *q == (char)CTLESC;
+					continue;
+				}
+				/* fall through */
+			case (size_t) -1:
+				q = pc;
+				ch = -(unsigned char) *q++;
+				break;
+			default:
+				ch = wc;
+				break;
 			}
-			return q - p;
-		default:
-			if (c)
-				*c = wc;
-			return q - p;
+			break;
 		}
 	}
+	if (c)
+		*c = ch;
+	return q - p;
 }
 
 size_t
