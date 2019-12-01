@@ -82,7 +82,7 @@ chkmail(void)
 		int len;
 
 		len = padvance(&mpath, nullstr);
-		if (!len)
+		if (len < 0)
 			break;
 		p = stackblock();
 		if (*p == '\0')
