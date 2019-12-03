@@ -24,7 +24,7 @@ gwsh_SOURCES = \
 	init.h input.h jobs.h machdep.h mail.h main.h memalloc.h miscbltin.h \
 	myhistedit.h mylocale.h mystring.h options.h output.h parser.h priv.h \
 	redir.h shell.h show.h system.h trap.h var.h
-gwsh_LDADD = builtins.o init.o nodes.o syntax.o
+nodist_gwsh_SOURCES = builtins.c init.c nodes.c syntax.c
 
 HELPERS = mkinit mksyntax mknodes
 
