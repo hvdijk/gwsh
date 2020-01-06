@@ -340,7 +340,11 @@ exexit:
 STATIC void
 evaltreenr(union node *n, int flags)
 {
-	evaltree(n, flags);
+	struct jmploc jmploc;
+	if (setjmp(jmploc.loc))
+		exitshell();
+	handler = &jmploc;
+	evaltree(n, EV_EXIT | flags);
 	abort();
 }
 
@@ -495,7 +499,6 @@ evalsubshell(union node *n, int flags)
 	jp = makejob(n, 1);
 	if (forkshell(jp, n, backgnd) == 0) {
 		INTON;
-		flags |= EV_EXIT;
 		if (backgnd)
 			flags &= ~EV_TESTED;
 nofork:
@@ -567,7 +570,6 @@ evalpipe(union node *n, int flags)
 	pipelen = 0;
 	for (lp = n->npipe.cmdlist ; lp ; lp = lp->next)
 		pipelen++;
-	flags |= EV_EXIT;
 	INTOFF;
 	jp = makejob(n, pipelen);
 	prevfd = -1;
@@ -645,7 +647,7 @@ evalbackcmd(union node *n, int flags, struct backcmd *result)
 			close(pip[1]);
 		}
 		ifsfree();
-		evaltreenr(n, EV_EXIT | flags);
+		evaltreenr(n, flags);
 		/* NOTREACHED */
 	}
 	close(pip[1]);
@@ -894,7 +896,8 @@ bail:
 		    !(exception == EXERROR && spclbltin <= 0)) {
 			exception &= ~EXEXT;
 raise:
-			longjmp(handler->loc, 1);
+			status = -1;
+			goto out;
 		}
 		break;
 
@@ -919,6 +922,9 @@ out:
 		 * However I implemented that within libedit itself.
 		 */
 		setvar("_", lastarg, 0);
+
+	if (status < 0)
+		longjmp(handler->loc, 1);
 
 	return status;
 }
