@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -795,7 +795,7 @@ numvar:
 #ifndef WITH_LOCALE
 				memtodest(sep, 1, quotes);
 #else
-				memtodest(sep, mbcget(sep, -1, NULL, 0), quotes);
+				memtodest(sep, mbcget(sep, -1, NULL, 0) - sep, quotes);
 #endif
 			}
 		}
@@ -919,12 +919,12 @@ ifsbreakup(char *string, int maxargs, struct arglist *arglist)
 				q = p;
 
 #ifdef WITH_LOCALE
-				p += mbcget(p, string + ifsp->endoff - p, &wc, 1);
+				p = mbcget(p, string + ifsp->endoff - p, &wc, 1);
 				c = wctob(wc);
 				isifs = !wc;
 				if (!isifs && !nulonly) {
 					for (ifs = realifs; *ifs; ) {
-						ifs += mbcget(ifs, realifs + realifslen - ifs, &wifs, 0);
+						ifs = mbcget(ifs, realifs + realifslen - ifs, &wifs, 0);
 						if (wc == wifs) {
 							isifs = true;
 							break;

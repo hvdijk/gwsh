@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 #include "parser.h"
 
 #ifdef WITH_LOCALE
-size_t
+char *
 mbcget(const char *p, size_t len, int *c, int ctlesc)
 {
 	const char *pc = p + (ctlesc && *p == (char)CTLESC), *q = pc;
@@ -65,7 +65,7 @@ mbcget(const char *p, size_t len, int *c, int ctlesc)
 	}
 	if (c)
 		*c = ch;
-	return q - p;
+	return (char *) q;
 }
 
 size_t
@@ -73,7 +73,7 @@ mbccnt(const char *p)
 {
 	size_t count = 0;
 	while (*p) {
-		p += mbcget(p, -1, NULL, 0);
+		p = mbcget(p, -1, NULL, 0);
 		count++;
 	}
 	return count;

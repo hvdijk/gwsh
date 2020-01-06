@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2018
+ * Copyright (c) 2018, 2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,11 +35,11 @@
 #include <wchar.h>
 
 #ifdef WITH_LOCALE
-size_t mbcget(const char *p, size_t len, int *c, int ctlesc);
+char *mbcget(const char *p, size_t len, int *c, int ctlesc);
 size_t mbccnt(const char *p);
 
-#define GETC(c, p)           ((void) ((p) += mbcget((p), -1, &(c), 0)))
-#define GETC_CTLESC(c, p, f) ((void) ((p) += mbcget((p), -1, &(c), (f))))
+#define GETC(c, p)           ((void) ((p) = mbcget((p), -1, &(c), 0)))
+#define GETC_CTLESC(c, p, f) ((void) ((p) = mbcget((p), -1, &(c), (f))))
 #else
 #define GETC(c, p)           ((void) ((c) = *(p)++))
 #define GETC_CTLESC(c, p, f) ((void) ((p) += (f) && *(p) == (char)CTLESC, (c) = *(p)++))
