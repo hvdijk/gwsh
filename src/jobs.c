@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -247,13 +247,15 @@ killcmd(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern const char *const signal_names[];
-	extern const int signal_names_length;
+	extern const char *signal_names[];
+	extern int signal_names_length;
 	int signo = -1;
 	int list = 0;
 	int i;
 	pid_t pid;
 	struct job *jp;
+
+	signal_names[0] = "0";
 
 	if (argc <= 1) {
 usage:
@@ -264,7 +266,7 @@ usage:
 	}
 
 	if (**++argv == '-') {
-		signo = decode_signal(*argv + 1, 1);
+		signo = decode_signal(*argv + 1);
 		if (signo < 0) {
 			int c;
 
@@ -278,7 +280,7 @@ usage:
 					list = 1;
 					break;
 				case 's':
-					signo = decode_signal(optionarg, 1);
+					signo = decode_signal(optionarg);
 					if (signo < 0) {
 						sh_error(
 							"invalid signal number or name: %s",
@@ -304,7 +306,7 @@ usage:
 
 		out = out1;
 		if (!*argv) {
-			for (i = 1; i < signal_names_length; i++) {
+			for (i = 0; i < signal_names_length; i++) {
 				if (signal_names[i])
 					outfmt(out, snlfmt, signal_names[i]);
 			}

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,9 @@
 
 #include <signal.h>
 
-const char *const signal_names[] = {
-	"EXIT",
+const char *signal_names[] = {
+	/* signal_names[0] is omitted here. It is set by killcmd() or trapcmd()
+	 * to the appropriate value for the command. */
 
 	/* Signals which may just be aliases for other signals come first.
 	 * If they turn out to be an alias, the later initialiser for the
