@@ -1,6 +1,7 @@
 #!/bin/sh
 
-aclocal \
+mkdir -p build-aux \
+&& aclocal \
 && autoheader \
-&& automake --add-missing \
+&& automake --add-missing --copy \
 && autoconf
