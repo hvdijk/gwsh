@@ -67,6 +67,7 @@ struct var {
 	void (*func)(const char *);
 					/* function to be called when  */
 					/* the variable gets set/unset */
+	struct localvar_list *local;
 };
 
 
@@ -75,6 +76,7 @@ struct localvar {
 	struct var *vp;			/* the variable that was made local */
 	int flags;			/* saved flags */
 	const char *text;		/* saved text */
+	struct localvar_list *local;	/* saved localvar list */
 };
 
 struct localvar_list;
@@ -188,6 +190,7 @@ int localcmd(int, char **);
 void mklocal(char *);
 struct localvar_list *pushlocalvars(void);
 void poplocalvars(int);
+void skiptoplocalvars(void);
 void unwindlocalvars(struct localvar_list *stop);
 int unsetcmd(int, char **);
 void unsetvar(const char *);

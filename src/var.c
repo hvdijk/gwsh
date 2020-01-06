@@ -82,6 +82,7 @@ struct localvar_list {
 };
 
 MKINIT struct localvar_list *localvar_stack;
+struct localvar_list *localvar_cur;
 
 const char defpathvar[] =
 	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
@@ -306,6 +307,7 @@ out_free:
 			goto out_free;
 		/* not found */
 		vp = ckmalloc(sizeof (*vp));
+		vp->local = NULL;
 		vp->next = *vpp;
 		vp->func = NULL;
 		*vpp = vp;
@@ -487,7 +489,7 @@ localcmd(int argc, char **argv)
 {
 	char *name;
 
-	if (!localvar_stack)
+	if (!localvar_cur)
 		sh_error("not in a function");
 
 	nextopt(nullstr);
@@ -532,16 +534,26 @@ void mklocal(char *name)
 				vp = setvar(name, NULL, VSTRFIXED);
 			lvp->flags = VUNSET;
 		} else {
+			lvp->local = vp->local;
 			lvp->text = vp->text;
 			lvp->flags = vp->flags;
 			vp->flags |= VSTRFIXED|VTEXTFIXED;
 			if (eq)
 				setvareq(name, 0);
+			if (unlikely(vp->local == localvar_stack
+				  || vp->local == localvar_cur)) {
+				if (!(lvp->flags & (VTEXTFIXED|VSTACK)))
+					ckfree(lvp->text);
+				ckfree(lvp);
+				goto out;
+			}
+			vp->local = localvar_cur;
 		}
 	}
 	lvp->vp = vp;
-	lvp->next = localvar_stack->lv;
-	localvar_stack->lv = lvp;
+	lvp->next = localvar_cur->lv;
+	localvar_cur->lv = lvp;
+out:
 	INTON;
 }
 
@@ -561,6 +573,7 @@ poplocalvars(int keep)
 	INTOFF;
 	ll = localvar_stack;
 	localvar_stack = ll->next;
+	localvar_cur = localvar_stack;
 
 	next = ll->lv;
 	ckfree(ll);
@@ -579,6 +592,7 @@ poplocalvars(int keep)
 					ckfree(lvp->text);
 			}
 
+			vp->local = lvp->local;
 			vp->flags &= ~bits;
 			vp->flags |= (lvp->flags & bits);
 
@@ -589,18 +603,21 @@ poplocalvars(int keep)
 			memcpy(optlist, lvp->text, sizeof(optlist));
 			ckfree(lvp->text);
 			optschanged();
-		} else if (lvp->flags == VUNSET) {
-			vp->flags &= ~(VSTRFIXED|VREADONLY);
-			unsetvar(vp->text);
 		} else {
-			if (vp->func)
-				(*vp->func)(strchrnul(lvp->text, '=') + 1);
-			if ((vp->flags & (VTEXTFIXED|VSTACK)) == 0)
-				ckfree(vp->text);
-			vp->flags = lvp->flags;
-			vp->text = lvp->text;
-			if (vp->func && vp->flags & VLATEFUNC)
-				(*vp->func)(strchrnul(lvp->text, '=') + 1);
+			vp->local = lvp->local;
+			if (lvp->flags == VUNSET) {
+				vp->flags &= ~(VSTRFIXED|VREADONLY);
+				unsetvar(vp->text);
+			} else {
+				if (vp->func)
+					(*vp->func)(strchrnul(lvp->text, '=') + 1);
+				if ((vp->flags & (VTEXTFIXED|VSTACK)) == 0)
+					ckfree(vp->text);
+				vp->flags = lvp->flags;
+				vp->text = lvp->text;
+				if (vp->func && vp->flags & VLATEFUNC)
+					(*vp->func)(strchrnul(lvp->text, '=') + 1);
+			}
 		}
 		ckfree(lvp);
 	}
@@ -620,9 +637,17 @@ struct localvar_list *pushlocalvars(void)
 	ll->lv = NULL;
 	ll->next = localvar_stack;
 	localvar_stack = ll;
+	localvar_cur = ll;
 	INTON;
 
 	return ll->next;
+}
+
+
+void
+skiptoplocalvars(void)
+{
+	localvar_cur = localvar_cur->next;
 }
 
 

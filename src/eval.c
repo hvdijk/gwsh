@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -884,11 +884,12 @@ bail:
 		/* NOTREACHED */
 
 	case CMDBUILTIN:
-		if (spclbltin > 0 || argc == 0) {
+		if (spclbltin) {
 			poplocalvars(1);
 			if (execcmd && argc > 1)
 				listsetvar(varlist.list, VEXPORT);
-		}
+		} else
+			skiptoplocalvars();
 		if (evalbltin(cmdentry.u.cmd, argc, argv, flags) &&
 		    !(exception == EXERROR && spclbltin <= 0)) {
 			exception &= ~EXEXT;
