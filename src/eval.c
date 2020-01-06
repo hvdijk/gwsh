@@ -760,9 +760,9 @@ evalcommand(union node *cmd, int flags)
 		}
 	}
 
-	/* Reserve one extra spot at the front for shellexec. */
-	nargv = stalloc(sizeof (char *) * (argc + 2));
-	argv = ++nargv;
+	/* Reserve two extra spots at the front for shellexec. */
+	nargv = stalloc(sizeof (char *) * (argc + 3));
+	argv = nargv += 2;
 	for (sp = arglist.list ; sp ; sp = sp->next) {
 		TRACE(("evalcommand arg: %s\n", sp->text));
 		*nargv++ = sp->text;

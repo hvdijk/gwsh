@@ -63,6 +63,25 @@ AC_CHECK_DECL([_PATH_TTY],,[AC_DEFINE_UNQUOTED([_PATH_TTY], ["/dev/tty"], [Defin
 #include <paths.h>
 #endif
 ])
+AC_ARG_ENABLE([self-exec-path],
+              [AS_HELP_STRING([--enable-self-exec-path[[=PATH]]], [Define to path to exec new instance of shell.])],,
+              [enable_self_exec_path=auto])
+AC_CACHE_CHECK([for path to exec new shell], [gwsh_cv_self_exec_path], [
+case "$enable_self_exec_path" in
+yes|no|/*) ;;
+auto)
+  if test "$cross_compiling" = no && test -x /proc/self/exe; then
+    enable_self_exec_path=/proc/self/exe
+  else
+    enable_self_exec_path=no
+  fi ;;
+*) AC_MSG_ERROR([exec path must be absolute])
+esac
+gwsh_cv_self_exec_path=$enable_self_exec_path])
+case "$gwsh_cv_self_exec_path" in
+yes) AC_DEFINE_UNQUOTED([SELF_EXEC_PATH], [BINDIR "/gwsh"]) ;;
+/*)  AC_DEFINE_UNQUOTED([SELF_EXEC_PATH], ["$gwsh_cv_self_exec_path"], [Define to path to gwsh.]) ;;
+esac
 
 dnl Some systems lack isblank
 AC_CHECK_DECLS([isblank],,,[#include <ctype.h>])

@@ -160,7 +160,11 @@ shellexec(char **argv, const char *path, int idx)
 STATIC void
 tryexec(char *cmd, char **argv, char **envp)
 {
-	char *const path_bshell = _PATH_BSHELL;
+#ifdef SELF_EXEC_PATH
+	char *const path_shell = SELF_EXEC_PATH;
+#else
+	char *const path_shell = _PATH_BSHELL;
+#endif
 
 repeat:
 #ifdef SYSV
@@ -170,9 +174,11 @@ repeat:
 #else
 	execve(cmd, argv, envp);
 #endif
-	if (cmd != path_bshell && errno == ENOEXEC) {
+	if (cmd != path_shell && errno == ENOEXEC) {
 		*argv-- = cmd;
-		*argv = cmd = path_bshell;
+		*argv-- = "-";
+		*argv = "sh";
+		cmd = path_shell;
 		goto repeat;
 	}
 }
