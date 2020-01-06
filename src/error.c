@@ -123,7 +123,9 @@ exvwarning2(const char *msg, va_list ap)
 
 	errs = out2;
 	name = dotfile ? dotfile : arg0 ? arg0 : "sh";
-	if (!commandname)
+	if (!errlinno)
+		fmt = "%s: ";
+	else if (!commandname)
 		fmt = "%s: %d: ";
 	else
 		fmt = "%s: %d: %s: ";

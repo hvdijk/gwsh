@@ -95,9 +95,11 @@ INCLUDE "error.h"
 INIT {
 	basepf.p.nextc = basepf.buf = basebuf;
 	basepf.linno = 1;
+	basepf.flags = PF_NONUL
 #ifndef SMALL
-	basepf.hist = 1;
+		| PF_HIST
 #endif
+	;
 	basepf.p.backq = 1;
 }
 
@@ -360,9 +362,14 @@ again:
 		more--;
 		c = *q;
 
-		if (!c)
+		if (!c) {
+			if (parsefile->flags & PF_NONUL) {
+				sh_warnx("cannot execute binary file");
+				_exit(126);
+			}
+
 			memmove(q, q + 1, more);
-		else {
+		} else {
 			q++;
 
 			if (c == '\n') {
@@ -390,12 +397,13 @@ again:
 		}
 	}
 	parsefile->lleft = more;
+	parsefile->flags &= ~PF_NONUL;
 
 	savec = *q;
 	*q = '\0';
 
 #ifndef SMALL
-	if (parsefile->hist && hist && something) {
+	if (parsefile->flags & PF_HIST && hist && something) {
 		HistEvent he;
 		INTOFF;
 		history(hist, &he, H_FIRST);
@@ -581,9 +589,7 @@ pushfile(void)
 	pf->p.unget = 0;
 	pf->p.backq = 1;
 	pf->p.dqbackq = 0;
-#ifndef SMALL
-	pf->hist = 0;
-#endif
+	pf->flags = 0;
 	parsefile = pf;
 }
 

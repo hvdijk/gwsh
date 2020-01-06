@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -100,10 +100,13 @@ struct parsefile {
 	char *buf;		/* input buffer */
 	struct strpush *strpush; /* for pushing strings at this level */
 	struct strpush basestrpush; /* so pushing one is fast */
-#ifndef SMALL
-	int hist;		/* create history entries */
-#endif
+	int flags;
 };
+
+#define PF_NONUL 0x01 /* do not allow NUL bytes on the first line */
+#ifndef SMALL
+#define PF_HIST  0x02 /* create history entries */
+#endif
 
 extern struct parsefile *parsefile;
 #ifdef WITH_PARSER_LOCALE
