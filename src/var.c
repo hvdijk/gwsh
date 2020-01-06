@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -112,6 +112,7 @@ struct var varinit[] = {
 	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_ALL\0",	changelocale },
 	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_COLLATE\0",	changelocale },
 	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_CTYPE\0",	changelocale },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_MESSAGES\0",	changelocale },
 	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LANG\0",	changelocale },
 #endif
 #ifndef SMALL
@@ -747,6 +748,7 @@ STATIC
 void changelocale(const char *var) {
 	setlocale(LC_CTYPE, *lc_allval() ? lc_allval() : *lc_ctypeval() ? lc_ctypeval() : langval());
 	setlocale(LC_COLLATE, *lc_allval() ? lc_allval() : *lc_collateval() ? lc_collateval() : langval());
+	setlocale(LC_MESSAGES, *lc_allval() ? lc_allval() : *lc_messagesval() ? lc_messagesval() : langval());
 }
 
 #endif
