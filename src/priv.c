@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2019
+ * Copyright (c) 2019-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,7 +67,7 @@ setprivileged(int on)
 	gid = getgid();
 	if (setregid(gid, gid)) {
 error:
-		sh_error(errfmt, strerror(errno));
+		sh_error(errfmt, errnomsg());
 	}
 	uid = getuid();
 	if (uid)

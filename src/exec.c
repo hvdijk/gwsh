@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018
+ * Copyright (c) 2018, 2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -112,6 +112,7 @@ void
 shellexec(char **argv, const char *path, int idx)
 {
 	char *cmdname;
+	const char *errmsg;
 	int e;
 	char **envp;
 	int exerrno;
@@ -120,14 +121,18 @@ shellexec(char **argv, const char *path, int idx)
 	if (strchr(argv[0], '/') != NULL) {
 		tryexec(argv[0], argv, envp);
 		e = errno;
+		errmsg = errnomsg();
 	} else {
-		e = ENOENT;
+		e = 0;
+		errmsg = "not found";
 		while (padvance(&path, argv[0]) >= 0) {
 			cmdname = stackblock();
 			if (--idx < 0 && pathopt == NULL) {
 				tryexec(cmdname, argv, envp);
-				if (errno != ENOENT && errno != ENOTDIR)
+				if (errno != ENOENT && errno != ENOTDIR) {
 					e = errno;
+					errmsg = errnomsg();
+				}
 			}
 		}
 	}
@@ -147,7 +152,7 @@ shellexec(char **argv, const char *path, int idx)
 	exitstatus = exerrno;
 	TRACE(("shellexec failed for %s, errno %d, suppressint %d\n",
 		argv[0], e, suppressint ));
-	exerror(EXEXIT, "%s: %s", argv[0], errmsg(e, E_EXEC));
+	exerror(EXEXIT, "%s: %s", argv[0], errmsg);
 	/* NOTREACHED */
 }
 
@@ -445,8 +450,9 @@ loop:
 	if (cmdp && updatetbl)
 		delete_cmd_entry();
 	if (act & DO_ERR)
-		sh_warnx("%s: %s", name, errmsg(e, E_EXEC));
+		sh_warnx("%s: %s", name, errmsg(e));
 	entry->cmdtype = CMDUNKNOWN;
+	entry->u.index = idx;
 	return;
 
 builtin_success:
@@ -816,8 +822,8 @@ describe_command(out, command, path, verbose)
 
 	default:
 		if (verbose) {
-			outstr(command, out2);
-			outstr(": not found\n", out2);
+			const char *msg = entry.u.index < 0 ? errnomsg() : "not found";
+			outfmt(out2, "%s: %s", command, msg);
 		}
 		return 127;
 	}

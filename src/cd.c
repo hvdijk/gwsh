@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -152,7 +152,7 @@ step6:
 	goto docd;
 
 err:
-	sh_error("can't cd to %s", dest);
+	sh_error("%s: %s", dest, errnomsg());
 	/* NOTREACHED */
 out:
 	if (flags & CD_PRINT)

@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2019
+ * Copyright (c) 2019-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -218,17 +218,12 @@ errnomsg(void)
  */
 
 const char *
-errmsg(int e, int action)
+errmsg(int e)
 {
 	if (e != ENOENT && e != ENOTDIR)
 		return strerror(e);
 
-	if (action & E_OPEN)
-		return "No such file";
-	else if (action & E_CREAT)
-		return "Directory nonexistent";
-	else
-		return "not found";
+	return "not found";
 }
 
 
