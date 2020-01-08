@@ -22,6 +22,8 @@ install:
     mkdir /opt/cov-analysis-linux64;
     tar -C /opt/cov-analysis-linux64 --strip-components=1 -xf cov-analysis-linux64.tgz;;
   esac
+before_script:
+- git ls-files | xargs touch -r configure
 script:
 - ./configure $configure
 - case $TRAVIS_OS_NAME:$TRAVIS_DIST:$TRAVIS_COMPILER:$configure in
