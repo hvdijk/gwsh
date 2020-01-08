@@ -78,6 +78,13 @@ int *gwsh_errno;
 short profile_buf[16384];
 extern int etext();
 #endif
+MKINIT struct jmploc exitshell_handler;
+
+#ifdef mkinit
+ENVRESET {
+	handler = &exitshell_handler;
+}
+#endif
 
 STATIC void read_profile(const char *);
 STATIC char *find_dot_file(char *);
@@ -113,6 +120,9 @@ main(int argc, char **argv)
 #if PROFILE
 	monitor(4, etext, profile_buf, sizeof profile_buf, 50);
 #endif
+	if (unlikely(setjmp(exitshell_handler.loc)))
+		exitshell();
+
 	if (unlikely(setjmp(jmploc.loc))) {
 		int e;
 #if HAVE_COMPUTED_GOTO

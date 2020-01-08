@@ -340,10 +340,6 @@ exexit:
 STATIC void
 evaltreenr(union node *n, int flags)
 {
-	struct jmploc jmploc;
-	if (setjmp(jmploc.loc))
-		exitshell();
-	handler = &jmploc;
 	evaltree(n, EV_EXIT | flags);
 	abort();
 }
