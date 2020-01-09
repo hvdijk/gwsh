@@ -868,6 +868,7 @@ forkchild(struct job *jp, union node *n, int mode)
 	shlvl++;
 
 	envreset();
+	unwindredir(0, 1);
 	closescript();
 	clear_traps();
 #if JOBS

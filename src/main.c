@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2020
+ * Copyright (c) 2018-2019
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -78,11 +78,11 @@ int *gwsh_errno;
 short profile_buf[16384];
 extern int etext();
 #endif
-MKINIT struct jmploc exitshell_handler;
+MKINIT struct jmploc main_handler;
 
 #ifdef mkinit
 ENVRESET {
-	handler = &exitshell_handler;
+	handler = &main_handler;
 }
 #endif
 
@@ -109,7 +109,6 @@ main(int argc, char **argv)
 	volatile int state = 0;
 #define SET_STATE(s) (state = s)
 #endif
-	struct jmploc jmploc;
 	struct stackmark smark;
 	int login;
 
@@ -120,10 +119,7 @@ main(int argc, char **argv)
 #if PROFILE
 	monitor(4, etext, profile_buf, sizeof profile_buf, 50);
 #endif
-	if (unlikely(setjmp(exitshell_handler.loc)))
-		exitshell();
-
-	if (unlikely(setjmp(jmploc.loc))) {
+	if (unlikely(setjmp(main_handler.loc))) {
 		int e;
 #if HAVE_COMPUTED_GOTO
 		void *s;
@@ -162,7 +158,7 @@ main(int argc, char **argv)
 		}
 #endif
 	}
-	handler = &jmploc;
+	handler = &main_handler;
 #ifdef DEBUG
 	opentrace();
 	trputs("Shell args:  ");  trargs(argv);

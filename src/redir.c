@@ -351,6 +351,24 @@ popredir(int drop)
 	INTON;
 }
 
+/*
+ * Undo all redirections.  Called on error or interrupt.
+ */
+
+#ifdef mkinit
+
+INCLUDE "redir.h"
+
+EXITRESET {
+	/*
+	 * Discard all saved file descriptors.
+	 */
+	unwindredir(0, 0);
+}
+
+#endif
+
+
 
 /*
  * Move a file descriptor to > 10.  Invokes sh_error on error unless
@@ -404,10 +422,10 @@ redirectsafe(union node *redir, int flags)
 }
 
 
-void unwindredir(struct redirtab *stop)
+void unwindredir(struct redirtab *stop, int drop)
 {
 	while (redirlist != stop)
-		popredir(0);
+		popredir(drop);
 }
 
 

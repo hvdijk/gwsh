@@ -50,7 +50,7 @@ void popredir(int);
 void clearredir(void);
 int savefd(int, int);
 int redirectsafe(union node *, int);
-void unwindredir(struct redirtab *stop);
+void unwindredir(struct redirtab *stop, int);
 struct redirtab *pushredir(union node *redir);
 
 #endif

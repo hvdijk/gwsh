@@ -892,8 +892,7 @@ bail:
 		    !(exception == EXERROR && spclbltin <= 0)) {
 			exception &= ~EXEXT;
 raise:
-			status = -1;
-			goto out;
+			longjmp(handler->loc, 1);
 		}
 		break;
 
@@ -909,7 +908,7 @@ raise:
 out:
 	if (cmd->ncmd.redirect)
 		popredir(execcmd);
-	unwindredir(redir_stop);
+	unwindredir(redir_stop, 0);
 	unwindfiles(file_stop);
 	unwindlocalvars(localvar_stop);
 	if (lastarg)
@@ -918,9 +917,6 @@ out:
 		 * However I implemented that within libedit itself.
 		 */
 		setvar("_", lastarg, 0);
-
-	if (status < 0)
-		longjmp(handler->loc, 1);
 
 	return status;
 }
