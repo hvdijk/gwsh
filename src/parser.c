@@ -739,6 +739,7 @@ top:
 	 */
 	if (kwd & CHKNL && t == TNL) {
 		parseheredoc();
+		checkkwd = 0;
 		goto top;
 	}
 
@@ -759,7 +760,7 @@ top:
 		}
 	}
 
-	if (checkkwd & CHKALIAS) {
+	if ((checkkwd | kwd) & CHKALIAS) {
 		struct alias *ap;
 		if ((ap = lookupalias(wordtext, 1)) != NULL) {
 			if (*ap->val) {
