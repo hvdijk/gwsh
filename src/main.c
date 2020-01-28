@@ -81,7 +81,7 @@ extern int etext();
 MKINIT struct jmploc main_handler;
 
 #ifdef mkinit
-ENVRESET {
+RESET {
 	handler = &main_handler;
 }
 #endif
@@ -127,16 +127,13 @@ main(int argc, char **argv)
 		int s;
 #endif
 
-		exitreset();
-		envreset();
+		reset(0);
 
 		e = exception;
 
 		s = state;
 		if (e == EXEXIT || !s || iflag == 0 || shlvl)
 			exitshell();
-
-		reset();
 
 		if (e == EXINT) {
 			out2c('\n');

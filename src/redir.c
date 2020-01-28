@@ -359,11 +359,11 @@ popredir(int drop)
 
 INCLUDE "redir.h"
 
-EXITRESET {
+RESET {
 	/*
 	 * Discard all saved file descriptors.
 	 */
-	unwindredir(0, 0);
+	unwindredir(0, sub);
 }
 
 #endif

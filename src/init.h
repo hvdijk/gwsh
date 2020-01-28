@@ -40,8 +40,6 @@
 #define H_INIT 1
 
 void init(void);
-void exitreset(void);
-void envreset(void);
-void reset(void);
+void reset(int sub);
 
 #endif

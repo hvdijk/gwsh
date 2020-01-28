@@ -119,7 +119,7 @@ STATIC const struct builtincmd null = {
 #ifdef mkinit
 INCLUDE "eval.h"
 
-ENVRESET {
+RESET {
 	evalskip = 0;
 	loopnest = 0;
 	savestatus = -1;
@@ -488,7 +488,7 @@ evalsubshell(union node *n, int flags)
 
 	expredir(n->nredir.redirect);
 	if (!backgnd && flags & EV_EXIT && !have_traps()) {
-		envreset();
+		reset(1);
 		goto nofork;
 	}
 	INTOFF;
@@ -910,7 +910,7 @@ out:
 		popredir(execcmd);
 	unwindredir(redir_stop, 0);
 	unwindfiles(file_stop);
-	unwindlocalvars(localvar_stop);
+	unwindlocalvars(localvar_stop, 0);
 	if (lastarg)
 		/* dsl: I think this is intended to be used to support
 		 * '_' in 'vi' command mode during line editing...

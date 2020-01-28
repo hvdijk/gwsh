@@ -112,32 +112,17 @@ char init[] = "\
  * Initialization code.\n\
  */\n";
 
-char exitreset[] = "\
-/*\n\
- * This routine is called when an error or an interrupt occurs in an\n\
- * interactive shell and control is returned to the main command loop\n\
- * but prior to exitshell. \n\
- */\n";
-
-char envreset[] = "\
+char reset[] = "\
 /*\n\
  * This routine is called when an error or an interrupt occurs in an\n\
  * interactive shell and control is returned to the main command loop,\n\
  * or when a subshell is started. \n\
  */\n";
 
-char reset[] = "\
-/*\n\
- * This routine is called when an error or an interrupt occurs in an\n\
- * interactive shell and control is returned to the main command loop.\n\
- */\n";
-
 
 struct event event[] = {
-	{"INIT", "init", init},
-	{"EXITRESET", "exitreset", exitreset},
-	{"ENVRESET", "envreset", envreset},
-	{"RESET", "reset", reset},
+	{"INIT", "void init(void)", init},
+	{"RESET", "void reset(int sub)", reset},
 	{NULL, NULL}
 };
 
@@ -396,7 +381,7 @@ output(void)
 	for (ep = event ; ep->name ; ep++) {
 		fputs("\n\n\n", fp);
 		fputs(ep->comment, fp);
-		fprintf(fp, "\nvoid\n%s() {\n", ep->routine);
+		fprintf(fp, "\n%s {\n", ep->routine);
 		writetext(&ep->code, fp);
 		fprintf(fp, "}\n");
 	}

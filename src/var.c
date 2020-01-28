@@ -173,7 +173,7 @@ INIT {
 }
 
 RESET {
-	unwindlocalvars(0);
+	unwindlocalvars(0, sub);
 }
 #endif
 
@@ -651,10 +651,10 @@ skiptoplocalvars(void)
 }
 
 
-void unwindlocalvars(struct localvar_list *stop)
+void unwindlocalvars(struct localvar_list *stop, int keep)
 {
 	while (localvar_stack != stop)
-		poplocalvars(0);
+		poplocalvars(keep);
 }
 
 
