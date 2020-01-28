@@ -645,3 +645,10 @@ closescript(void)
 		parsefile->fd = 0;
 	}
 }
+
+#ifdef mkinit
+RESET {
+	if (sub)
+		closescript();
+}
+#endif

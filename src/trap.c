@@ -188,6 +188,13 @@ clear_traps(void)
 	INTON;
 }
 
+#ifdef mkinit
+RESET {
+	if (sub)
+		clear_traps();
+}
+#endif
+
 
 
 /*

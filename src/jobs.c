@@ -868,8 +868,6 @@ forkchild(struct job *jp, union node *n, int mode)
 	shlvl++;
 
 	reset(1);
-	closescript();
-	clear_traps();
 #if JOBS
 	/* do job control only in root shell */
 	jobctl = 0;
