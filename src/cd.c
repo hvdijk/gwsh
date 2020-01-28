@@ -225,51 +225,60 @@ updatepwd(const char *dir)
 	dir = pathbuf;
 #endif
 
-	cdcomppath = sstrdup(dir);
+	p = cdcomppath = sstrdup(dir);
 	STARTSTACKSTR(new);
-	if (*dir != '/') {
-		if (curdir == nullstr)
+	if (*p != '/') {
+		if (!*curdir)
 			return 0;
 		new = stputs(curdir, new);
 	}
-	new = makestrspace(strlen(dir) + 2, new);
-	lim = (char *) stackblock() + 1;
-	if (*dir != '/') {
-		if (new[-1] != '/')
-			USTPUTC('/', new);
-		if (new > lim && *lim == '/')
-			lim++;
-	} else {
+	new = makestrspace(strlen(dir) + 1, new);
+	lim = stackblock() + 1;
+	if (*p == '/') {
 		USTPUTC('/', new);
-		cdcomppath++;
-		if (dir[1] == '/' && dir[2] != '/') {
+		p++;
+		if (*p == '/' && p[1] != '/') {
 			USTPUTC('/', new);
-			cdcomppath++;
+			p++;
 			lim++;
 		}
 	}
-	p = strtok(cdcomppath, "/");
-	while (p) {
-		switch(*p) {
+	for (;;) {
+		char *end = strchrnul(p, '/');
+		if (end == p) {
+			if (!*end)
+				break;
+			p++;
+			continue;
+		}
+		switch (*p) {
 		case '.':
-			if (p[1] == '.' && p[2] == '\0') {
+			if (p[1] == '.' && end - p == 2) {
+				struct stat statb;
+				USTPUTC('/', new);
+				USTPUTC('\0', new);
+				if (stat(stackblock(), &statb) < 0)
+					sh_error("%s: %s", dir, errnomsg());
+				STUNPUTC(new);
+				STUNPUTC(new);
 				while (new > lim) {
 					STUNPUTC(new);
-					if (new[-1] == '/')
+					if (*new == '/')
 						break;
 				}
 				break;
-			} else if (p[1] == '\0')
+			} else if (end - p == 1)
 				break;
 			/* fall through */
 		default:
-			new = stputs(p, new);
-			USTPUTC('/', new);
+			if (new != stackblock() && new[-1] != '/')
+				USTPUTC('/', new);
+			new = mempcpy(new, p, end - p);
 		}
-		p = strtok(0, "/");
+		if (!*end)
+			break;
+		p = end + 1;
 	}
-	if (new > lim)
-		STUNPUTC(new);
 	*new = 0;
 	return stackblock();
 }
