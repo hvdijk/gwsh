@@ -127,18 +127,8 @@ trapcmd(int argc, char **argv)
 		}
 		return 0;
 	}
-	if (trapcnt < 0) {
-		char **tp;
-		INTOFF;
-		for (tp = trap ; tp < &trap[NSIG] ; tp++) {
-			if (*tp && **tp) {      /* trap not NULL or SIG_IGN */
-				ckfree(*tp);
-				*tp = NULL;
-			}
-		}
-		trapcnt = 0;
-		INTON;
-	}
+	if (trapcnt < 0)
+		clear_traps();
 	if (!ap[1] || decode_signum(*ap) >= 0)
 		action = NULL;
 	else
@@ -176,7 +166,7 @@ trapcmd(int argc, char **argv)
 
 
 /*
- * Clear traps on a fork.
+ * Clear traps.
  */
 
 void
@@ -187,11 +177,14 @@ clear_traps(void)
 	INTOFF;
 	for (tp = trap ; tp < &trap[NSIG] ; tp++) {
 		if (*tp && **tp) {	/* trap not NULL or SIG_IGN */
-			if (tp != &trap[0])
+			if (trapcnt <= 0) {
+				ckfree(*tp);
+				*tp = NULL;
+			} else if (tp != &trap[0])
 				setsignal(tp - trap);
 		}
 	}
-	trapcnt = -1;
+	trapcnt = trapcnt <= 0 ? 0 : -1;
 	INTON;
 }
 
