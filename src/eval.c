@@ -73,7 +73,7 @@
 int evalskip;			/* set if we are skipping commands */
 STATIC int skipcount;		/* number of levels to skip */
 MKINIT int loopnest;		/* current loop nesting level */
-static int funcnest;		/* depth of function calls */
+int funcnest;			/* depth of function calls */
 
 
 char *dotfile;

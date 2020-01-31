@@ -57,6 +57,7 @@
 #include "output.h"
 #include "expand.h"
 #include "nodes.h"	/* for other headers */
+#include "eval.h"
 #include "exec.h"
 #include "syntax.h"
 #include "options.h"
@@ -489,7 +490,7 @@ localcmd(int argc, char **argv)
 {
 	char *name;
 
-	if (!localvar_cur)
+	if (!funcnest)
 		sh_error("not in a function");
 
 	nextopt(nullstr);
@@ -508,7 +509,8 @@ localcmd(int argc, char **argv)
  * "-" as a special case.
  */
 
-void mklocal(char *name)
+void
+mklocal(char *name)
 {
 	struct localvar *lvp;
 	struct var **vpp;
@@ -541,14 +543,17 @@ void mklocal(char *name)
 			if (eq)
 				setvareq(name, 0);
 			if (unlikely(vp->local == localvar_stack
-				  || vp->local == localvar_cur)) {
-				if (!(lvp->flags & (VTEXTFIXED|VSTACK)))
-					ckfree(lvp->text);
-				ckfree(lvp);
-				goto out;
-			}
+				  || vp->local == localvar_cur))
+				goto free;
 			vp->local = localvar_cur;
 		}
+	}
+	if (!localvar_cur) {
+free:
+		if (!(lvp->flags & (VTEXTFIXED|VSTACK|VUNSET)))
+			ckfree(lvp->text);
+		ckfree(lvp);
+		goto out;
 	}
 	lvp->vp = vp;
 	lvp->next = localvar_cur->lv;

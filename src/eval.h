@@ -61,7 +61,8 @@ union node;	/* BLETCH for ansi C */
 int evaltree(union node *, int);
 void evalbackcmd(union node *, int, struct backcmd *);
 
-extern int evalskip;
+extern int evalskip		/* set if we are skipping commands */;
+extern int funcnest;		/* depth of function calls */
 
 /* reasons for skipping commands (see comment on breakcmd routine) */
 #define SKIPBREAK	(1 << 0)
