@@ -127,6 +127,13 @@ static int restartjob(struct job *, int);
 static void xtcsetpgrp(int, pid_t);
 #endif
 
+#ifdef mkinit
+INCLUDE "system.h"
+INIT {
+	sigclearmask();
+}
+#endif
+
 STATIC void
 set_curjob(struct job *jp, unsigned mode)
 {
