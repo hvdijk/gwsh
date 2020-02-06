@@ -315,7 +315,7 @@ usage:
 		signo = number(*argv);
 		if (signo > 128)
 			signo -= 128;
-		if (0 < signo && signo < signal_names_length && signal_names[signo])
+		if (0 <= signo && signo < signal_names_length && signal_names[signo])
 			outfmt(out, snlfmt, signal_names[signo]);
 		else
 			sh_error("invalid signal number or exit status: %s",
