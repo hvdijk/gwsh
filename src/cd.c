@@ -113,10 +113,11 @@ cdcmd(int argc, char **argv)
 		dest = bltinlookup("OLDPWD");
 		flags |= CD_PRINT;
 	}
-	if (!dest)
+	if (!dest || !*dest) {
 		dest = nullstr;
-	if (!*dest)
-		goto err;
+		flags |= CD_PHYSICAL; /* ensure error */
+		goto step6;
+	}
 	if (*dest == '/')
 		goto step6;
 	if (*dest == '.') {
