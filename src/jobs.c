@@ -347,7 +347,7 @@ usage:
 				-number(*argv + 1) : number(*argv);
 		if (kill(pid, signo) != 0) {
 err:
-			sh_warnx("%s\n", errnomsg());
+			sh_warnx("%s", errnomsg());
 			i = 1;
 		}
 	} while (*++argv);

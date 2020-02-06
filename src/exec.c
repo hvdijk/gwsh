@@ -829,7 +829,7 @@ describe_command(out, command, path, verbose)
 	default:
 		if (verbose) {
 			const char *msg = entry.u.index < 0 ? errnomsg() : "not found";
-			outfmt(out2, "%s: %s", command, msg);
+			outfmt(out2, "%s: %s\n", command, msg);
 		}
 		return 127;
 	}
