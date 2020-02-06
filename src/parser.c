@@ -949,6 +949,7 @@ readtoken1_loop(char *out, int c, char *eofmark, int flags)
 		CHECKSTRSPACE(4, out);	/* permit 4 calls to USTPUTC */
 
 		switch (c) {
+			int quotemark;
 #ifdef WITH_LOCALE
 		case PMBB:
 			if (!flags)
@@ -1148,7 +1149,7 @@ output:
 			}
 			if (flags & (~(flags << 1) | RT_ESCAPE | RT_MBCHAR) & (RT_HEREDOC | RT_QSYNTAX | RT_ESCAPE | RT_MBCHAR) & ~qsyntax)
 				goto word;
-			int quotemark = 1;
+			quotemark = 1;
 			if (flags & qsyntax) {
 				if (!(flags & RT_VARNEST)) {
 					quoteflag++;
@@ -1507,6 +1508,9 @@ readtoken1_parsebackq(char *out, int flags, int oldstyle)
 	union node *n;
 	char *str;
 	size_t savelen;
+	struct nodelist *savebqlist;
+	struct heredoc *saveheredoclist;
+	struct heredoc **here;
 
 	str = NULL;
 	savelen = out - (char *)stackblock();
@@ -1527,12 +1531,11 @@ readtoken1_parsebackq(char *out, int flags, int oldstyle)
 			parsefile->p.dqbackq |= parsefile->p.backq;
 		parsefile->p.backq <<= 1;
 	}
-	struct nodelist *savebqlist = backquotelist;
-	struct heredoc *saveheredoclist = heredoclist;
+	savebqlist = backquotelist;
+	saveheredoclist = heredoclist;
 	heredoclist = 0;
 	n = list(2);
 	backquotelist = savebqlist;
-	struct heredoc **here;
 	for (here = &saveheredoclist; *here; here = &(*here)->next)
 		;
 	*here = heredoclist;
@@ -1581,6 +1584,7 @@ readtoken1_parseheredoc(char *out)
 {
 	char *str;
 	size_t savelen;
+	struct nodelist *savebqlist;
 
 	str = NULL;
 	savelen = out - (char *)stackblock();
@@ -1588,7 +1592,7 @@ readtoken1_parseheredoc(char *out)
 		str = alloca(savelen);
 		memcpy(str, stackblock(), savelen);
 	}
-	struct nodelist *savebqlist = backquotelist;
+	savebqlist = backquotelist;
 	parseheredoc();
 	backquotelist = savebqlist;
 	while (stackblocksize() <= savelen)
