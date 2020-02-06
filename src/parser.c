@@ -918,6 +918,7 @@ STATIC void readtoken1_parseredir(char *, int);
 STATIC char *readtoken1_parsesub(char *, int, char *, int);
 STATIC char *readtoken1_parsebackq(char *, int, int);
 STATIC char *readtoken1_parsearith(char *, char *, int);
+STATIC char *readtoken1_parseheredoc(char *);
 
 STATIC int
 readtoken1(int firstc, char *eofmark, int flags)
@@ -965,6 +966,8 @@ readtoken1_loop(char *out, int c, char *eofmark, int flags)
 			if (!flags)
 				goto endword;	/* exit outer loop */
 			nlprompt();
+			if (unlikely(flags & RT_HEREDOC && heredoclist))
+				out = readtoken1_parseheredoc(out);
 			flags |= RT_CHECKEND;
 			/* fall through */
 word:
@@ -1568,6 +1571,35 @@ readtoken1_parsearith(char *out, char *eofmark, int flags)
 	return readtoken1_loop(out, 0, eofmark, (flags & RT_STRIPTABS) | RT_ARINEST);
 }
 
+
+/*
+ * Parse a nested heredoc.
+ */
+
+STATIC char *
+readtoken1_parseheredoc(char *out)
+{
+	char *str;
+	size_t savelen;
+
+	str = NULL;
+	savelen = out - (char *)stackblock();
+	if (savelen) {
+		str = alloca(savelen);
+		memcpy(str, stackblock(), savelen);
+	}
+	struct nodelist *savebqlist = backquotelist;
+	parseheredoc();
+	backquotelist = savebqlist;
+	while (stackblocksize() <= savelen)
+		growstackblock();
+	STARTSTACKSTR(out);
+	if (str) {
+		memcpy(out, str, savelen);
+		STADJUST(savelen, out);
+	}
+	return out;
+}
 
 
 #ifdef mkinit
