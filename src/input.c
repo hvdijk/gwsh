@@ -181,7 +181,7 @@ pgetc1(void)
 		 * character, unless it is PEOF or PEOA. */
 		int sp = c != (signed char)c;
 		parsefile->p.lastc[1] = sp ? c : parsefile->p.lastc[0];
-		parsefile->p.lastc[0] = c = (signed char)parsefile->p.mbc[0];
+		parsefile->p.lastc[parsefile->p.unget] = c = (signed char)parsefile->p.mbc[0];
 		parsefile->p.unget += sp;
 		pushstring(parsefile->p.mbc + 1, p - parsefile->p.mbc + sp, NULL);
 		return c;

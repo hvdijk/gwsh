@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -1230,8 +1230,8 @@ readtoken1_endword(char *out, char *eofmark)
 	len = out - (char *)stackblock();
 	out = stackblock();
 
+	c = pgetc();
 	if (eofmark == NULL) {
-		c = pgetc();
 		if ((c == '>' || c == '<')
 		 && quoteflag == 0
 		 && len <= 2
@@ -1241,6 +1241,11 @@ readtoken1_endword(char *out, char *eofmark)
 		} else {
 			pungetc();
 		}
+	} else {
+		if (c == '\n')
+			nlnoprompt();
+		else
+			pungetc();
 	}
 	grabstackblock(len);
 	wordtext = out;
@@ -1525,9 +1530,10 @@ readtoken1_parsebackq(char *out, int flags, int oldstyle)
 	n = list(2);
 	backquotelist = savebqlist;
 	struct heredoc **here;
-	for (here = &heredoclist; *here; here = &(*here)->next)
+	for (here = &saveheredoclist; *here; here = &(*here)->next)
 		;
-	*here = saveheredoclist;
+	*here = heredoclist;
+	heredoclist = saveheredoclist;
 	(*nlpp)->n = n;
 	if (oldstyle) {
 		if (readtoken() != TEOF)
