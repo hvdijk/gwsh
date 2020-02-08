@@ -63,6 +63,7 @@
 #include "main.h"
 #include "mystring.h"
 #include "show.h"
+#include "system.h"
 #include "cd.h"
 
 #define CD_PHYSICAL 1
