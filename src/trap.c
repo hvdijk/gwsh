@@ -86,9 +86,14 @@ extern int signal_names_length;
 
 static int decode_signum(const char *);
 
+sigset_t sigset_empty, sigset_full;
+
 #ifdef mkinit
 INCLUDE "trap.h"
 INIT {
+	sigemptyset(&sigset_empty);
+	sigfillset(&sigset_full);
+	sigprocmask(SIG_SETMASK, &sigset_empty, 0);
 	sigmode[SIGCHLD - 1] = S_DFL;
 	setsignal(SIGCHLD);
 }
@@ -138,7 +143,7 @@ trapcmd(int argc, char **argv)
 			sh_warnx("%s: bad trap", *ap);
 			status = 1;
 		} else {
-			INTOFF;
+			sigprocmask(SIG_SETMASK, &sigset_full, 0);
 			if (action) {
 				if (action[0] == '-' && action[1] == '\0')
 					action = NULL;
@@ -156,7 +161,7 @@ trapcmd(int argc, char **argv)
 			trap[signo] = action;
 			if (signo != 0)
 				setsignal(signo);
-			INTON;
+			sigprocmask(SIG_SETMASK, &sigset_empty, 0);
 		}
 		ap++;
 	}
@@ -175,16 +180,16 @@ clear_traps(void)
 	char **tp;
 
 	INTOFF;
+	trapcnt = trapcnt <= 0 ? 0 : -1;
 	for (tp = trap ; tp < &trap[NSIG] ; tp++) {
 		if (*tp && **tp) {	/* trap not NULL or SIG_IGN */
-			if (trapcnt <= 0) {
+			if (!trapcnt) {
 				ckfree(*tp);
 				*tp = NULL;
 			} else if (tp != &trap[0])
 				setsignal(tp - trap);
 		}
 	}
-	trapcnt = trapcnt <= 0 ? 0 : -1;
 	INTON;
 }
 
@@ -316,14 +321,15 @@ onsig(int signo)
 			return;
 	}
 
-	gotsig[signo - 1] = 1;
-	pending_sig = signo;
-
 	if (signo == SIGINT && (!have_traps() || !trap[SIGINT])) {
 		if (!suppressint)
 			onint();
 		intpending = 1;
+		return;
 	}
+
+	gotsig[signo - 1] = 1;
+	pending_sig = signo;
 }
 
 
@@ -361,8 +367,6 @@ void dotrap(void)
 		*q = 0;
 
 		p = trap[i + 1];
-		if (!have_traps() || !p)
-			continue;
 		evalstring(p, 0);
 		if (evalskip != SKIPFUNC)
 			exitstatus = savestatus;

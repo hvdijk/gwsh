@@ -56,6 +56,7 @@
 #include "eval.h"
 #include "parser.h"
 #include "system.h"
+#include "trap.h"
 
 
 /*
@@ -104,7 +105,7 @@ void
 onint(void) {
 
 	intpending = 0;
-	sigclearmask();
+	sigprocmask(SIG_SETMASK, &sigset_empty, 0);
 	if (!(rootshell && iflag)) {
 		signal(SIGINT, SIG_DFL);
 		raise(SIGINT);

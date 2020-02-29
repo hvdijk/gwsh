@@ -48,6 +48,8 @@ extern char sigmode[];
 extern volatile sig_atomic_t pending_sig;
 extern int gotsigchld;
 
+extern sigset_t sigset_empty, sigset_full;
+
 int trapcmd(int, char **);
 void clear_traps(void);
 void setsignal(int);

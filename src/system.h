@@ -41,13 +41,6 @@
 #define SSIZE_MAX ((ssize_t)((size_t)-1 >> 1))
 #endif
 
-static inline void sigclearmask(void)
-{
-	sigset_t set;
-	sigemptyset(&set);
-	sigprocmask(SIG_SETMASK, &set, 0);
-}
-
 #ifndef HAVE_MEMPCPY
 void *mempcpy(void *, const void *, size_t);
 #endif

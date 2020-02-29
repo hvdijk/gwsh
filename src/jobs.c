@@ -127,13 +127,6 @@ static int restartjob(struct job *, int);
 static void xtcsetpgrp(int, pid_t);
 #endif
 
-#ifdef mkinit
-INCLUDE "system.h"
-INIT {
-	sigclearmask();
-}
-#endif
-
 STATIC void
 set_curjob(struct job *jp, unsigned mode)
 {
@@ -953,6 +946,7 @@ forkshell(struct job *jp, union node *n, int mode)
 	int pid;
 
 	TRACE(("forkshell(%%%d, %p, %d) called\n", jobno(jp), n, mode));
+	sigprocmask(SIG_SETMASK, &sigset_full, 0);
 	pid = fork();
 	if (pid < 0) {
 		TRACE(("Fork failed, errno=%d", errno));
@@ -964,6 +958,7 @@ forkshell(struct job *jp, union node *n, int mode)
 		forkchild(jp, n, mode);
 	else
 		forkparent(jp, n, mode, pid);
+	sigprocmask(SIG_SETMASK, &sigset_empty, 0);
 	return pid;
 }
 
@@ -1155,7 +1150,6 @@ STATIC int onsigchild() {
 STATIC int
 waitproc(int block, int *status)
 {
-	sigset_t mask, oldmask;
 	int flags = block == DOWAIT_BLOCK ? 0 : WNOHANG;
 	int err;
 
@@ -1172,13 +1166,12 @@ waitproc(int block, int *status)
 
 		block = 0;
 
-		sigfillset(&mask);
-		sigprocmask(SIG_SETMASK, &mask, &oldmask);
+		sigprocmask(SIG_SETMASK, &sigset_full, 0);
 
 		while (!gotsigchld && !pending_sig)
-			sigsuspend(&oldmask);
+			sigsuspend(&sigset_empty);
 
-		sigclearmask();
+		sigprocmask(SIG_SETMASK, &sigset_empty, 0);
 	} while (gotsigchld);
 
 	return err;
