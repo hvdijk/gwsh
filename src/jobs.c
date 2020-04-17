@@ -1168,7 +1168,7 @@ waitproc(int block, int *status)
 
 		sigprocmask(SIG_SETMASK, &sigset_full, 0);
 
-		while (!gotsigchld && !pending_sig)
+		while (!gotsigchld && !pending_sig && !intpending)
 			sigsuspend(&sigset_empty);
 
 		sigprocmask(SIG_SETMASK, &sigset_empty, 0);
