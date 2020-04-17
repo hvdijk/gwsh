@@ -574,7 +574,8 @@ evalpipe(union node *n, int flags)
 		pip[0] = pip[1] = -1;
 		if (lp->next) {
 			if (pipe(pip) < 0) {
-				close(prevfd);
+				if (prevfd >= 0)
+					close(prevfd);
 				sh_error("Pipe call failed");
 			}
 		}

@@ -1140,8 +1140,8 @@ expmeta1(char *expdir, char *enddir, char *name, int force)
 			if (metaflag)
 				metaflag = 1;
 			continue;
-			do {
 		default:
+			do {
 				q = p;
 				break;
 		case '\\':

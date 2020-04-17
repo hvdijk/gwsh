@@ -163,7 +163,13 @@ int printfcmd(int argc, char *argv[])
 				ch = c_ch;
 				goto pc;
 			}
-			if (ch != '%' || (*fmt == '%' && (++fmt || 1))) {
+			switch (ch) {
+			case '%':
+				if (*fmt != '%')
+					break;
+				fmt++;
+				/* fall through */
+			default:
 pc:
 				putchar(ch);
 				continue;

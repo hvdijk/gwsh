@@ -1040,9 +1040,9 @@ output:
 					if ((p = strchr(ESCSEQCH "\0" ESCCHARS, c)))
 						c = p[sizeof ESCSEQCH];
 					break;
-					do {
 				case '0': case '1': case '2': case '3':
 				case '4': case '5': case '6': case '7':
+					do {
 						pungetc();
 						lenbase = 0x0208; break;
 				case 'x':	lenbase = 0x0110; break;
