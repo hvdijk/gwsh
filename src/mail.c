@@ -70,6 +70,7 @@ void
 chkmail(void)
 {
 	const char *mpath;
+	const char *mpathopt;
 	char *p;
 	char *q;
 	time_t *mtp;
@@ -81,7 +82,7 @@ chkmail(void)
 	for (mtp = mailtime; mtp < mailtime + MAXMBOXES; mtp++) {
 		int len;
 
-		len = padvance(&mpath, nullstr);
+		len = padvance(&mpath, &mpathopt, nullstr);
 		if (len < 0)
 			break;
 		p = stackblock();
@@ -100,7 +101,7 @@ chkmail(void)
 		if (!changed && statb.st_mtime != *mtp) {
 			outfmt(
 				&errout, snlfmt,
-				pathopt ? pathopt : "you have mail"
+				mpathopt ? mpathopt : "you have mail"
 			);
 		}
 		*mtp = statb.st_mtime;

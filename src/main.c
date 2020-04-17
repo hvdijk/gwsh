@@ -326,7 +326,7 @@ find_dot_file(char *basename)
 	if (strchr(basename, '/'))
 		return basename;
 
-	while ((len = padvance(&path, basename)) >= 0) {
+	while ((len = padvance(&path, NULL, basename)) >= 0) {
 		fullname = stackblock();
 		if ((stat(fullname, &statb) == 0) && S_ISREG(statb.st_mode)) {
 			/* This will be freed by the caller. */

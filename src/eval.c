@@ -717,7 +717,7 @@ evalcommand(union node *cmd, int flags)
 	const struct builtincmd *bltin = COMMANDCMD;
 	struct job *jp;
 	char *lastarg;
-	const char *path;
+	const char *path, *fpath;
 	int spclbltin;
 	int execcmd;
 	int status;
@@ -778,6 +778,7 @@ evalcommand(union node *cmd, int flags)
 	status = redirectsafe(cmd->ncmd.redirect, REDIR_PUSH);
 
 	path = vpath.text;
+	fpath = vfpath.text;
 	for (argp = cmd->ncmd.assign; argp; argp = argp->narg.next) {
 		struct strlist **spp;
 		char *p;
@@ -794,6 +795,8 @@ evalcommand(union node *cmd, int flags)
 		p = (*spp)->text;
 		if (varequal(p, path))
 			path = p;
+		else if (varequal(p, fpath))
+			fpath = p;
 	}
 
 	/* Print the command if xflag is set. */
@@ -820,9 +823,10 @@ evalcommand(union node *cmd, int flags)
 		int cmd_flag = DO_ERR;
 
 		path = path[4] ? path + 5 : NULL;
+		fpath = fpath[5] ? fpath + 6 : NULL;
 		oldpath = path;
 		for (;;) {
-			find_command(argv[0], &cmdentry, cmd_flag, path);
+			find_command(argv[0], &cmdentry, cmd_flag, path, fpath);
 			if (cmdentry.cmdtype == CMDUNKNOWN) {
 				status = 127;
 #ifdef FLUSHERR
@@ -1020,7 +1024,8 @@ prehash(union node *n)
 	if (n->type == NCMD && n->ncmd.args)
 		if (goodname(n->ncmd.args->narg.text))
 			find_command(n->ncmd.args->narg.text, &entry, 0,
-			             pathset() ? pathval() : NULL);
+			             pathset() ? pathval() : NULL,
+			             fpathset() ? fpathval() : NULL);
 }
 
 

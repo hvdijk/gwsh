@@ -135,7 +135,7 @@ dotdot:
 		}
 	}
 	path = bltinlookup("CDPATH");
-	while (p = path, (len = padvance(&path, dest)) >= 0) {
+	while (p = path, (len = padvance(&path, NULL, dest)) >= 0) {
 		c = *p;
 		p = stalloc(len);
 

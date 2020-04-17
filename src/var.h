@@ -90,6 +90,7 @@ enum {
 	VMAIL,
 	VMPATH,
 	VPATH,
+	VFPATH,
 	VPS1,
 	VPS2,
 	VPS4,
@@ -114,6 +115,7 @@ enum {
 #define vmail varinit[VMAIL]
 #define vmpath varinit[VMPATH]
 #define vpath varinit[VPATH]
+#define vfpath varinit[VFPATH]
 #define vps1 varinit[VPS1]
 #define vps2 varinit[VPS2]
 #define vps4 varinit[VPS4]
@@ -155,6 +157,8 @@ extern char linenovar[];
 #define mpathset()	((vmpath.flags & VUNSET) == 0)
 #define pathval()	(vpath.text + 5)
 #define pathset()	((vpath.flags & VUNSET) == 0)
+#define fpathval()	(vfpath.text + 6)
+#define fpathset()	((vfpath.flags & VUNSET) == 0)
 #define ps1val()	(vps1.text + 4)
 #define ps2val()	(vps2.text + 4)
 #define ps4val()	(vps4.text + 4)

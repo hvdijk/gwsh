@@ -103,6 +103,7 @@ struct var varinit[] = {
 	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAIL\0",	changemail },
 	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAILPATH\0",	changemail },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defpathvar,	changepath },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"FPATH\0",	0 },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defps1var,	0 },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS2=> ",	0 },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS4=+ ",	0 },
