@@ -223,7 +223,7 @@ errnomsg(void)
 const char *
 errmsg(int e)
 {
-	if (e != ENOENT && e != ENOTDIR)
+	if (e && e != ENOENT && e != ENOTDIR)
 		return strerror(e);
 
 	return "not found";

@@ -819,7 +819,7 @@ evalcommand(union node *cmd, int flags)
 		const char *oldpath;
 		int cmd_flag = DO_ERR;
 
-		path += 5;
+		path = path[4] ? path + 5 : NULL;
 		oldpath = path;
 		for (;;) {
 			find_command(argv[0], &cmdentry, cmd_flag, path);
@@ -1020,7 +1020,7 @@ prehash(union node *n)
 	if (n->type == NCMD && n->ncmd.args)
 		if (goodname(n->ncmd.args->narg.text))
 			find_command(n->ncmd.args->narg.text, &entry, 0,
-				     pathval());
+			             pathset() ? pathval() : NULL);
 }
 
 
@@ -1128,7 +1128,7 @@ execcmd(int argc, char **argv)
 		iflag = 0;		/* exit on error */
 		mflag = 0;
 		optschanged();
-		shellexec(argv + 1, pathval(), 0);
+		shellexec(argv + 1, pathset() ? pathval() : NULL, 0);
 	}
 	return 0;
 }

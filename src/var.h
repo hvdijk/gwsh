@@ -152,7 +152,9 @@ extern char linenovar[];
 #define ifsset()	((vifs.flags & VUNSET) == 0)
 #define mailval()	(vmail.text + 5)
 #define mpathval()	(vmpath.text + 9)
+#define mpathset()	((vmpath.flags & VUNSET) == 0)
 #define pathval()	(vpath.text + 5)
+#define pathset()	((vpath.flags & VUNSET) == 0)
 #define ps1val()	(vps1.text + 4)
 #define ps2val()	(vps2.text + 4)
 #define ps4val()	(vps4.text + 4)
@@ -171,8 +173,6 @@ extern char linenovar[];
 #define histsizeval()	(vhistsize.text + 9)
 #define termval()	(vterm.text + 5)
 #endif
-
-#define mpathset()	((vmpath.flags & VUNSET) == 0)
 
 void initvar(void);
 struct var *setvar(const char *name, const char *val, int flags);

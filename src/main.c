@@ -318,7 +318,7 @@ STATIC char *
 find_dot_file(char *basename)
 {
 	char *fullname;
-	const char *path = pathval();
+	const char *path = pathset() ? pathval() : NULL;
 	struct stat statb;
 	int len;
 

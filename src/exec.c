@@ -263,7 +263,8 @@ hashcmd(int argc, char **argv)
 		 && (cmdp->cmdtype == CMDNORMAL
 		     || (cmdp->cmdtype == CMDBUILTIN && builtinloc >= 0)))
 			delete_cmd_entry();
-		find_command(name, &entry, DO_ERR, pathval());
+		find_command(name, &entry, DO_ERR,
+		             pathset() ? pathval() : NULL);
 		if (entry.cmdtype == CMDUNKNOWN)
 			c = 1;
 		argptr++;
@@ -296,7 +297,7 @@ printentry(struct tblentry *cmdp)
  * change the shellexec routine as well.
  */
 
-void
+int
 find_command(char *name, struct cmdentry *entry, int act, const char *path)
 {
 	struct tblentry *cmdp;
@@ -314,12 +315,13 @@ find_command(char *name, struct cmdentry *entry, int act, const char *path)
 		entry->u.index = -1;
 		if (act & DO_ABS) {
 			while (stat(name, &statb) < 0) {
+				e = errno;
 #ifdef SYSV
-				if (errno == EINTR)
+				if (e == EINTR)
 					continue;
 #endif
 				entry->cmdtype = CMDUNKNOWN;
-				return;
+				return e;
 			}
 			if (!S_ISREG(statb.st_mode)
 #ifdef HAVE_FACCESSAT
@@ -328,16 +330,15 @@ find_command(char *name, struct cmdentry *entry, int act, const char *path)
 			    || !test_access(&statb, X_OK)
 #endif
 			   ) {
-				errno = EACCES;
 				entry->cmdtype = CMDUNKNOWN;
-				return;
+				return EACCES;
 			}
 		}
 		entry->cmdtype = CMDNORMAL;
-		return;
+		return 0;
 	}
 
-	updatetbl = (path == pathval());
+	updatetbl = !path || (path == pathval());
 	if (!updatetbl) {
 		act |= DO_ALTPATH;
 		if (strstr(path, "%builtin") != NULL)
@@ -387,7 +388,7 @@ find_command(char *name, struct cmdentry *entry, int act, const char *path)
 			prev = cmdp->param.index;
 	}
 
-	e = ENOENT;
+	e = 0;
 	idx = -1;
 loop:
 	while ((len = padvance(&path, name)) >= 0) {
@@ -445,7 +446,7 @@ loop:
 		if (!updatetbl) {
 			entry->cmdtype = CMDNORMAL;
 			entry->u.index = idx;
-			return;
+			return 0;
 		}
 		INTOFF;
 		cmdp = cmdlookup(name, 1);
@@ -462,13 +463,13 @@ loop:
 		sh_warnx("%s: %s", name, errmsg(e));
 	entry->cmdtype = CMDUNKNOWN;
 	entry->u.index = idx;
-	return;
+	return e;
 
 builtin_success:
 	if (!updatetbl) {
 		entry->cmdtype = CMDBUILTIN;
 		entry->u.cmd = bcmd;
-		return;
+		return 0;
 	}
 	INTOFF;
 	cmdp = cmdlookup(name, 1);
@@ -479,6 +480,7 @@ success:
 	cmdp->rehash = 0;
 	entry->cmdtype = cmdp->cmdtype;
 	entry->u = cmdp->param;
+	return 0;
 }
 
 
@@ -747,6 +749,7 @@ describe_command(out, command, path, verbose)
 	struct cmdentry entry;
 	struct tblentry *cmdp;
 	const struct alias *ap;
+	int e;
 
 	/* First look at the keywords */
 	if (findkwd(command)) {
@@ -773,7 +776,7 @@ describe_command(out, command, path, verbose)
 	 * a tracked alias.
 	 */
 	if (path == NULL) {
-		path = pathval();
+		path = pathset() ? pathval() : NULL;
 		cmdp = cmdlookup(command, 0);
 	} else {
 		cmdp = NULL;
@@ -782,9 +785,10 @@ describe_command(out, command, path, verbose)
 	if (cmdp != NULL) {
 		entry.cmdtype = cmdp->cmdtype;
 		entry.u = cmdp->param;
+		e = 0;
 	} else {
 		/* Finally use brute force */
-		find_command(command, &entry, DO_ABS, path);
+		e = find_command(command, &entry, DO_ABS, path);
 	}
 
 	switch (entry.cmdtype) {
@@ -831,7 +835,7 @@ describe_command(out, command, path, verbose)
 
 	default:
 		if (verbose) {
-			const char *msg = entry.u.index < 0 ? errnomsg() : "not found";
+			const char *msg = e ? strerror(e) : "not found";
 			outfmt(out2, "%s: %s\n", command, msg);
 		}
 		return 127;
