@@ -78,10 +78,6 @@ locale_t parselocale;		/* the locale to use during parsing */
 #endif
 int whichprompt;		/* 1 == PS1, 2 == PS2 */
 
-#ifndef SMALL
-EditLine *el;			/* cookie for editline package */
-#endif
-
 STATIC void pushfile(void);
 static int preadfd(void);
 static void setinputfd(int fd, int push);
