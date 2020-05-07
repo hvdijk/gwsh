@@ -240,39 +240,18 @@ histcmd(int argc, char **argv)
 	static int active = 0;
 	struct jmploc jmploc;
 	struct jmploc *volatile savehandler;
-	char editfile[PATH_MAX + 1];
+	int saveactive;
+	static char editfile[PATH_MAX + 1];
 	FILE *efp;
-#ifdef __GNUC__
-	/* Avoid longjmp clobbering */
-	(void) &editor;
-	(void) &lflg;
-	(void) &nflg;
-	(void) &rflg;
-	(void) &sflg;
-	(void) &firststr;
-	(void) &laststr;
-	(void) &pat;
-	(void) &repl;
-	(void) &efp;
-	(void) &argc;
-	(void) &argv;
-#endif
 
 	if (hist == NULL)
 		sh_error("history not active");
 
-#ifdef __GLIBC__
-#define OPTIND (optind ? optind : 1)
-	optind = 0;
-#else
-#define OPTIND (optind)
-	optreset = 1; optind = 1; /* initialize getopt */
-#endif
-	while (not_fcnumber(argv[OPTIND]) &&
-	      (ch = getopt(argc, argv, ":e:lnrs")) != -1)
+	while (not_fcnumber(*argptr) &&
+	       (ch = nextopt("e:lnrs")) != '\0')
 		switch ((char)ch) {
 		case 'e':
-			editor = optarg;
+			editor = optionarg;
 			break;
 		case 'l':
 			lflg = 1;
@@ -286,15 +265,12 @@ histcmd(int argc, char **argv)
 		case 's':
 			sflg = 1;
 			break;
-		case ':':
-			sh_error("option -%c expects argument", optopt);
-			/* NOTREACHED */
-		case '?':
-		default:
-			sh_error("unknown option: -%c", optopt);
-			/* NOTREACHED */
 		}
-	argc -= OPTIND, argv += OPTIND;
+	argc -= argptr - argv;
+	argv = argptr;
+
+	saveactive = active;
+	savehandler = handler;
 
 	/*
 	 * If executing...
@@ -306,11 +282,10 @@ histcmd(int argc, char **argv)
 		 * Catch interrupts to reset active counter and
 		 * cleanup temp files.
 		 */
-		savehandler = handler;
 		if (setjmp(jmploc.loc)) {
-			active = 0;
 			if (*editfile)
 				unlink(editfile);
+			active = saveactive;
 			handler = savehandler;
 			longjmp(handler->loc, 1);
 		}
@@ -325,13 +300,9 @@ histcmd(int argc, char **argv)
 		 */
 		if (sflg == 0) {
 			if (editor == NULL &&
-			    (editor = bltinlookup("FCEDIT")) == NULL &&
-			    (editor = bltinlookup("EDITOR")) == NULL)
+			    ((editor = bltinlookup("FCEDIT")) == NULL ||
+			     *editor == '\0'))
 				editor = DEFEDITOR;
-			if (editor[0] == '-' && editor[1] == '\0') {
-				sflg = 1;	/* no edit */
-				editor = NULL;
-			}
 		}
 	}
 
@@ -447,18 +418,17 @@ histcmd(int argc, char **argv)
 		evalstring(editcmd, 0);
 		INTON;
 		setinputfile(editfile, INPUT_PUSH_FILE);
+		unlink(editfile);
+		*editfile = '\0';
 		parsefile->flags |= PF_HIST;
 		histop = H_REPLACE;
 		cmdloop(0);
 		popfile();
-		if (*editfile)
-			unlink(editfile);
 	}
 
-	if (lflg == 0 && active > 0)
-		--active;
-	if (displayhist)
-		displayhist = 0;
+	displayhist = 0;
+	active = saveactive;
+	handler = savehandler;
 	return 0;
 }
 
