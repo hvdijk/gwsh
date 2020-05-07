@@ -98,7 +98,7 @@ static int print_escape_str(int skip, const char *f, int width, int prec, const 
 	len = q - p;
 	total = len - 1;
 
-	if (f[1] == 'b') {
+	if (f[1] == 's') {
 		q[-1] = (next & f[2]);
 		total += !!q[-1];
 		goto easy;
@@ -213,9 +213,11 @@ pc:
 
 			case 'b':
 				/* escape if a \c was encountered */
+				*fmt = 's';
 				if (!print_escape_str(skip, start, width, prec,
 						      getstr()))
 					goto out;
+				*fmt = 'b';
 				break;
 			case 'c': {
 				int p = getchr();
@@ -457,7 +459,7 @@ check_conversion(const char *s, const char *ep)
 int
 echocmd(int argc, char **argv)
 {
-	char fmt[] = "%b ";
+	char fmt[] = "%s ";
 	char lastfmt = '\n';
 	int next;
 
