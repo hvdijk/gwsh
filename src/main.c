@@ -242,16 +242,17 @@ cmdloop(int top)
 			if (!top || numeof >= 50)
 				break;
 			if (!stoppedjobs()) {
-				if (!Iflag) {
-					if (iflag) {
-						out2c('\n');
+				if (!iflag)
+					break;
+				else if (Iflag)
+					out2str("\nUse \"exit\" to leave shell.\n");
+				else {
+					out2c('\n');
 #ifdef FLUSHERR
-						flushout(out2);
+					flushout(out2);
 #endif
-					}
 					break;
 				}
-				out2str("\nUse \"exit\" to leave shell.\n");
 			}
 			numeof++;
 		} else {
