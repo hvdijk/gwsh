@@ -123,13 +123,15 @@ shellexec(char **argv, const char *path, int idx)
 	} else {
 		e = 0;
 		errmsg = "not found";
-		while (padvance(&path, NULL, argv[0]) >= 0) {
-			cmdname = stackblock();
-			if (--idx < 0) {
-				tryexec(cmdname, argv, envp);
-				if (errno != ENOENT && errno != ENOTDIR) {
-					e = errno;
-					errmsg = errnomsg();
+		if (path && *path) {
+			while (padvance(&path, NULL, argv[0]) >= 0) {
+				cmdname = stackblock();
+				if (--idx < 0) {
+					tryexec(cmdname, argv, envp);
+					if (errno != ENOENT && errno != ENOTDIR) {
+						e = errno;
+						errmsg = errnomsg();
+					}
 				}
 			}
 		}
@@ -261,8 +263,7 @@ hashcmd(int argc, char **argv)
 		 && cmdp->cmdtype == CMDNORMAL)
 			delete_cmd_entry();
 		find_command(name, &entry, DO_ERR,
-		             pathset() ? pathval() : NULL,
-		             fpathset() ? fpathval() : NULL);
+		             pathval(), fpathval());
 		if (entry.cmdtype == CMDUNKNOWN)
 			c = 1;
 		argptr++;
@@ -384,56 +385,58 @@ find_command(char *name, struct cmdentry *entry, int act, const char *path, cons
 	idx = -1;
 	checkexec = 1;
 loop:
-	while ((len = padvance(&path, NULL, name)) >= 0) {
-		fullname = stackblock();
-		idx++;
-		/* if rehash, don't redo absolute path names */
-		if (fullname[0] == '/' && idx <= prev) {
-			if (idx < prev)
-				continue;
-			TRACE(("searchexec \"%s\": no change\n", name));
-			goto success;
-		}
-		while (stat(fullname, &statb) < 0) {
+	if (path && *path) {
+		while ((len = padvance(&path, NULL, name)) >= 0) {
+			fullname = stackblock();
+			idx++;
+			/* if rehash, don't redo absolute path names */
+			if (fullname[0] == '/' && idx <= prev) {
+				if (idx < prev)
+					continue;
+				TRACE(("searchexec \"%s\": no change\n", name));
+				goto success;
+			}
+			while (stat(fullname, &statb) < 0) {
 #ifdef SYSV
-			if (errno == EINTR)
-				continue;
+				if (errno == EINTR)
+					continue;
 #endif
-			if (errno != ENOENT && errno != ENOTDIR)
-				e = errno;
-			goto loop;
-		}
-		e = EACCES; /* if we fail, this will be the error */
-		if (!S_ISREG(statb.st_mode))
-			continue;
-		if (!checkexec) { /* this is an FPATH directory */
-			stalloc(len);
-			readcmdfile(fullname);
-			if ((cmdp = cmdlookup(name, 0)) == NULL ||
-			    cmdp->cmdtype != CMDFUNCTION)
-				sh_error("%s not defined in %s", name,
-					 fullname);
-			stunalloc(fullname);
+				if (errno != ENOENT && errno != ENOTDIR)
+					e = errno;
+				goto loop;
+			}
+			e = EACCES; /* if we fail, this will be the error */
+			if (!S_ISREG(statb.st_mode))
+				continue;
+			if (!checkexec) { /* this is an FPATH directory */
+				stalloc(len);
+				readcmdfile(fullname);
+				if ((cmdp = cmdlookup(name, 0)) == NULL ||
+				    cmdp->cmdtype != CMDFUNCTION)
+					sh_error("%s not defined in %s", name,
+						 fullname);
+				stunalloc(fullname);
+				goto success;
+			}
+#ifdef HAVE_FACCESSAT
+			if (!test_file_access(fullname, X_OK))
+#else
+			if (!test_access(&statb, X_OK))
+#endif
+				continue;
+			TRACE(("searchexec \"%s\" returns \"%s\"\n", name, fullname));
+			if (!updatetbl) {
+				entry->cmdtype = CMDNORMAL;
+				entry->u.index = idx;
+				return 0;
+			}
+			INTOFF;
+			cmdp = cmdlookup(name, 1);
+			cmdp->cmdtype = CMDNORMAL;
+			cmdp->param.index = idx;
+			INTON;
 			goto success;
 		}
-#ifdef HAVE_FACCESSAT
-		if (!test_file_access(fullname, X_OK))
-#else
-		if (!test_access(&statb, X_OK))
-#endif
-			continue;
-		TRACE(("searchexec \"%s\" returns \"%s\"\n", name, fullname));
-		if (!updatetbl) {
-			entry->cmdtype = CMDNORMAL;
-			entry->u.index = idx;
-			return 0;
-		}
-		INTOFF;
-		cmdp = cmdlookup(name, 1);
-		cmdp->cmdtype = CMDNORMAL;
-		cmdp->param.index = idx;
-		INTON;
-		goto success;
 	}
 	if (checkexec--) {
 		path = fpath;
@@ -737,8 +740,8 @@ describe_command(out, command, path, fpath, verbose)
 	 * a tracked alias.
 	 */
 	if (path == NULL) {
-		path = pathset() ? pathval() : NULL;
-		fpath = fpathset() ? fpathval() : NULL;
+		path = pathval();
+		fpath = fpathval();
 		cmdp = cmdlookup(command, 0);
 	} else {
 		cmdp = NULL;
