@@ -47,6 +47,7 @@
 #include "../memalloc.h"
 #include "../output.h"
 #include "../error.h"
+#include "builtins.h"
 #undef stdout
 #undef stderr
 #undef putc
@@ -74,8 +75,5 @@
 #define setlocate(l,s) 0
 
 #define getenv(p) bltinlookup((p),0)
-
-int echocmd(int, char **);
-
 
 extern const char *commandname;

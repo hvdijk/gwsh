@@ -205,10 +205,8 @@ eopen:
 
 
 STATIC void
-dupredirect(redir, f)
-	union node *redir;
-	int f;
-	{
+dupredirect(union node *redir, int f)
+{
 	int fd = redir->nfile.fd;
 	const char *errmsg = NULL;
 

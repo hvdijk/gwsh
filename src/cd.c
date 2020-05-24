@@ -78,7 +78,7 @@ STATIC const char *curdir = nullstr;	/* current working directory */
 STATIC const char *physdir = nullstr;	/* physical working directory */
 
 STATIC int
-cdopt()
+cdopt(void)
 {
 	int flags = 0;
 	int i, j;
@@ -292,7 +292,7 @@ updatepwd(const char *dir)
  */
 inline
 STATIC const char *
-getpwd()
+getpwd(void)
 {
 #ifdef __GLIBC__
 	char *dir = getcwd(0, 0);

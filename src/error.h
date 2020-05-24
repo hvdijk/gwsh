@@ -78,7 +78,7 @@ extern int exception;
 extern int suppressint;
 extern volatile sig_atomic_t intpending;
 
-static inline void barrier() {
+static inline void barrier(void) {
 	__asm__ volatile ("": : :"memory");
 }
 #define INTOFF \

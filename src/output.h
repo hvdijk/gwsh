@@ -76,7 +76,7 @@ int doformat(struct output *, const char *, va_list);
 int xwrite(int, const void *, size_t);
 
 static inline void
-freestdout()
+freestdout(void)
 {
 	output.nextc = output.buf;
 	output.error = 0;

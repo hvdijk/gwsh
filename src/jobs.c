@@ -241,9 +241,7 @@ close:
 
 
 int
-killcmd(argc, argv)
-	int argc;
-	char **argv;
+killcmd(int argc, char *argv[])
 {
 	extern const char *signal_names[];
 	extern int signal_names_length;

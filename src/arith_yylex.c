@@ -55,7 +55,7 @@
 extern const char *arith_buf;
 
 int
-yylex()
+yylex(void)
 {
 	int value;
 	const char *buf = arith_buf;
