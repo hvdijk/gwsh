@@ -124,6 +124,8 @@ readcmd(int argc, char **argv)
 	int rflag;
 	char *prompt;
 	char *p;
+	size_t bufsize;
+	char *pin, *pinend;
 	int startloc;
 	int newloc;
 	int status;
@@ -147,21 +149,30 @@ readcmd(int argc, char **argv)
 	status = 0;
 	STARTSTACKSTR(p);
 
+	bufsize = lseek(0, 0, SEEK_CUR) >= 0 ? IOBUFSIZE : 1;
+	pin = pinend = NULL;
+
 	goto start;
 
 	for (;;) {
-		switch (read(0, &c, 1)) {
-		case 1:
-			break;
-		default:
-			if (errno == EINTR && !pending_sig)
-				continue;
-			sh_warnx("%s", errnomsg());
-			/* fall through */
-		case 0:
-			status = 1;
-			goto out;
+		if (pin == pinend) {
+			ssize_t nbytes;
+read:
+			switch (nbytes = read(0, iobuf, bufsize)) {
+			default:
+				pin = iobuf;
+				pinend = iobuf + nbytes;
+				break;
+			case -1:
+				if (errno == EINTR && !pending_sig)
+					goto read;
+				goto errmsg;
+			case 0:
+				goto err;
+			}
 		}
+
+		c = *pin++;
 		if (c == '\0')
 			continue;
 		if (newloc >= startloc) {
@@ -189,7 +200,14 @@ start:
 			newloc = startloc - 1;
 		}
 	}
-out:
+	if (pin != pinend) {
+		if (lseek(0, pin - pinend, SEEK_CUR) < 0) {
+errmsg:
+			sh_warnx("%s", errnomsg());
+err:
+			status = 1;
+		}
+	}
 	recordregion(startloc, p - (char *)stackblock(), 0);
 	STACKSTRNUL(p);
 	readcmd_handle_line(p + 1, argc - (ap - argv), ap);
