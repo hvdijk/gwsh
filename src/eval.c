@@ -89,11 +89,7 @@ STATIC int evalcase(union node *, int);
 STATIC int evalsubshell(union node *, int);
 STATIC void expredir(union node *);
 STATIC int evalpipe(union node *, int);
-#ifdef notyet
-STATIC int evalcommand(union node *, int, struct backcmd *);
-#else
 STATIC int evalcommand(union node *, int);
-#endif
 STATIC int evalbltin(const struct builtincmd *, int, char **, int);
 STATIC int evalfun(struct funcnode *, int, char **, int);
 STATIC void prehash(union node *);
@@ -229,9 +225,7 @@ evaltree(union node *n, int flags)
 	default:
 #ifdef DEBUG
 		out1fmt("Node type = %d\n", n->type);
-#ifndef USE_GLIBC_STDIO
 		flushout(out1);
-#endif
 		break;
 #endif
 	case NNOT:
@@ -252,18 +246,11 @@ evaltree(union node *n, int flags)
 			popredir(0);
 		goto setstatus;
 	case NCMD:
-#ifdef notyet
-		if (eflag && !(flags & EV_TESTED))
-			checkexit = ~0;
-		status = evalcommand(n, flags, (struct backcmd *)NULL);
-		goto setstatus;
-#else
 		evalfn = evalcommand;
 checkexit:
 		if (eflag && !(flags & EV_TESTED))
 			checkexit = ~0;
 		goto calleval;
-#endif
 	case NFOR:
 		evalfn = evalfor;
 		goto calleval;
@@ -695,11 +682,7 @@ parse_command_args(char **argv, const char **path)
  */
 
 STATIC int
-#ifdef notyet
-evalcommand(union node *cmd, int flags, struct backcmd *backcmd)
-#else
 evalcommand(union node *cmd, int flags)
-#endif
 {
 	struct localvar_list *localvar_stop;
 	struct parsefile *file_stop;
@@ -710,9 +693,6 @@ evalcommand(union node *cmd, int flags)
 	char **argv;
 	int argc;
 	struct strlist *sp;
-#ifdef notyet
-	int pip[2];
-#endif
 	struct cmdentry cmdentry;
 	const struct builtincmd *bltin = COMMANDCMD;
 	struct job *jp;

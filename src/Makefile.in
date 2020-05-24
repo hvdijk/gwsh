@@ -333,7 +333,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_YFLAGS = -d
-COMMON_CPPFLAGS = -DBSD -DSHELL -DBINDIR='"$(bindir)"'
+COMMON_CPPFLAGS = -DBINDIR='"$(bindir)"'
 AM_CPPFLAGS = $(COMMON_CPPFLAGS)
 AM_CPPFLAGS_FOR_BUILD = $(COMMON_CPPFLAGS)
 COMPILE_FOR_BUILD = \

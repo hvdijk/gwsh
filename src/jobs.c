@@ -44,11 +44,9 @@
 #include <paths.h>
 #endif
 #include <sys/types.h>
-#ifdef BSD
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#endif
 
 #include "shell.h"
 #if JOBS

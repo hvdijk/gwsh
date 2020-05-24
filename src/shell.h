@@ -40,7 +40,6 @@
  * The follow should be set to reflect the type of system you have:
  *	JOBS -> 1 if you have Berkeley job control, 0 otherwise.
  *	SHORTNAMES -> 1 if your linker cannot handle long names.
- *	define BSD if you are running 4.2 BSD or later.
  *	define SYSV if you are running under System V.
  *	define DEBUG=1 to compile in debugging ('set -o debug' to turn on)
  *	define DEBUG=2 to compile in and turn on debugging.
@@ -56,9 +55,6 @@
 
 #ifndef JOBS
 #define JOBS 1
-#endif
-#ifndef BSD
-#define BSD 1
 #endif
 
 #ifndef DO_SHAREDVFORK

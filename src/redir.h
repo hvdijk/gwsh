@@ -39,9 +39,6 @@
 
 /* flags passed to redirect */
 #define REDIR_PUSH 01		/* save previous values of file descriptors */
-#ifdef notyet
-#define REDIR_BACKQ 02		/* save the command output in memory */
-#endif
 
 struct redirtab;
 union node;

@@ -53,9 +53,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-#ifdef USE_GLIBC_STDIO
-#include <fcntl.h>
-#endif
 #include <limits.h>
 
 #include "shell.h"
@@ -71,19 +68,6 @@
 #define MEM_OUT -3		/* output to dynamically allocated memory */
 
 
-#ifdef USE_GLIBC_STDIO
-struct output output = {
-	.stream = 0, .nextc = 0, .end = 0, .buf = 0, .bufsize = 0, .fd = 1, .error = 0
-};
-struct output errout = {
-	.stream = 0, .nextc = 0, .end = 0, .buf = 0, .bufsize = 0, .fd = 2, .error = 0
-}
-#ifdef notyet
-struct output memout = {
-	.stream = 0, .nextc = 0, .end = 0, .buf = 0, .bufsize = 0, .fd = MEM_OUT, .error = 0
-};
-#endif
-#else
 struct output output = {
 	.nextc = 0, .end = 0, .buf = 0, .bufsize = OUTBUFSIZ, .fd = 1, .error = 0
 };
@@ -91,12 +75,6 @@ struct output errout = {
 	.nextc = 0, .end = 0, .buf = 0, .bufsize = 0, .fd = 2, .error = 0
 };
 struct output preverrout;
-#ifdef notyet
-struct output memout = {
-	.nextc = 0, .end = 0, .buf = 0, .bufsize = 0, .fd = MEM_OUT, .error = 0
-};
-#endif
-#endif
 struct output *out1 = &output;
 struct output *out2 = &errout;
 
@@ -104,43 +82,9 @@ struct output *out2 = &errout;
 static int xvsnprintf(char *, size_t, const char *, va_list);
 
 
-#ifdef mkinit
-
-INCLUDE "output.h"
-INCLUDE "memalloc.h"
-
-INIT {
-#ifdef USE_GLIBC_STDIO
-	initstreams();
-#endif
-}
-
-RESET {
-#ifdef notyet
-	out1 = &output;
-	out2 = &errout;
-#ifdef USE_GLIBC_STDIO
-	if (memout.stream != NULL)
-		__closememout();
-#endif
-	if (memout.buf != NULL) {
-		ckfree(memout.buf);
-		memout.buf = NULL;
-	}
-#endif
-}
-
-#endif
-
-
 void
 outmem(const char *p, size_t len, struct output *dest)
 {
-#ifdef USE_GLIBC_STDIO
-	INTOFF;
-	fwrite(p, 1, len, dest->stream);
-	INTON;
-#else
 	size_t bufsize;
 	size_t offset;
 	size_t nleft;
@@ -157,27 +101,7 @@ buffered:
 	if (!bufsize) {
 		;
 	} else if (dest->buf == NULL) {
-#ifdef notyet
-		if (dest->fd == MEM_OUT && len > bufsize) {
-			bufsize = len;
-		}
-#endif
 		offset = 0;
-#ifdef notyet
-		goto alloc;
-	} else if (dest->fd == MEM_OUT) {
-		offset = bufsize;
-		if (bufsize >= len) {
-			bufsize <<= 1;
-		} else {
-			bufsize += len;
-		}
-		if (bufsize < offset) {
-			dest->error = ENOSPC;
-			return;
-		}
-alloc:
-#endif
 		INTOFF;
 		dest->buf = ckrealloc(dest->buf, bufsize);
 		dest->bufsize = bufsize;
@@ -194,27 +118,17 @@ alloc:
 
 	if (xwrite(dest->fd, p, len) && !dest->error)
 		dest->error = errno;
-#endif
 }
 
 
 void
 outstr(const char *p, struct output *file)
 {
-#ifdef USE_GLIBC_STDIO
-	INTOFF;
-	fputs(p, file->stream);
-	INTON;
-#else
 	size_t len;
 
 	len = strlen(p);
 	outmem(p, len, file);
-#endif
 }
-
-
-#ifndef USE_GLIBC_STDIO
 
 
 void
@@ -223,7 +137,6 @@ outcslow(int c, struct output *dest)
 	char buf = c;
 	outmem(&buf, 1, dest);
 }
-#endif
 
 
 void
@@ -239,11 +152,6 @@ flushall(void)
 void
 flushout(struct output *dest)
 {
-#ifdef USE_GLIBC_STDIO
-	INTOFF;
-	fflush(dest->stream);
-	INTON;
-#else
 	size_t len;
 
 	len = dest->nextc - dest->buf;
@@ -252,7 +160,6 @@ flushout(struct output *dest)
 	dest->nextc = dest->buf;
 	if (xwrite(dest->fd, dest->buf, len) && !dest->error)
 		dest->error = errno;
-#endif
 }
 
 
@@ -324,7 +231,6 @@ int xasprintf(char **sp, const char *f, ...)
 }
 
 
-#ifndef USE_GLIBC_STDIO
 int
 doformat(struct output *dest, const char *f, va_list ap)
 {
@@ -346,8 +252,6 @@ out:
 	popstackmark(&smark);
 	return len;
 }
-#endif
-
 
 
 /*
@@ -376,33 +280,6 @@ xwrite(int fd, const void *p, size_t n)
 	}
 	return 0;
 }
-
-
-#ifdef notyet
-#ifdef USE_GLIBC_STDIO
-void initstreams() {
-	output.stream = stdout;
-	errout.stream = stderr;
-}
-
-
-void
-openmemout(void) {
-	INTOFF;
-	memout.stream = open_memstream(&memout.buf, &memout.bufsize);
-	INTON;
-}
-
-
-int
-__closememout(void) {
-	int error;
-	error = fclose(memout.stream);
-	memout.stream = NULL;
-	return error;
-}
-#endif
-#endif
 
 
 static int

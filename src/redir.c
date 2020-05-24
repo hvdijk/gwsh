@@ -80,11 +80,7 @@ struct redirtab {
 MKINIT struct redirtab *redirlist;
 
 STATIC int openredirect(union node *);
-#ifdef notyet
-STATIC void dupredirect(union node *, int, char[10]);
-#else
 STATIC void dupredirect(union node *, int);
-#endif
 STATIC int openhere(union node *);
 
 
@@ -104,13 +100,6 @@ redirect(union node *redir, int flags)
 	int fd;
 	int newfd;
 	int *p;
-#if notyet
-	char memory[10];	/* file descriptors to write to memory */
-
-	for (i = 10 ; --i >= 0 ; )
-		memory[i] = 0;
-	memory[1] = flags & REDIR_BACKQ;
-#endif
 	if (!redir)
 		return;
 	sv = NULL;
@@ -132,19 +121,9 @@ redirect(union node *redir, int flags)
 		if (fd == newfd)
 			continue;
 
-#ifdef notyet
-		dupredirect(n, newfd, memory);
-#else
 		dupredirect(n, newfd);
-#endif
 	} while ((n = n->nfile.next));
 	INTON;
-#ifdef notyet
-	if (memory[1])
-		out1 = &memout;
-	if (memory[2])
-		out2 = &memout;
-#endif
 	if (sv && sv->renamed[2] >= 0)
 		preverrout.fd = sv->renamed[2];
 }
@@ -226,35 +205,20 @@ eopen:
 
 
 STATIC void
-#ifdef notyet
-dupredirect(redir, f, memory)
-#else
 dupredirect(redir, f)
-#endif
 	union node *redir;
 	int f;
-#ifdef notyet
-	char memory[10];
-#endif
 	{
 	int fd = redir->nfile.fd;
 	const char *errmsg = NULL;
 
-#ifdef notyet
-	memory[fd] = 0;
-#endif
 	if (redir->nfile.type == NTOFD || redir->nfile.type == NFROMFD) {
 		/* if not ">&-" */
 		if (f >= 0) {
-#ifdef notyet
-			if (memory[f])
-				memory[fd] = 1;
-			else
-#endif
-				if (dup2(f, fd) < 0) {
-					errmsg = errnomsg();
-					goto err;
-				}
+			if (dup2(f, fd) < 0) {
+				errmsg = errnomsg();
+				goto err;
+			}
 			return;
 		}
 		f = fd;

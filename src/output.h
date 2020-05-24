@@ -42,15 +42,9 @@
 #include "config.h"
 
 #include <stdarg.h>
-#ifdef USE_GLIBC_STDIO
-#include <stdio.h>
-#endif
 #include <sys/types.h>
 
 struct output {
-#ifdef USE_GLIBC_STDIO
-	FILE *stream;
-#endif
 	char *nextc;
 	char *end;
 	char *buf;
@@ -62,17 +56,12 @@ struct output {
 extern struct output output;
 extern struct output errout;
 extern struct output preverrout;
-#ifdef notyet
-extern struct output memout;
-#endif
 extern struct output *out1;
 extern struct output *out2;
 
 void outmem(const char *, size_t, struct output *);
 void outstr(const char *, struct output *);
-#ifndef USE_GLIBC_STDIO
 void outcslow(int, struct output *);
-#endif
 void flushall(void);
 void flushout(struct output *);
 void outfmt(struct output *, const char *, ...)
@@ -83,17 +72,8 @@ int fmtstr(char *, size_t, const char *, ...)
     attribute((format(printf,3,4)));
 int xasprintf(char **, const char *, ...);
 int xvasprintf(char **, size_t, const char *, va_list);
-#ifndef USE_GLIBC_STDIO
 int doformat(struct output *, const char *, va_list);
-#endif
 int xwrite(int, const void *, size_t);
-#ifdef notyet
-#ifdef USE_GLIBC_STDIO
-void initstreams(void);
-void openmemout(void);
-int __closememout(void);
-#endif
-#endif
 
 static inline void
 freestdout()
@@ -102,13 +82,6 @@ freestdout()
 	output.error = 0;
 }
 
-#ifdef USE_GLIBC_STDIO
-static inline void outc(int ch, struct output *file)
-{
-	putc(ch, file->stream);
-}
-#define doformat(d, f, a)	vfprintf((d)->stream, (f), (a))
-#else
 static inline void outc(int ch, struct output *file)
 {
 	if (file->nextc == file->end)
@@ -118,7 +91,6 @@ static inline void outc(int ch, struct output *file)
 		file->nextc++;
 	}
 }
-#endif
 #define out1c(c)	outc((c), out1)
 #define out2c(c)	outcslow((c), out2)
 #define out1mem(s, l)	outmem((s), (l), out1)

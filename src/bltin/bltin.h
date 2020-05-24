@@ -37,19 +37,16 @@
  */
 
 /*
- * This file is included by programs which are optionally built into the
- * shell.  If SHELL is defined, we try to map the standard UNIX library
- * routines to ash routines using defines.
+ * This file is included by programs which are built into the * shell.  We
+ * map the standard UNIX library routines to ash routines using defines.
  */
 
 #include "../shell.h"
 #include "../mystring.h"
 #include "../options.h"
-#ifdef SHELL
 #include "../memalloc.h"
 #include "../output.h"
 #include "../error.h"
-#ifndef USE_GLIBC_STDIO
 #undef stdout
 #undef stderr
 #undef putc
@@ -67,7 +64,6 @@
 #define fflush flushout
 #define fileno(f) ((f)->fd)
 #define ferror outerr
-#endif
 #define INITARGS(argv)
 #define	error sh_error
 #define	warn sh_warn
@@ -78,13 +74,6 @@
 #define setlocate(l,s) 0
 
 #define getenv(p) bltinlookup((p),0)
-
-#else
-#undef NULL
-#include <stdio.h>
-#undef main
-#define INITARGS(argv)	if ((commandname = argv[0]) == NULL) {fputs("Argc is zero\n", stderr); exit(2);} else
-#endif
 
 int echocmd(int, char **);
 
