@@ -137,9 +137,7 @@ main(int argc, char **argv)
 
 		if (e == EXINT) {
 			out2c('\n');
-#ifdef FLUSHERR
-			flushout(out2);
-#endif
+			flushall();
 		}
 		popstackmark(&smark);
 		FORCEINTON;				/* enable interrupts */
@@ -248,9 +246,7 @@ cmdloop(int top)
 					out2str("\nUse \"exit\" to leave shell.\n");
 				else {
 					out2c('\n');
-#ifdef FLUSHERR
-					flushout(out2);
-#endif
+					flushall();
 					break;
 				}
 			}

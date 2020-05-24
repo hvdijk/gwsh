@@ -64,19 +64,15 @@
 #include "system.h"
 
 
-#define OUTBUFSIZ BUFSIZ
-#define MEM_OUT -3		/* output to dynamically allocated memory */
-
-
 struct output output = {
-	.nextc = 0, .end = 0, .buf = 0, .bufsize = OUTBUFSIZ, .fd = 1, .error = 0
+	.nextc = 0, .end = 0, .fd = 1, .error = 0
 };
 struct output errout = {
-	.nextc = 0, .end = 0, .buf = 0, .bufsize = 0, .fd = 2, .error = 0
+	.nextc = 0, .end = 0, .fd = 2, .error = 0
 };
 struct output preverrout;
-struct output *out1 = &output;
-struct output *out2 = &errout;
+char iobuf[IOBUFSIZE];
+struct output *iobufout;
 
 
 static int xvsnprintf(char *, size_t, const char *, va_list);
@@ -85,32 +81,23 @@ static int xvsnprintf(char *, size_t, const char *, va_list);
 void
 outmem(const char *p, size_t len, struct output *dest)
 {
-	size_t bufsize;
-	size_t offset;
 	size_t nleft;
 
 	nleft = dest->end - dest->nextc;
 	if (likely(nleft >= len)) {
-buffered:
 		if (len)
+buffered:
 			dest->nextc = mempcpy(dest->nextc, p, len);
 		return;
 	}
 
-	bufsize = dest->bufsize;
-	if (!bufsize) {
-		;
-	} else if (dest->buf == NULL) {
-		offset = 0;
-		INTOFF;
-		dest->buf = ckrealloc(dest->buf, bufsize);
-		dest->bufsize = bufsize;
-		dest->end = dest->buf + bufsize;
-		dest->nextc = dest->buf + offset;
-		INTON;
-	} else {
-		flushout(dest);
-	}
+	flushall();
+
+	INTOFF;
+	iobufout = dest;
+	dest->nextc = iobuf;
+	dest->end = IOBUFEND;
+	INTON;
 
 	nleft = dest->end - dest->nextc;
 	if (nleft > len)
@@ -142,24 +129,16 @@ outcslow(int c, struct output *dest)
 void
 flushall(void)
 {
-	flushout(&output);
-#ifdef FLUSHERR
-	flushout(&errout);
-#endif
-}
-
-
-void
-flushout(struct output *dest)
-{
-	size_t len;
-
-	len = dest->nextc - dest->buf;
-	if (!len || dest->fd < 0)
-		return;
-	dest->nextc = dest->buf;
-	if (xwrite(dest->fd, dest->buf, len) && !dest->error)
-		dest->error = errno;
+	if (iobufout) {
+		struct output *dest = iobufout;
+		size_t len = dest->nextc - iobuf;
+		INTOFF;
+		if (len && xwrite(dest->fd, iobuf, len) && !dest->error)
+			dest->error = errno;
+		dest->nextc = dest->end = NULL;
+		iobufout = NULL;
+		INTON;
+	}
 }
 
 

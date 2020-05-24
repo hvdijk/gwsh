@@ -41,14 +41,13 @@
 
 #include "config.h"
 
+#include <stdio.h>
 #include <stdarg.h>
 #include <sys/types.h>
 
 struct output {
 	char *nextc;
 	char *end;
-	char *buf;
-	size_t bufsize;
 	int fd;
 	int error;
 };
@@ -56,14 +55,17 @@ struct output {
 extern struct output output;
 extern struct output errout;
 extern struct output preverrout;
-extern struct output *out1;
-extern struct output *out2;
+#define out1 (&output)
+#define out2 (&errout)
+#define IOBUFSIZE BUFSIZ
+extern char iobuf[IOBUFSIZE];
+#define IOBUFEND (iobuf+IOBUFSIZE)
+extern struct output *iobufout;
 
 void outmem(const char *, size_t, struct output *);
 void outstr(const char *, struct output *);
 void outcslow(int, struct output *);
 void flushall(void);
-void flushout(struct output *);
 void outfmt(struct output *, const char *, ...)
     attribute((format(printf,2,3)));
 void out1fmt(const char *, ...)
@@ -78,7 +80,7 @@ int xwrite(int, const void *, size_t);
 static inline void
 freestdout(void)
 {
-	output.nextc = output.buf;
+	iobufout = NULL;
 	output.error = 0;
 }
 

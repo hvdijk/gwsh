@@ -225,7 +225,7 @@ evaltree(union node *n, int flags)
 	default:
 #ifdef DEBUG
 		out1fmt("Node type = %d\n", n->type);
-		flushout(out1);
+		flushall();
 		break;
 #endif
 	case NNOT:
@@ -789,9 +789,7 @@ evalcommand(union node *cmd, int flags)
 		sep = eprintlist(out, varlist.list, EPL_START | EPL_ASSIGN);
 		eprintlist(out, arglist.list, sep | EPL_COMMAND);
 		outcslow('\n', out);
-#ifdef FLUSHERR
-		flushout(out);
-#endif
+		flushall();
 	}
 
 	execcmd = 0;
@@ -809,9 +807,7 @@ evalcommand(union node *cmd, int flags)
 			find_command(argv[0], &cmdentry, cmd_flag, path, fpath);
 			if (cmdentry.cmdtype == CMDUNKNOWN) {
 				status = 127;
-#ifdef FLUSHERR
-				flushout(&errout);
-#endif
+				flushall();
 				goto bail;
 			}
 
@@ -935,6 +931,7 @@ evalbltin(const struct builtincmd *cmd, int argc, char **argv, int flags)
 	flushall();
 	if ((error = outerr(out1))) {
 		sh_warnx("%s", strerror(error));
+		flushall();
 		status = 1;
 	}
 	exitstatus = status;

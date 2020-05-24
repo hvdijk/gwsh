@@ -139,9 +139,7 @@ readcmd(int argc, char **argv)
 	}
 	if (prompt && isatty(0)) {
 		out2str(prompt);
-#ifdef FLUSHERR
 		flushall();
-#endif
 	}
 	if (*(ap = argptr) == NULL)
 		sh_error("arg count");

@@ -62,7 +62,7 @@
 #define FILE struct output
 #define fprintf outfmt
 #define fputs outstr
-#define fflush flushout
+#define fflush(f) flushall()
 #define fileno(f) ((f)->fd)
 #define ferror outerr
 #define INITARGS(argv)

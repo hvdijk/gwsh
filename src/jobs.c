@@ -1098,6 +1098,7 @@ out:
 			s[len] = '\n';
 			s[len + 1] = 0;
 			outstr(s, out2);
+			flushall();
 		}
 	}
 	return pid;
@@ -1481,7 +1482,6 @@ showpipe(struct job *jp, struct output *out)
 	for (sp = jp->ps + 1; sp < spend; sp++)
 		outfmt(out, " | %s", sp->cmd);
 	outcslow('\n', out);
-	flushall();
 }
 
 

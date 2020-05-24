@@ -361,6 +361,7 @@ again:
 		if (!c) {
 			if (parsefile->flags & PF_NONUL) {
 				sh_warnx("cannot execute binary file");
+				flushall();
 				_exit(126);
 			}
 
@@ -411,9 +412,7 @@ again:
 
 	if (vflag) {
 		out2str(parsefile->p.nextc);
-#ifdef FLUSHERR
-		flushout(out2);
-#endif
+		flushall();
 	}
 
 	*q = savec;
