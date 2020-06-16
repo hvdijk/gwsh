@@ -535,6 +535,7 @@ mklocal(char *name)
 				vp = setvareq(name, VSTRFIXED);
 			else
 				vp = setvar(name, NULL, VSTRFIXED);
+			lvp->local = NULL;
 			lvp->flags = VUNSET;
 		} else {
 			lvp->local = vp->local;
@@ -546,8 +547,8 @@ mklocal(char *name)
 			if (unlikely(vp->local == localvar_stack
 				  || vp->local == localvar_cur))
 				goto free;
-			vp->local = localvar_cur;
 		}
+		vp->local = localvar_cur;
 	}
 	if (!localvar_cur) {
 free:
