@@ -234,7 +234,7 @@ updatepwd(const char *dir)
 			return 0;
 		new = stputs(curdir, new);
 	}
-	new = makestrspace(strlen(dir) + 1, new);
+	new = makestrspace(strlen(dir) + 2, new);
 	lim = stackblock() + 1;
 	if (*p == '/') {
 		USTPUTC('/', new);
