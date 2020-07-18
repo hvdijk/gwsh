@@ -62,6 +62,7 @@
 #include "alias.h"
 #include "parser.h"
 #include "main.h"
+#include "system.h"
 #ifndef SMALL
 #include "myhistedit.h"
 #endif
@@ -117,38 +118,42 @@ RESET {
  */
 
 STATIC int
+pgetc2(void)
+{
+	if (--parsefile->p.nleft >= 0)
+		return (signed char)*parsefile->p.nextc++;
+	else
+		return preadbuffer();
+}
+
+STATIC int
 pgetc1(void)
 {
 	int c;
 
 #ifdef WITH_LOCALE
-	mbstate_t mbs = {0};
+	mbstate_t mbs;
 	wchar_t wc;
 	char *p;
 #endif
 
+	c = pgetc2();
 #ifdef WITH_LOCALE
+	if (likely(!(c & 0x80)))
+		goto out;
+
+	memset(&mbs, 0, sizeof mbs);
 	p = parsefile->p.mbc;
+
 	for (;;) {
-#endif
-		if (--parsefile->p.nleft >= 0)
-			c = (signed char)*parsefile->p.nextc++;
-		else {
-			c = preadbuffer();
-#ifdef WITH_LOCALE
-			if (c != (signed char)c)
-				break;
-#endif
-		}
-
-#ifdef WITH_LOCALE
-		if (likely(p == parsefile->p.mbc && c >= 0))
-			goto out;
-
 		*p = c;
 		switch (mbrtowc(&wc, p, 1, &mbs)) {
 		case (size_t)-2:
 			p++;
+			c = pgetc2();
+			/* If c == PEOF, the next mbrtowc() is guaranteed to
+			 * return -1. No special handling is needed. */
+			STATIC_ASSERT(!(PEOF & 0xFF));
 			continue;
 		case (size_t)-1:
 			break;

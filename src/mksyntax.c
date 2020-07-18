@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -121,11 +121,11 @@ main(int argc, char **argv)
 	}
 	putc('\n', hfile);
 	fputs("#ifdef WITH_LOCALE\n", hfile);
-	fprintf(hfile, "#define PMBW %d\n\n", -131);
-	fprintf(hfile, "#define PMBB %d\n\n", -130);
+	fprintf(hfile, "#define PMBW %d\n\n", -258);
+	fprintf(hfile, "#define PMBB %d\n\n", -257);
 	fputs("#endif\n\n", hfile);
 	fprintf(hfile, "#define SYNBASE %d\n", 128);
-	fprintf(hfile, "#define PEOF %d\n\n", -129);
+	fprintf(hfile, "#define PEOF %d\n\n", -256);
 	putc('\n', hfile);
 	output_type_macros();		/* is_digit, etc. */
 	putc('\n', hfile);
