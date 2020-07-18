@@ -30,6 +30,16 @@ if test "$gwsh_cv_computed_goto" = "yes"; then
 	AC_DEFINE_UNQUOTED([HAVE_COMPUTED_GOTO],[1],
 	                   [Define to 1 if your compiler supports the GNU C computed goto extension.])
 fi
+AC_CACHE_CHECK([for _Static_assert], [gwsh_cv_static_assert],
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[_Static_assert(1, "")])],
+                   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[_Static_assert(0, "")])],
+                                      [gwsh_cv_static_assert=no],
+                                      [gwsh_cv_static_assert=yes])],
+                   [gwsh_cv_static_assert=no])])
+if test "$gwsh_cv_static_assert" = "yes"; then
+	AC_DEFINE_UNQUOTED([HAVE_STATIC_ASSERT],[1],
+	                   [Define to 1 if your compiler supports the C11 _Static_assert keyword.])
+fi
 AC_ARG_ENABLE([static], [AS_HELP_STRING([--enable-static], \
                                         [Build statical linked program])])
 if test "$enable_static" = "yes"; then

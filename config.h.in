@@ -44,6 +44,9 @@
 /* Define to 1 if you have the <paths.h> header file. */
 #undef HAVE_PATHS_H
 
+/* Define to 1 if your compiler supports the C11 _Static_assert keyword. */
+#undef HAVE_STATIC_ASSERT
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 

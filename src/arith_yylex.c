@@ -3,7 +3,7 @@
  *	Herbert Xu.
  * Copyright (c) 1993
  *	The Regents of the University of California.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -48,9 +48,11 @@
 #include "syntax.h"
 #include "system.h"
 
-#if ARITH_BOR + 14 != ARITH_BORASS || ARITH_ASS + 14 != ARITH_EQ || ARITH_NOT + 14 != ARITH_NE || ARITH_LT + 14 != ARITH_LE || ARITH_GT + 14 != ARITH_GE
-#error Arithmetic tokens are out of order.
-#endif
+STATIC_ASSERT(ARITH_BOR + 14 == ARITH_BORASS);
+STATIC_ASSERT(ARITH_ASS + 14 == ARITH_EQ);
+STATIC_ASSERT(ARITH_NOT + 14 == ARITH_NE);
+STATIC_ASSERT(ARITH_LT  + 14 == ARITH_LE);
+STATIC_ASSERT(ARITH_GT  + 14 == ARITH_GE);
 
 extern const char *arith_buf;
 

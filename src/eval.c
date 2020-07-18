@@ -65,6 +65,7 @@
 #include "init.h"
 #include "show.h"
 #include "mystring.h"
+#include "system.h"
 #ifndef SMALL
 #include "myhistedit.h"
 #endif
@@ -270,13 +271,9 @@ checkexit:
 		goto calleval;
 	case NAND:
 	case NOR:
-	case NSEMI:
-#if NAND + 1 != NOR
-#error NAND + 1 != NOR
-#endif
-#if NOR + 1 != NSEMI
-#error NOR + 1 != NSEMI
-#endif
+	case NSEMI:;
+		STATIC_ASSERT(NAND + 1 == NOR);
+		STATIC_ASSERT(NOR + 1 == NSEMI);
 		isor = n->type - NAND;
 		status = evaltree(n->nbinary.ch1,
 				  (flags & ~EV_EXIT) | (~isor & EV_TESTED));
@@ -443,9 +440,8 @@ match:
 		 * exit status.
 		 */
 		if (cp->nclist.body) {
-#if !(NCLIST & EV_EXIT && !(NCLISTFT & EV_EXIT))
-#error "!(NCLIST & EV_EXIT && !(NCLISTFT & EV_EXIT))"
-#endif
+			STATIC_ASSERT(NCLIST & EV_EXIT);
+			STATIC_ASSERT(!(NCLISTFT & EV_EXIT));
 			status = evaltree(cp->nclist.body, flags &
 					  (~EV_EXIT | cp->type));
 			if (evalskip)

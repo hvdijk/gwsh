@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2004
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2019
+ * Copyright (c) 2019-2020
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -96,6 +96,12 @@ long sysconf(int) attribute((noreturn));
 
 #if !HAVE_DECL_ISBLANK
 int isblank(int c);
+#endif
+
+#ifdef HAVE_STATIC_ASSERT
+#define STATIC_ASSERT(expr) _Static_assert((expr), #expr)
+#else
+#define STATIC_ASSERT(expr) typedef char static_assert_failed[sizeof(struct { int : ((expr) ? 1 : -1); })] attribute((unused))
 #endif
 
 #endif

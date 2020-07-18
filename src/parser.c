@@ -955,10 +955,8 @@ readtoken1_loop(char *out, int c, char *eofmark, int flags)
 			if (!flags)
 				goto endword;
 			/* fall through */
-		case PMBW:
-#if RT_MBCHAR >> 1 != RT_ESCAPE
-#error RT_MBCHAR >> 1 != RT_ESCAPE
-#endif
+		case PMBW:;
+			STATIC_ASSERT(RT_MBCHAR >> 1 == RT_ESCAPE);
 			flags ^= RT_MBCHAR;
 			flags &= ~RT_ESCAPE | (flags >> 1);
 			goto nextchar;
