@@ -2,7 +2,7 @@
 #	The Regents of the University of California.  All rights reserved.
 # Copyright (c) 1997-2005
 #	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
-# Copyright (c) 2019
+# Copyright (c) 2019-2020
 #	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
 #
 # This code is derived from software contributed to Berkeley by
@@ -46,25 +46,26 @@
 #	nodelist - a pointer to a list of nodes
 #	string - a pointer to a nul terminated string
 #	int - an integer
+#	uchar - an unsigned char
 #	other - any type that can be copied by assignment
 #	temp - a field that doesn't have to be copied when the node is copied
 # The last two types should be followed by the text of a C declaration for
 # the field.
 
 NCMD ncmd			# a simple command
-	type	  int
+	type	  uchar
 	linno	  int
 	assign    nodeptr		# variable assignments
 	args	  nodeptr		# the arguments
 	redirect  nodeptr		# list of file redirections
 
 NPIPE npipe			# a pipeline
-	type	  int
+	type	  uchar
 	backgnd	  int			# set to run pipeline in background
 	cmdlist	  nodelist		# the commands in the pipeline
 
 NREDIR nredir			# redirection (of a complex command)
-	type	  int
+	type	  uchar
 	linno	  int
 	n	  nodeptr		# the command
 	redirect  nodeptr		# list of file redirections
@@ -76,12 +77,12 @@ NAND nbinary			# the && operator
 NOR nbinary			# the || operator
 
 NSEMI nbinary			# two commands separated by a semicolon
-	type	  int
+	type	  uchar
 	ch1	  nodeptr		# the first child
 	ch2	  nodeptr		# the second child
 
 NIF nif				# the if statement.  Elif clauses are handled
-	type	  int		    # using multiple if nodes.
+	type	  uchar		    # using multiple if nodes.
 	test	  nodeptr		# if test
 	ifpart	  nodeptr		# then ifpart
 	elsepart  nodeptr		# else elsepart
@@ -90,34 +91,34 @@ NWHILE nbinary			# the while statement.  First child is the test
 NUNTIL nbinary			# the until statement
 
 NFOR nfor			# the for statement
-	type	  int
+	type	  uchar
 	linno	  int
 	args	  nodeptr		# for var in args
 	body	  nodeptr		# do body; done
 	var	  string		# the for variable
 
 NCASE ncase			# a case statement
-	type	  int
+	type	  uchar
 	linno	  int
 	expr	  nodeptr		# the word to switch on
 	cases	  nodeptr		# the list of cases (NCLIST nodes)
 
 NCLIST nclist			# a case
 NCLISTFT nclist			# a fallthrough case
-	type	  int
+	type	  uchar
 	next	  nodeptr		# the next case in list
 	pattern	  nodeptr		# list of patterns for this case
 	body	  nodeptr		# code to execute for this case
 
 
 NDEFUN ndefun			# a function
-	type	  int
+	type	  uchar
 	linno	  int
 	text	  string
 	body	  nodeptr
 
 NARG narg			# represents a word
-	type	  int
+	type	  uchar
 	next	  nodeptr		# next word in list
 	text	  string		# the text of the word
 	backquote nodelist		# list of commands in back quotes
@@ -127,7 +128,7 @@ NCLOBBER nfile			# fd>| fname
 NFROM nfile			# fd< fname
 NFROMTO nfile			# fd<> fname
 NAPPEND nfile			# fd>> fname
-	type	  int
+	type	  uchar
 	next	  nodeptr		# next redirection in list
 	fd	  int			# file descriptor being redirected
 	fname	  nodeptr		# file name, in a NARG node
@@ -135,7 +136,7 @@ NAPPEND nfile			# fd>> fname
 
 NTOFD ndup			# fd<&dupfd
 NFROMFD ndup			# fd>&dupfd
-	type	  int
+	type	  uchar
 	next	  nodeptr		# next redirection in list
 	fd	  int			# file descriptor being redirected
 	dupfd	  int			# file descriptor to duplicate
@@ -144,7 +145,7 @@ NFROMFD ndup			# fd>&dupfd
 
 NHERE nhere			# fd<<\!
 NXHERE nhere			# fd<<!
-	type	  int
+	type	  uchar
 	next	  nodeptr		# next redirection in list
 	fd	  int			# file descriptor being redirected
 	doc	  nodeptr		# input to command (NARG node)

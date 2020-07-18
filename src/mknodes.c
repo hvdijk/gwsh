@@ -3,6 +3,8 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
+ * Copyright (c) 2020
+ *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
@@ -182,6 +184,9 @@ parsefield(void)
 	} else if (strcmp(type, "int") == 0) {
 		fp->type = T_INT;
 		sprintf(decl, "int %s", name);
+	} else if (strcmp(type, "uchar") == 0) {
+		fp->type = T_INT;
+		sprintf(decl, "unsigned char %s", name);
 	} else if (strcmp(type, "other") == 0) {
 		fp->type = T_OTHER;
 	} else if (strcmp(type, "temp") == 0) {
@@ -236,7 +241,7 @@ output(char *file)
 		fputs("};\n\n\n", hfile);
 	}
 	fputs("union node {\n", hfile);
-	fprintf(hfile, "      int type;\n");
+	fprintf(hfile, "      unsigned char type;\n");
 	for (sp = str ; sp < &str[nstr] ; sp++) {
 		fprintf(hfile, "      struct %s %s;\n", sp->tag, sp->tag);
 	}
