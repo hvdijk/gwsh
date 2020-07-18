@@ -112,10 +112,12 @@ shellexec(char **argv, const char *path, int idx)
 	char *cmdname;
 	const char *errmsg;
 	int e;
-	char **envp;
+	char **envp, **envpp;
 	int exerrno;
 
 	envp = environment();
+	for (envpp = envp; *envpp; envpp++)
+		*strchr(*envpp, '\0') = '=';
 	if (strchr(argv[0], '/') != NULL) {
 		tryexec(argv[0], argv, envp);
 		e = errno;

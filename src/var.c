@@ -86,13 +86,13 @@ MKINIT struct localvar_list *localvar_stack;
 struct localvar_list *localvar_cur;
 
 const char defpathvar[] =
-	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
-char defps1var[] = "PS1=$ ";
-char defifsvar[] = "IFS= \t\n";
-MKINIT char defoptindvar[] = "OPTIND=1";
+	"PATH\0/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\0";
+char defps1var[] = "PS1\0$ \0";
+char defifsvar[] = "IFS\0 \t\n\0";
+MKINIT char defoptindvar[] = "OPTIND\0001\0";
 
 int lineno;
-char linenovar[sizeof("LINENO=")+sizeof(int)*CHAR_BIT/3+1] = "LINENO=";
+char linenovar[sizeof("LINENO=")+sizeof(int)*CHAR_BIT/3+1] = "LINENO";
 
 #ifdef WITH_LOCALE
 STATIC void changelocale(const char *val);
@@ -100,27 +100,27 @@ STATIC void changelocale(const char *val);
 
 struct var varinit[] = {
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defifsvar,	0 },
-	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAIL\0",	changemail },
-	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAILPATH\0",	changemail },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAIL\0\0\1",	changemail },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"MAILPATH\0\0\1",changemail },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defpathvar,	changepath },
-	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"FPATH\0",	0 },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"FPATH\0\0\1",	0 },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defps1var,	0 },
-	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS2=> ",	0 },
-	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS4=+ ",	0 },
+	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS2\0> ",	0 },
+	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS4\0+ ",	0 },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defoptindvar,	getoptsreset },
 #ifdef WITH_LINENO
 	{ 0,	VSTRFIXED|VTEXTFIXED,		linenovar,	0 },
 #endif
 #ifdef WITH_LOCALE
-	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_ALL\0",	changelocale },
-	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_COLLATE\0",	changelocale },
-	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_CTYPE\0",	changelocale },
-	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_MESSAGES\0",	changelocale },
-	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LANG\0",	changelocale },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_ALL\0\0\1",		changelocale },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_COLLATE\0\0\1",	changelocale },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_CTYPE\0\0\1",	changelocale },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LC_MESSAGES\0\0\1",	changelocale },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET|VLATEFUNC,	"LANG\0\0\1",		changelocale },
 #endif
 #ifndef SMALL
-	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"TERM\0",	0 },
-	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"HISTSIZE\0",	sethistsize },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"TERM\0\0\1",		0 },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"HISTSIZE\0\0\1",	sethistsize },
 #endif
 };
 
@@ -145,7 +145,7 @@ INCLUDE "var.h"
 MKINIT char **environ;
 INIT {
 	char **envp;
-	static char ppid[32] = "PPID=";
+	static char ppid[32] = "PPID";
 	const char *p;
 	struct stat st1, st2;
 
@@ -153,7 +153,7 @@ INIT {
 	for (envp = environ ; *envp ; envp++) {
 		p = endofname(*envp);
 		if (p != *envp && *p == '=') {
-			setvareq(*envp, VEXPORT|VTEXTFIXED);
+			setvareq(*envp, VEXPORT);
 		}
 	}
 
@@ -226,12 +226,13 @@ struct var *setvar(const char *name, const char *val, int flags)
 		vallen = strlen(val);
 	}
 	INTOFF;
-	p = mempcpy(nameeq = ckmalloc(namelen + vallen + 2), name, namelen + 1);
-	if (val) {
-		p[-1] = '=';
+	nameeq = ckmalloc(namelen + vallen + 3);
+	p = mempcpy(nameeq, name, namelen);
+	*p++ = '\0';
+	if (val)
 		p = mempcpy(p, val, vallen);
-	}
-	*p = '\0';
+	*p++ = '\0';
+	*p = !val;
 	vp = setvareq(nameeq, flags | VNOSAVE);
 	INTON;
 
@@ -257,9 +258,13 @@ intmax_t setvarint(const char *name, intmax_t val, int flags)
 
 /*
  * Same as setvar except that the variable and value are passed in
- * the first argument as name=value.  Since the first argument will
- * be actually stored in the table, it should not be a string that
- * will go away.
+ * the first argument. The form of s depends on the provided flags:
+ * if flags does not include any of VTEXTFIXED, VSTACK, or VNOSAVE,
+ * s must be in the form name=value. If flags does include any of those,
+ * s may alternatively be in the form name\0value, must regardless have
+ * an extra byte after the value if there is a chance the value will be
+ * printed by set, export -p, or readonly -p, and will be stored in the
+ * table without making a copy so must not be a string that will go away.
  * Called with interrupts off.
  */
 
@@ -278,8 +283,7 @@ struct var *setvareq(char *s, int flags)
 			if (flags & VNOSAVE)
 				free(s);
 			n = vp->text;
-			sh_error("%.*s: is read only", strchrnul(n, '=') - n,
-				 n);
+			sh_error("%s: is read only", n);
 		}
 
 		if (flags & VNOSET)
@@ -314,12 +318,18 @@ out_free:
 		vp->func = NULL;
 		*vpp = vp;
 	}
-	if (!(flags & (VTEXTFIXED|VSTACK|VNOSAVE)))
-		s = savestr(s);
+	if (!(flags & (VTEXTFIXED|VSTACK|VNOSAVE))) {
+		size_t len = strlen(s);
+		char *d = ckmalloc(len + 2);
+		*(char *) mempcpy(d, s, len + 1) = 0;
+		s = d;
+	}
 	vp->text = s;
 	vp->flags = flags;
+	s = strchrnul(s, '=');
+	*s = '\0';
 	if (vp->func && flags & VLATEFUNC)
-		(*vp->func)(strchrnul(s, '=') + 1);
+		(*vp->func)(s + 1);
 out:
 	return vp;
 }
@@ -361,7 +371,7 @@ lookupvar(const char *name)
 			fmtstr(linenovar+7, sizeof(linenovar)-7, "%d", lineno);
 		}
 #endif
-		return strchrnul(v->text, '=') + 1;
+		return strchr(v->text, '\0') + 1;
 	}
 	return NULL;
 }
@@ -432,15 +442,15 @@ showvars(const char *prefix, int on, int off)
 	sep = *prefix ? spcstr : prefix;
 
 	for (; ep < epend; ep++) {
-		const char *p;
-		const char *q;
-
-		p = strchrnul(*ep, '=');
-		q = nullstr;
-		if (*p)
-			q = shell_quote(++p, 0);
-
-		out1fmt("%s%s%.*s%s\n", prefix, sep, (int)(p - *ep), *ep, q);
+		const char *fmt;
+		const char *val = strchr(*ep, '\0') + 1;
+		if (!*val && val[1]) {
+			fmt = "%s%s%s\n";
+		} else {
+			fmt = "%s%s%s=%s\n";
+			val = shell_quote(val, 0);
+		}
+		out1fmt(fmt, prefix, sep, *ep, val);
 	}
 
 	return 0;
@@ -459,7 +469,7 @@ exportcmd(int argc, char **argv)
 	char *name;
 	const char *p;
 	char **aptr;
-	int flag = argv[0][0] == 'r'? VREADONLY : VEXPORT;
+	int flag = argv[0][0] == 'r' ? VREADONLY : VEXPORT;
 	int notp;
 
 	notp = nextopt("p") - 'p';
@@ -617,13 +627,13 @@ poplocalvars(int keep)
 				unsetvar(vp->text);
 			} else {
 				if (vp->func)
-					(*vp->func)(strchrnul(lvp->text, '=') + 1);
+					(*vp->func)(strchr(lvp->text, '\0') + 1);
 				if ((vp->flags & (VTEXTFIXED|VSTACK)) == 0)
 					ckfree(vp->text);
 				vp->flags = lvp->flags;
 				vp->text = lvp->text;
 				if (vp->func && vp->flags & VLATEFUNC)
-					(*vp->func)(strchrnul(lvp->text, '=') + 1);
+					(*vp->func)(strchr(lvp->text, '\0') + 1);
 			}
 		}
 		ckfree(lvp);
@@ -747,18 +757,12 @@ varcmp(const char *p, const char *q)
 STATIC int
 vpcmp(const void *a, const void *b)
 {
-#ifndef WITH_LOCALE
-	return varcmp(*(const char **)a, *(const char **)b);
-#else
 	const char *pa = *(const char **)a;
 	const char *pb = *(const char **)b;
-	const char *pea = strchrnul(pa, '=');
-	const char *peb = strchrnul(pb, '=');
-	char *cpa = alloca(pea - pa + 1);
-	char *cpb = alloca(peb - pb + 1);
-	*(char *) mempcpy(cpa, pa, pea - pa) = 0;
-	*(char *) mempcpy(cpb, pb, peb - pb) = 0;
-	return strcoll(cpa, cpb);
+#ifndef WITH_LOCALE
+	return strcmp(pa, pb);
+#else
+	return strcoll(pa, pb);
 #endif
 }
 
