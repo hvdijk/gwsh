@@ -1527,16 +1527,12 @@ ast:
 					if (*p == '\\')
 						p++;
 					GETC_CTLESC(c2, p, 1);
-#ifndef WITH_LOCALE
+#ifdef WITH_LOCALE
+					if (chr < 0 || c < 0 || c2 < 0)
+						continue;
+#endif
 					if (chr >= c && chr <= c2)
 						found = 1;
-#else
-					if (chr >= 0 && c >= 0 && c2 >= 0) {
-						wchar_t schr[2] = {chr}, sc[2] = {c}, sc2[2] = {c2};
-						if (wcscoll(schr, sc) >= 0 && wcscoll(schr, sc2) <= 0)
-							found = 1;
-					}
-#endif
 				} else {
 					if (chr == c)
 						found = 1;
