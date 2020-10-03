@@ -124,7 +124,7 @@ struct builtincmd {
 extern const struct builtincmd builtincmd[];
 
 EOF
-awk '/^[^#]/ {
+awk '/^ *[^# ]/ {
   if ($2 !~ /^-.*n/) {
     printf "int %s(int argc, char *argv[]);\n", $1
   }
