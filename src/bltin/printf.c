@@ -44,6 +44,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "main.h"
+
 static int	   conv_escape_str(const char *, char **);
 static const char *conv_escape(const char *, int *);
 static int	   getchr(void);

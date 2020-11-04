@@ -62,6 +62,7 @@
 #endif
 #include "syntax.h"
 #include "error.h"
+#include "main.h"
 #include "mylocale.h"
 #include "mystring.h"
 #include "memalloc.h"
