@@ -7579,6 +7579,9 @@ else $as_nop
   as_fn_error $? "Can't find required header files." "$LINENO" 5
 fi
 
+else $as_nop
+
+		as_fn_error $? "Can't find libedit." "$LINENO" 5
 fi
 
 fi
