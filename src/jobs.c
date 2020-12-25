@@ -378,6 +378,7 @@ fgcmd(int argc, char **argv)
 		}
 		outstr(jp->ps->cmd, out);
 		showpipe(jp, out);
+		flushall();
 		retval = restartjob(jp, mode);
 	} while (*argv && *++argv);
 	return retval;
