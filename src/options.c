@@ -69,13 +69,15 @@ char *optptr;			/* used by nextopt */
 char *minusc;			/* argument to -c option */
 
 static const char *const optnames[NOPTS] = {
+	NULL,
+	NULL,
+	"stdin",
 	"errexit",
 	"noglob",
 	"ignoreeof",
 	"interactive",
 	"monitor",
 	"noexec",
-	"stdin",
 	"xtrace",
 	"verbose",
 	"vi",
@@ -91,13 +93,15 @@ static const char *const optnames[NOPTS] = {
 };
 
 const char optletters[NOPTS] = {
+	'c',
+	'l',
+	's',
 	'e',
 	'f',
 	'I',
 	'i',
 	'm',
 	'n',
-	's',
 	'x',
 	'v',
 	'V',
@@ -116,8 +120,8 @@ char optlist[NOPTS];
 
 
 static int options(int);
-STATIC void minus_o(char *, int);
-STATIC void setoption(int, int);
+STATIC void minus_o(int, char *, int);
+STATIC void setoption(int, int, int);
 STATIC int getopts(char *, char *, char **);
 
 
@@ -129,23 +133,21 @@ int
 procargs(int argc, char **argv)
 {
 	int i;
-	const char *xminusc;
 	char **xargv;
 	int login;
 
 	xargv = argv;
-	login = xargv[0] && xargv[0][0] == '-';
+	lflag = xargv[0] && xargv[0][0] == '-';
 	arg0 = xargv[0];
 	if (argc > 0)
 		xargv++;
 	for (i = 0; i < NOPTS; i++)
 		optlist[i] |= 2;
 	argptr = xargv;
-	login |= options(1);
+	login = options(1);
 	xargv = argptr;
-	xminusc = minusc;
 	if (*xargv == NULL) {
-		if (xminusc)
+		if (cflag & 1)
 			sh_error("-c requires an argument");
 		sflag = 1;
 	}
@@ -159,7 +161,7 @@ procargs(int argc, char **argv)
 	debug = 1;
 #endif
 	/* POSIX 1003.2: first arg after -c cmd is $0, remainder $1... */
-	if (xminusc) {
+	if (cflag) {
 		minusc = *xargv++;
 		if (*xargv)
 			goto setarg0;
@@ -208,7 +210,6 @@ options(int cmdline)
 	char *p;
 	int val;
 	int c;
-	int login = 0;
 
 	if (cmdline)
 		minusc = NULL;
@@ -234,43 +235,39 @@ options(int cmdline)
 			break;
 		}
 		while ((c = *p++) != '\0') {
-			if (c == 'c' && cmdline) {
-				minusc = p;	/* command is after shell args*/
-			} else if (c == 'l' && cmdline) {
-				login = 1;
-			} else if (c == 'o') {
-				minus_o(*argptr, val);
+			if (c == 'o') {
+				minus_o(cmdline, *argptr, val);
 				if (*argptr)
 					argptr++;
 			} else {
-				setoption(c, val);
+				setoption(cmdline, c, val);
 			}
 		}
 	}
 
-	return login;
+	return lflag & 1;
 }
 
 STATIC void
-minus_o(char *name, int val)
+minus_o(int cmdline, char *name, int val)
 {
 	int i;
 
 	if (name == NULL) {
 		if (val) {
 			out1str("Current option settings\n");
-			for (i = 0; i < NOPTS; i++)
+			for (i = FIRSTSETOPT; i < NOPTS; i++)
 				out1fmt("%-16s%s\n", optnames[i],
 					optlist[i] ? "on" : "off");
 		} else {
-			for (i = 0; i < NOPTS; i++)
+			for (i = FIRSTSETOPT; i < NOPTS; i++)
 				out1fmt("set %s %s\n",
 					optlist[i] ? "-o" : "+o",
 					optnames[i]);
 
 		}
 	} else {
-		for (i = 0; i < NOPTS; i++)
+		for (i = cmdline ? 2 : FIRSTSETOPT; i < NOPTS; i++)
 			if (equal(name, optnames[i])) {
 				optlist[i] = val;
 				return;
@@ -281,11 +278,12 @@ minus_o(char *name, int val)
 
 
 STATIC void
-setoption(int flag, int val)
+setoption(int cmdline, int flag, int val)
 {
 	int i;
 
-	for (i = 0; i < NOPTS; i++)
+	/* Skip over command-line-only options when used with set. */
+	for (i = cmdline ? 0 : FIRSTSETOPT; i < NOPTS; i++)
 		if (optletters[i] == flag) {
 			optlist[i] = val;
 			if (val) {

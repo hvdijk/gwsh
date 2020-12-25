@@ -48,28 +48,52 @@ struct shparam {
 };
 
 
-
-#define eflag optlist[0]
-#define fflag optlist[1]
-#define Iflag optlist[2]
-#define iflag optlist[3]
-#define mflag optlist[4]
-#define nflag optlist[5]
-#define sflag optlist[6]
-#define xflag optlist[7]
-#define vflag optlist[8]
-#define Vflag optlist[9]
-#define Eflag optlist[10]
-#define Cflag optlist[11]
-#define aflag optlist[12]
-#define bflag optlist[13]
-#define uflag optlist[14]
-#define pflag optlist[15]
-#define nolog optlist[16]
-#define debug optlist[17]
-#define optpipefail optlist[18]
-
-#define NOPTS	19
+enum {
+	cflagind,
+#define cflag (optlist[cflagind])
+	lflagind,
+#define lflag (optlist[lflagind])
+	sflagind,
+#define sflag (optlist[sflagind])
+	FIRSTSETOPT,
+	eflagind = FIRSTSETOPT,
+#define eflag (optlist[eflagind])
+	fflagind,
+#define fflag (optlist[fflagind])
+	Iflagind,
+#define Iflag (optlist[Iflagind])
+	iflagind,
+#define iflag (optlist[iflagind])
+	mflagind,
+#define mflag (optlist[mflagind])
+	nflagind,
+#define nflag (optlist[nflagind])
+	xflagind,
+#define xflag (optlist[xflagind])
+	vflagind,
+#define vflag (optlist[vflagind])
+	Vflagind,
+#define Vflag (optlist[Vflagind])
+	Eflagind,
+#define Eflag (optlist[Eflagind])
+	Cflagind,
+#define Cflag (optlist[Cflagind])
+	aflagind,
+#define aflag (optlist[aflagind])
+	bflagind,
+#define bflag (optlist[bflagind])
+	uflagind,
+#define uflag (optlist[uflagind])
+	pflagind,
+#define pflag (optlist[pflagind])
+	nologind,
+#define nolog (optlist[nologind])
+	debugind,
+#define debug (optlist[debugind])
+	optpipefailind,
+#define optpipefail (optlist[optpipefailind])
+	NOPTS
+};
 
 extern const char optletters[NOPTS];
 extern char optlist[NOPTS];
