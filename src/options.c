@@ -120,7 +120,7 @@ char optlist[NOPTS];
 
 
 static int options(int);
-STATIC void minus_o(int, char *, int);
+STATIC void minus_o(int, const char *, int);
 STATIC void setoption(int, int, int);
 STATIC int getopts(char *, char *, char **);
 
@@ -134,7 +134,6 @@ procargs(int argc, char **argv)
 {
 	int i;
 	char **xargv;
-	int login;
 
 	xargv = argv;
 	lflag = xargv[0] && xargv[0][0] == '-';
@@ -144,7 +143,7 @@ procargs(int argc, char **argv)
 	for (i = 0; i < NOPTS; i++)
 		optlist[i] |= 2;
 	argptr = xargv;
-	login = options(1);
+	options(1);
 	xargv = argptr;
 	if (*xargv == NULL) {
 		if (cflag & 1)
@@ -181,7 +180,7 @@ setarg0:
 	}
 	optschanged();
 
-	return login;
+	return lflag & 1;
 }
 
 
@@ -207,49 +206,53 @@ optschanged(void)
 STATIC int
 options(int cmdline)
 {
-	char *p;
+	const char *p;
 	int val;
 	int c;
 
 	if (cmdline)
 		minusc = NULL;
-	while ((p = *argptr) != NULL) {
-		argptr++;
+	while ((p = *argptr++) != NULL) {
 		if ((c = *p++) == '-') {
 			val = 1;
-                        if (p[0] == '\0' || (p[0] == '-' && p[1] == '\0')) {
-                                if (!cmdline) {
-                                        /* "-" means turn off -x and -v */
-                                        if (p[0] == '\0')
-                                                xflag = vflag = 0;
-                                        /* "--" means reset params */
-                                        else if (*argptr == NULL)
-						setparam(argptr);
-                                }
-				break;	  /* "-" or  "--" terminates options */
+			if (p[0] == '\0') {
+				/* "-" means end of options. "set -"
+				 * additionally means turn off -x and -v. */
+				if (!cmdline)
+					xflag = vflag = 0;
+				argptr++;
+				break;
 			}
-		} else if (c == '+') {
+			if (p[0] == '-' && p[1] == '\0') {
+				/* "--" also means end of options. "set --"
+				 * additionally means reset params. */
+				return 1;
+			}
+		} else if (c == '+')
 			val = 0;
-		} else {
-			argptr--;
+		else
 			break;
-		}
 		while ((c = *p++) != '\0') {
-			if (c == 'o') {
-				minus_o(cmdline, *argptr, val);
-				if (*argptr)
-					argptr++;
-			} else {
-				setoption(cmdline, c, val);
-			}
+			if (c == 'o')
+				goto opto;
+			setoption(cmdline, c, val);
 		}
+		continue;
+opto:
+		if (!*p)
+			p = *argptr++;
+		minus_o(cmdline, p, val);
+		if (!p)
+			break;
+		continue;
 	}
 
-	return lflag & 1;
+	argptr--;
+	return *argptr != NULL;
 }
 
 STATIC void
-minus_o(int cmdline, char *name, int val)
+minus_o(int cmdline, const char *name, int val)
 {
 	int i;
 
@@ -387,11 +390,9 @@ setcmd(int argc, char **argv)
 	if (argc == 1)
 		return showvars(nullstr, 0, VUNSET);
 	INTOFF;
-	options(0);
-	optschanged();
-	if (*argptr != NULL) {
+	if (options(0))
 		setparam(argptr);
-	}
+	optschanged();
 	INTON;
 	return 0;
 }
