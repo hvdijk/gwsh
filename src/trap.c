@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018, 2020
+ * Copyright (c) 2018, 2020-2021
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -265,15 +265,10 @@ setsignal(int signo)
 			 */
 			return;
 		}
-		if (act.sa_handler == SIG_IGN) {
-			if (mflag && (signo == SIGTSTP ||
-			     signo == SIGTTIN || signo == SIGTTOU)) {
-				tsig = S_IGN;	/* don't hard ignore these */
-			} else
-				tsig = S_HARD_IGN;
-		} else {
+		if (act.sa_handler == SIG_IGN)
+			tsig = S_HARD_IGN;
+		else
 			tsig = S_RESET;	/* force to be set */
-		}
 	}
 	if (tsig == S_HARD_IGN || tsig == action)
 		return;
