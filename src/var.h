@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2020
+ * Copyright (c) 2018-2021
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -95,6 +95,7 @@ enum {
 	VPS2,
 	VPS4,
 	VOPTIND,
+	VPWD,
 #ifdef WITH_LINENO
 	VLINENO,
 #endif
@@ -120,6 +121,7 @@ enum {
 #define vps2 varinit[VPS2]
 #define vps4 varinit[VPS4]
 #define voptind varinit[VOPTIND]
+#define vpwd varinit[VPWD]
 #ifdef WITH_LINENO
 #define vlineno varinit[VLINENO]
 #endif
@@ -163,6 +165,7 @@ extern char linenovar[];
 #define ps2val()	(vps2.text + 4)
 #define ps4val()	(vps4.text + 4)
 #define optindval()	(voptind.text + 7)
+#define pwdval()	(vpwd.text + 4)
 #ifdef WITH_LINENO
 #define linenoval()	(vlineno.text + 7)
 #endif

@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018, 2020
+ * Copyright (c) 2018, 2020-2021
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -74,6 +74,7 @@
 #include "jobs.h"
 #include "alias.h"
 #include "system.h"
+#include "cd.h"
 
 
 #define CMDTABLESIZE 31		/* should be prime */
@@ -758,7 +759,14 @@ describe_command(
 	switch (entry.cmdtype) {
 	case CMDNORMAL: {
 		int j = entry.u.index;
-		char *p;
+		const char *p;
+		if (verbose) {
+			outfmt(
+				out, "%s is%s ",
+				command,
+				cmdp ? " a tracked alias for" : nullstr
+			);
+		}
 		if (j == -1) {
 			p = command;
 		} else {
@@ -767,15 +775,16 @@ describe_command(
 			} while (--j >= 0);
 			p = stackblock();
 		}
-		if (verbose) {
-			outfmt(
-				out, "%s is%s %s",
-				command,
-				cmdp ? " a tracked alias for" : nullstr, p
-			);
-		} else {
-			outstr(p, out);
+		if (*p != '/') {
+			char *d = getpwd();
+			if (d) {
+				outstr(d, out);
+				if (strchr(d, '\0')[-1] != '/')
+					outc('/', out);
+				free(d);
+			}
 		}
+		outstr(p, out);
 		break;
 	}
 

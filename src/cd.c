@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2020
+ * Copyright (c) 2018-2021
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -71,7 +71,6 @@
 
 STATIC int docd(const char *, int);
 STATIC const char *updatepwd(const char *);
-STATIC const char *getpwd(void);
 STATIC int cdopt(void);
 
 STATIC const char *curdir = nullstr;	/* current working directory */
@@ -287,11 +286,9 @@ updatepwd(const char *dir)
 
 
 /*
- * Find out what the current directory is. If we already know the current
- * directory, this routine returns immediately.
+ * Find out what the current directory is.
  */
-inline
-STATIC const char *
+char *
 getpwd(void)
 {
 #ifdef __GLIBC__
@@ -307,7 +304,7 @@ getpwd(void)
 #endif
 
 	sh_warnx("getcwd() failed: %s", errnomsg());
-	return nullstr;
+	return NULL;
 }
 
 int
@@ -345,6 +342,8 @@ setpwd(const char *val, int setold)
 	}
 	if (oldcur == val || !val) {
 		const char *s = getpwd();
+		if (!s)
+			s = nullstr;
 		physdir = s;
 		if (!val)
 			dir = s;

@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2020
+ * Copyright (c) 2018-2021
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -108,6 +108,7 @@ struct var varinit[] = {
 	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS2\0> ",	0 },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS4\0+ ",	0 },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defoptindvar,	getoptsreset },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"PWD\0\0\1",	0 },
 #ifdef WITH_LINENO
 	{ 0,	VSTRFIXED|VTEXTFIXED,		linenovar,	0 },
 #endif
@@ -163,11 +164,10 @@ INIT {
 	fmtstr(ppid + 5, sizeof(ppid) - 5, "%ld", (long) getppid());
 	setvareq(ppid, VTEXTFIXED);
 
-	p = lookupvar("PWD");
-	if (p)
-		if (*p != '/' || stat(p, &st1) || stat(".", &st2) ||
-		    st1.st_dev != st2.st_dev || st1.st_ino != st2.st_ino)
-			p = 0;
+	p = pwdval();
+	if (*p == '\0' || *p != '/' || stat(p, &st1) || stat(".", &st2) ||
+	    st1.st_dev != st2.st_dev || st1.st_ino != st2.st_ino)
+		p = 0;
 	setpwd(p, 0);
 #ifdef WITH_PARSER_LOCALE
 	parselocale = duplocale(LC_GLOBAL_LOCALE);
