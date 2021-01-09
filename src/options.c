@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2021
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -71,11 +71,11 @@ char *minusc;			/* argument to -c option */
 static const char *const optnames[NOPTS] = {
 	NULL,
 	NULL,
+	"interactive",
 	"stdin",
 	"errexit",
 	"noglob",
 	"ignoreeof",
-	"interactive",
 	"monitor",
 	"noexec",
 	"xtrace",
@@ -95,11 +95,11 @@ static const char *const optnames[NOPTS] = {
 const char optletters[NOPTS] = {
 	'c',
 	'l',
+	'i',
 	's',
 	'e',
 	'f',
 	'I',
-	'i',
 	'm',
 	'n',
 	'x',

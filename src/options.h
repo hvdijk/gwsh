@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2021
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -53,6 +53,8 @@ enum {
 #define cflag (optlist[cflagind])
 	lflagind,
 #define lflag (optlist[lflagind])
+	iflagind,
+#define iflag (optlist[iflagind])
 	sflagind,
 #define sflag (optlist[sflagind])
 	FIRSTSETOPT,
@@ -62,8 +64,6 @@ enum {
 #define fflag (optlist[fflagind])
 	Iflagind,
 #define Iflag (optlist[Iflagind])
-	iflagind,
-#define iflag (optlist[iflagind])
 	mflagind,
 #define mflag (optlist[mflagind])
 	nflagind,
