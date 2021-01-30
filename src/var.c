@@ -107,7 +107,7 @@ struct var varinit[] = {
 	{ 0,	VSTRFIXED|VTEXTFIXED,		defps1var,	0 },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS2\0> ",	0 },
 	{ 0,	VSTRFIXED|VTEXTFIXED,		"PS4\0+ ",	0 },
-	{ 0,	VSTRFIXED|VTEXTFIXED,		defoptindvar,	getoptsreset },
+	{ 0,	VSTRFIXED|VTEXTFIXED|VLATEFUNC,	defoptindvar,	getoptsreset },
 	{ 0,	VSTRFIXED|VTEXTFIXED|VUNSET,	"PWD\0\0\1",	0 },
 #ifdef WITH_LINENO
 	{ 0,	VSTRFIXED|VTEXTFIXED,		linenovar,	0 },

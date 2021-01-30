@@ -36,9 +36,10 @@
 
 #include "config.h"
 
+#include <limits.h>
 #include <signal.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "shell.h"
 #define DEFINE_OPTIONS
@@ -67,6 +68,15 @@ char *optionarg;		/* set by nextopt (like getopt) */
 char *optptr;			/* used by nextopt */
 
 char *minusc;			/* argument to -c option */
+
+static int shoptind = 1;	/* next parameter to be processed by getopts */
+static int shoptoff = -1;	/* used by getopts */
+
+struct optindval {
+	char text[sizeof("OPTIND=")+sizeof(int)*CHAR_BIT/3+1];
+	int shoptind;
+	int shoptoff;
+};
 
 static const char *const optnames[NOPTS] = {
 	NULL,
@@ -171,8 +181,6 @@ setarg0:
 	}
 
 	shellparam.p = xargv;
-	shellparam.optind = 1;
-	shellparam.optoff = -1;
 	/* assert(shellparam.malloc == 0 && shellparam.nparam == 0); */
 	while (*xargv) {
 		shellparam.nparam++;
@@ -325,8 +333,6 @@ setparam(char **argv)
 	shellparam.malloc = 1;
 	shellparam.nparam = nparam;
 	shellparam.p = newparam;
-	shellparam.optind = 1;
-	shellparam.optoff = -1;
 }
 
 
@@ -372,8 +378,6 @@ shiftcmd(int argc, char **argv)
 	}
 	ap2 = shellparam.p;
 	while ((*ap2++ = *ap1++) != NULL);
-	shellparam.optind = 1;
-	shellparam.optoff = -1;
 	INTON;
 	return 0;
 }
@@ -401,8 +405,14 @@ setcmd(int argc, char **argv)
 void
 getoptsreset(const char *value)
 {
-	shellparam.optind = -1;
-	shellparam.optoff = -1;
+	if (voptind.flags & VUSER1) {
+		struct optindval *optindval = (struct optindval *)voptind.text;
+		shoptind = optindval->shoptind;
+		shoptoff = optindval->shoptoff;
+	} else {
+		shoptind = -1;
+		shoptoff = -1;
+	}
 }
 
 /*
@@ -419,22 +429,22 @@ getoptscmd(int argc, char **argv)
 
 	if (argc < 3)
 		sh_error("Usage: getopts optstring var [arg]");
-	if (shellparam.optind < 0) {
-		shellparam.optind = lookupvarint("OPTIND");
-		shellparam.optoff = -1;
+	if (shoptind < 0) {
+		shoptind = lookupvarint("OPTIND");
+		shoptoff = -1;
 	}
 	if (argc == 3) {
 		optbase = shellparam.p;
-		if ((unsigned) (shellparam.optind - 1) > shellparam.nparam) {
-			shellparam.optind = 1;
-			shellparam.optoff = -1;
+		if ((unsigned) (shoptind - 1) > shellparam.nparam) {
+			shoptind = 1;
+			shoptoff = -1;
 		}
 	}
 	else {
 		optbase = &argv[3];
-		if ((unsigned) (shellparam.optind - 1) > argc - 3) {
-			shellparam.optind = 1;
-			shellparam.optoff = -1;
+		if ((unsigned) (shoptind - 1) > argc - 3) {
+			shoptind = 1;
+			shoptoff = -1;
 		}
 	}
 
@@ -449,10 +459,11 @@ getopts(char *optstr, char *optvar, char **optfirst)
 	int done = 0;
 	char s[2];
 	char **optnext;
-	int ind = shellparam.optind;
-	int off = shellparam.optoff;
+	int ind = shoptind;
+	int off = shoptoff;
+	struct optindval *optindval;
 
-	shellparam.optind = -1;
+	shoptind = -1;
 	optnext = optfirst + ind - 1;
 
 	if (ind <= 1 || off < 0 || strlen(optnext[-1]) < off)
@@ -515,13 +526,15 @@ atend:
 
 out:
 	ind = optnext - optfirst + 1;
-	setvarint("OPTIND", ind, VNOFUNC);
+	off = p ? p - *(optnext - 1) : -1;
+	optindval = ckmalloc(sizeof *optindval);
+	fmtstr(optindval->text, sizeof optindval->text, "OPTIND=%d", ind);
+	optindval->shoptind = ind;
+	optindval->shoptoff = off;
+	setvareq((char *)optindval, VNOSAVE|VUSER1);
 	s[0] = c;
 	s[1] = '\0';
 	setvar(optvar, s, 0);
-
-	shellparam.optoff = p ? p - *(optnext - 1) : -1;
-	shellparam.optind = ind;
 
 	return done;
 }

@@ -43,8 +43,6 @@ struct shparam {
 	int nparam;		/* # of positional parameters (without $0) */
 	unsigned char malloc;	/* if parameter list dynamically allocated */
 	char **p;		/* parameter list */
-	int optind;		/* next parameter to be processed by getopts */
-	int optoff;		/* used by getopts */
 };
 
 
