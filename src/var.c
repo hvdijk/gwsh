@@ -305,7 +305,7 @@ out_free:
 			return 0;
 		}
 
-		flags |= vp->flags & ~(VTEXTFIXED|VSTACK|VNOSAVE|VUNSET);
+		flags |= vp->flags & ~(VTEXTFIXED|VSTACK|VNOSAVE|VUNSET|VUSER1);
 	} else {
 		if (flags & VNOSET)
 			goto out;
