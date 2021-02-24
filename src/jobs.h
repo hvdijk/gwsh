@@ -110,6 +110,7 @@ struct job *makejob(union node *, int);
 int forkshell(struct job *, union node *, int);
 int waitforjob(struct job *);
 int stoppedjobs(void);
+void resetjobs(void);
 
 #if ! JOBS
 #define setjobctl(on) ((void)(on))	/* do nothing */

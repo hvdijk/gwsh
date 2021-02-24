@@ -897,9 +897,6 @@ forkchild(struct job *jp, union node *n, int mode)
 		setsignal(SIGQUIT);
 		setsignal(SIGTERM);
 	}
-	for (jp = curjob; jp; jp = jp->prev_job)
-		freejob(jp);
-	jobless = 0;
 }
 
 STATIC inline void
@@ -1198,6 +1195,24 @@ stoppedjobs(void)
 out:
 	return retval;
 }
+
+void
+resetjobs(void)
+{
+	struct job *jp;
+
+	for (jp = curjob; jp; jp = jp->prev_job)
+		freejob(jp);
+	jobless = 0;
+}
+
+#ifdef mkinit
+INCLUDE "jobs.h"
+RESET {
+	if (sub)
+		resetjobs();
+}
+#endif
 
 /*
  * Return a string identifying a command (to be printed by the
