@@ -864,7 +864,6 @@ forkchild(struct job *jp, union node *n, int mode)
 	oldlvl = shlvl;
 	shlvl++;
 
-	reset(1);
 #if JOBS
 	/* do job control only in root shell */
 	jobctl = 0;
@@ -897,6 +896,7 @@ forkchild(struct job *jp, union node *n, int mode)
 		setsignal(SIGQUIT);
 		setsignal(SIGTERM);
 	}
+	reset(1);
 }
 
 STATIC inline void
