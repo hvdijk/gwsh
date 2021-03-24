@@ -66,6 +66,7 @@ extern int exception;
 #define EXERROR 1	/* a generic error */
 #define EXEXIT 4	/* exit the shell */
 #define EXEXT 8		/* exception external to builtin */
+#define EXEOF 16	/* hit EOF */
 
 
 /*

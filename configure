@@ -759,6 +759,7 @@ enable_default_privileged
 enable_self_exec_path
 enable_test_workaround
 with_libedit
+enable_completion
 enable_lineno
 enable_locale
 enable_parser_locale
@@ -1416,6 +1417,8 @@ Optional Features:
   --enable-test-workaround
                           Guard against faccessat(2) that tells root all files
                           are executable
+  --enable-completion[=internal/external]
+                          Compile with completion support (default=external)
   --disable-lineno        Disable LINENO support
   --disable-locale        Disable locale support
   --disable-parser-locale Disable use of fixed locale during parsing.
@@ -7561,19 +7564,53 @@ printf "%s\n" "#define SMALL 1" >>confdefs.h
 
 else
 	export LIBS="$LIBS -ledit"
-	ac_fn_c_check_func "$LINENO" "_el_fn_complete" "ac_cv_func__el_fn_complete"
-if test "x$ac_cv_func__el_fn_complete" = xyes
+	# Check whether --enable-completion was given.
+if test ${enable_completion+y}
 then :
-  printf "%s\n" "#define HAVE__EL_FN_COMPLETE 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "_el_fn_sh_complete" "ac_cv_func__el_fn_sh_complete"
-if test "x$ac_cv_func__el_fn_sh_complete" = xyes
-then :
-  printf "%s\n" "#define HAVE__EL_FN_SH_COMPLETE 1" >>confdefs.h
-
+  enableval=$enable_completion;
+else $as_nop
+  enable_completion=auto
 fi
 
+	case $enable_completion in
+	internal)
+
+printf "%s\n" "#define ENABLE_COMPLETION 1" >>confdefs.h
+
+
+printf "%s\n" "#define ENABLE_INTERNAL_COMPLETION 1" >>confdefs.h
+
+		;;
+	external|yes|auto)
+
+  for ac_func in _el_fn_sh_complete _el_fn_complete
+do :
+  as_ac_var=`printf "%s\n" "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+ break
+fi
+
+done
+		if test "$ac_cv_func__el_fn_sh_complete:$ac_cv_func__el_fn_complete" = "no:no"; then
+			if test "$enable_completion" != "auto"; then
+				as_fn_error $? "cannot find completion function in libedit" "$LINENO" 5
+			fi
+		else
+			printf "%s\n" "#define ENABLE_COMPLETION 1" >>confdefs.h
+
+
+printf "%s\n" "#define ENABLE_EXTERNAL_COMPLETION 1" >>confdefs.h
+
+		fi
+		;;
+	no)
+		;;
+	esac
 fi
 # Check whether --enable-lineno was given.
 if test ${enable_lineno+y}

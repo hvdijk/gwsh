@@ -41,6 +41,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <fcntl.h>
 #ifdef HAVE_GETPWNAM
 #include <pwd.h>
 #endif
@@ -126,7 +127,7 @@ STATIC size_t strtodest(const char *, int);
 STATIC void memtodest(const char *, size_t, int);
 STATIC ssize_t varvalue(char *, int, int);
 STATIC void expandmeta(struct strlist *, int);
-STATIC void expmeta(char *);
+STATIC void expmeta(char *, int);
 STATIC struct strlist *expsort(struct strlist *);
 STATIC struct strlist *msort(struct strlist *, int);
 STATIC void addfname(char *);
@@ -166,28 +167,38 @@ static inline const char *getpwhome(const char *name)
  */
 
 void
-expandarg(union node *arg, struct arglist *arglist, int flag)
+expandarg(union node *arg, struct arglist *arglist, int flags)
 {
 	struct strlist *sp;
 	char *p;
 
 	argbackq = arg->narg.backquote;
 	STARTSTACKSTR(expdest);
-	argstr(arg->narg.text, flag);
+	argstr(arg->narg.text, flags);
 	if (arglist == NULL) {
 		/* here document expanded */
 		goto out;
 	}
+#ifdef ENABLE_INTERNAL_COMPLETION
+	if (flags & EXP_COMPLETE)
+		expdest = makestrspace(1, expdest);
+#endif
 	p = grabstackstr(expdest);
 	exparg.lastp = &exparg.list;
 	/*
 	 * TODO - EXP_REDIR
 	 */
-	if (flag & EXP_FULL) {
+	if (flags & EXP_FULL) {
 		ifsbreakup(p, -1, &exparg);
 		*exparg.lastp = NULL;
 		exparg.lastp = &exparg.list;
-		expandmeta(exparg.list, flag);
+#ifdef ENABLE_INTERNAL_COMPLETION
+		if (flags & EXP_COMPLETE) {
+			if (!exparg.list || exparg.list->next)
+				exraise(EXERROR);
+		}
+#endif
+		expandmeta(exparg.list, flags);
 	} else {
 		sp = (struct strlist *)stalloc(sizeof (struct strlist));
 		sp->text = p;
@@ -213,7 +224,7 @@ out:
  */
 
 STATIC char *
-argstr(char *p, int flag)
+argstr(char *p, int flags)
 {
 	static const char spclchars[] = {
 		'=',
@@ -231,20 +242,20 @@ argstr(char *p, int flag)
 	const char *reject = spclchars + 2;
 	char prev;
 	int c = 0;
-	int breakall = (flag & (EXP_WORD | EXP_QUOTED)) == EXP_WORD;
+	int breakall = (flags & (EXP_WORD | EXP_QUOTED)) == EXP_WORD;
 	size_t length;
 	int startloc;
 
-	reject -= (flag & (EXP_VARTILDE | EXP_VARTILDE2)) / EXP_VARTILDE2;
+	reject -= (flags & (EXP_VARTILDE | EXP_VARTILDE2)) / EXP_VARTILDE2;
 	length = 0;
-	if ((flag & (EXP_TILDE | EXP_DISCARD)) == EXP_TILDE) {
+	if ((flags & (EXP_TILDE | EXP_DISCARD)) == EXP_TILDE) {
 		char *q;
 
-		flag &= ~EXP_TILDE;
+		flags &= ~EXP_TILDE;
 tilde:
 		q = p;
 		if (*q == '~')
-			p = exptilde(p, q, flag);
+			p = exptilde(p, q, flags);
 	}
 start:
 	startloc = expdest - (char *)stackblock();
@@ -256,11 +267,11 @@ start:
 			/* c == '=' || c == ':' */
 			length++;
 		}
-		if (length > 0 && !(flag & EXP_DISCARD)) {
+		if (length > 0 && !(flags & EXP_DISCARD)) {
 			int newloc;
 			expdest = stnputs(p, length, expdest);
 			newloc = expdest - (char *)stackblock();
-			if (breakall && !(flag & EXP_QUOTED) && newloc > startloc) {
+			if (breakall && !(flags & EXP_QUOTED) && newloc > startloc) {
 				recordregion(startloc, newloc, 0);
 			}
 			startloc = newloc;
@@ -273,11 +284,11 @@ start:
 		case '\0':
 		case CTLENDVAR:
 		case CTLENDARI:
-			if (!(flag & (EXP_WORD | EXP_DISCARD)))
+			if (!(flags & (EXP_WORD | EXP_DISCARD)))
 				STPUTC('\0', expdest);
 			return p;
 		case '=':
-			flag ^= EXP_VARTILDE | EXP_VARTILDE2;
+			flags ^= EXP_VARTILDE | EXP_VARTILDE2;
 			reject++;
 			/* fall through */
 		case ':':
@@ -290,9 +301,9 @@ start:
 			}
 			continue;
 		case CTLQUOTEMARK:
-			flag ^= EXP_QUOTED;
+			flags ^= EXP_QUOTED;
 addquote:
-			if (flag & QUOTES_ESC) {
+			if (flags & QUOTES_ESC) {
 				p--;
 				length++;
 				startloc++;
@@ -300,9 +311,9 @@ addquote:
 			break;
 		case CTLESC:
 			if (*p >= (char) CTL_FIRST && *p <= (char) CTL_LAST
-			    && !(flag & EXP_QUOTED)) {
+			    && !(flags & EXP_QUOTED)) {
 				length++;
-				if (flag & QUOTES_ESC) {
+				if (flags & QUOTES_ESC) {
 					p--;
 					length++;
 				}
@@ -313,33 +324,33 @@ addquote:
 			goto addquote;
 		case CTLVAR:
 			/* "$@" syntax adherence hack */
-			dolatstrhack = p[1] == '@' && (*p & VSTYPE) != VSMINUS && (*p & VSTYPE) != VSLENGTH && !shellparam.nparam && flag & QUOTES_ESC && !(flag & EXP_DISCARD);
-			p = evalvar(p, flag);
+			dolatstrhack = p[1] == '@' && (*p & VSTYPE) != VSMINUS && (*p & VSTYPE) != VSLENGTH && !shellparam.nparam && flags & QUOTES_ESC && !(flags & EXP_DISCARD);
+			p = evalvar(p, flags);
 			if (dolatstrhack && prev == (char)CTLQUOTEMARK && *p == (char)CTLQUOTEMARK) {
 				expdest--;
-				flag ^= EXP_QUOTED;
+				flags ^= EXP_QUOTED;
 				p++;
 			}
 			goto start;
 		case CTLBACKQ:
-			if (!(flag & EXP_DISCARD))
-				expbackq(argbackq->n, flag);
+			if (!(flags & EXP_DISCARD))
+				expbackq(argbackq->n, flags);
 			argbackq = argbackq->next;
 			goto start;
 		case CTLARI:
-			p = expari(p, flag);
+			p = expari(p, flags);
 			goto start;
 		}
 	}
 }
 
 STATIC char *
-exptilde(char *startp, char *p, int flag)
+exptilde(char *startp, char *p, int flags)
 {
 	signed char c;
 	char *name;
 	const char *home;
-	int quotes = flag & QUOTES_ESC;
+	int quotes = flags & QUOTES_ESC;
 
 	name = p + 1;
 
@@ -350,7 +361,7 @@ exptilde(char *startp, char *p, int flag)
 		case CTLQUOTEMARK:
 			return (startp);
 		case ':':
-			if (flag & (EXP_VARTILDE | EXP_VARTILDE2))
+			if (flags & (EXP_VARTILDE | EXP_VARTILDE2))
 				goto done;
 			break;
 		case '/':
@@ -424,7 +435,7 @@ removerecordregions(int endoff)
  * Expand arithmetic expression.
  */
 STATIC char *
-expari(char *start, int flag)
+expari(char *start, int flags)
 {
 	struct stackmark sm;
 	char *p;
@@ -434,8 +445,8 @@ expari(char *start, int flag)
 	intmax_t result;
 
 	begoff = expdest - (char *) stackblock();
-	p = argstr(start, (flag & EXP_DISCARD) | EXP_QUOTED);
-	if (flag & EXP_DISCARD)
+	p = argstr(start, (flags & EXP_DISCARD) | EXP_QUOTED);
+	if (flags & EXP_DISCARD)
 		goto out;
 
 	endoff = expdest - (char *) stackblock();
@@ -444,9 +455,9 @@ expari(char *start, int flag)
 	result = arith(expdest);
 	popstackmark(&sm);
 
-	len = cvtnum(result, flag);
+	len = cvtnum(result, flags);
 
-	if (likely(!(flag & EXP_QUOTED)))
+	if (likely(!(flags & EXP_QUOTED)))
 		recordregion(begoff, begoff + len, 0);
 
 out:
@@ -459,7 +470,7 @@ out:
  */
 
 STATIC void
-expbackq(union node *cmd, int flag)
+expbackq(union node *cmd, int flags)
 {
 	struct backcmd in;
 	int i;
@@ -469,10 +480,15 @@ expbackq(union node *cmd, int flag)
 	int startloc;
 	struct stackmark smark;
 
+#ifdef ENABLE_INTERNAL_COMPLETION
+	if (flags & EXP_COMPLETE)
+		exraise(EXERROR);
+#endif
+
 	INTOFF;
 	startloc = expdest - (char *)stackblock();
 	pushstackmark(&smark, startloc);
-	evalbackcmd(cmd, flag & EXP_XTRACE ? EV_XTRACE : 0, &in);
+	evalbackcmd(cmd, flags & EXP_XTRACE ? EV_XTRACE : 0, &in);
 	popstackmark(&smark);
 
 	p = in.buf;
@@ -480,7 +496,7 @@ expbackq(union node *cmd, int flag)
 	if (i == 0)
 		goto read;
 	for (;;) {
-		memtodest(p, i, flag & (QUOTES_ESC | EXP_QUOTED));
+		memtodest(p, i, flags & (QUOTES_ESC | EXP_QUOTED));
 read:
 		if (in.fd < 0)
 			break;
@@ -507,7 +523,7 @@ read:
 		STUNPUTC(dest);
 	expdest = dest;
 
-	if (!(flag & EXP_QUOTED))
+	if (!(flags & EXP_QUOTED))
 		recordregion(startloc, dest - (char *)stackblock(), 0);
 	TRACE(("evalbackq: size=%d: \"%.*s\"\n",
 		(dest - (char *)stackblock()) - startloc,
@@ -517,9 +533,9 @@ read:
 
 
 STATIC const char *
-subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varflags, int flag)
+subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varflags, int flags)
 {
-	int quotes = flag & QUOTES_ESC;
+	int quotes = flags & QUOTES_ESC;
 	char *startp;
 	char *loc;
 	struct nodelist *saveargbackq = argbackq;
@@ -532,6 +548,10 @@ subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varfla
 
 	switch (subtype) {
 	case VSASSIGN:
+#ifdef ENABLE_INTERNAL_COMPLETION
+		if (flags & EXP_COMPLETE)
+			exraise(EXERROR);
+#endif
 		setvar(str, startp, 0);
 		amount = startp - expdest;
 		STADJUST(amount, expdest);
@@ -569,7 +589,7 @@ subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varfla
  * input string.
  */
 STATIC char *
-evalvar(char *p, int flag)
+evalvar(char *p, int flags)
 {
 	int subtype;
 	int varflags;
@@ -583,14 +603,14 @@ evalvar(char *p, int flag)
 	varflags = *p++;
 	subtype = varflags & VSTYPE;
 
-	if (flag & EXP_DISCARD)
+	if (flags & EXP_DISCARD)
 		goto discard;
 
 	if (!subtype)
 badsub:
 		sh_error("Bad substitution");
 
-	quoted = flag & EXP_QUOTED;
+	quoted = flags & EXP_QUOTED;
 	var = p;
 	easy = (!quoted || (*var == '@' && shellparam.nparam));
 	startloc = expdest - (char *)stackblock();
@@ -599,7 +619,7 @@ badsub:
 		goto badsub;
 
 again:
-	varlen = varvalue(var, varflags, flag);
+	varlen = varvalue(var, varflags, flags);
 	if (varflags & VSNUL)
 		varlen--;
 
@@ -611,7 +631,7 @@ again:
 	if (subtype == VSMINUS) {
 vsplus:
 		if (varlen < 0) {
-			return argstr(p, flag | EXP_TILDE | EXP_WORD);
+			return argstr(p, flags | EXP_TILDE | EXP_WORD);
 		}
 		goto record;
 	}
@@ -621,7 +641,7 @@ vsplus:
 			goto record;
 
 		subevalvar(p, var, 0, subtype, startloc, varflags,
-			   flag & ~QUOTES_ESC);
+			   flags & ~QUOTES_ESC);
 		varflags &= ~VSNUL;
 		/* 
 		 * Remove any recorded regions beyond 
@@ -635,7 +655,7 @@ vsplus:
 		varunset(p, var, 0, 0);
 
 	if (subtype == VSLENGTH) {
-		cvtnum(varlen > 0 ? varlen : 0, flag);
+		cvtnum(varlen > 0 ? varlen : 0, flags);
 		goto record;
 	}
 
@@ -645,7 +665,7 @@ record:
 			recordregion(startloc, expdest - (char *)stackblock(), quoted);
 discard:
 		if (subtype & ~VSNORMAL)
-			return argstr(p, flag | EXP_DISCARD);
+			return argstr(p, flags | EXP_DISCARD);
 		return p;
 	}
 
@@ -668,7 +688,7 @@ discard:
 	STPUTC('\0', expdest);
 	patloc = expdest - (char *)stackblock();
 	if (subevalvar(p, NULL, patloc, subtype,
-		       startloc, varflags, flag) == 0) {
+		       startloc, varflags, flags) == 0) {
 		int amount = expdest - (
 			(char *)stackblock() + patloc - 1
 		);
@@ -698,13 +718,13 @@ memtodest(const char *p, size_t len, int quotes) {
 		if (c) {
 			if (quotes & QUOTES_ESC) {
 				switch (c) {
-					case '\\':
-					case '!': case '*': case '?': case '[': case '=':
-					case '~': case ':': case '/': case '-': case ']':
-						if (quotes & EXP_QUOTED)
-					case CTLCHARS:
-							USTPUTC(CTLESC, q);
-						break;
+				case '\\':
+				case '!': case '*': case '?': case '[': case '=':
+				case '~': case ':': case '-': case '/': case ']':
+					if (quotes & EXP_QUOTED)
+				case CTLCHARS:
+						USTPUTC(CTLESC, q);
+					break;
 				}
 			}
 		} else if (!(quotes & QUOTES_KEEPNUL))
@@ -1058,7 +1078,7 @@ out:
  */
 
 STATIC void
-expandmeta(struct strlist *str, int flag)
+expandmeta(struct strlist *str, int flags)
 {
 	/* TODO - EXP_REDIR */
 
@@ -1072,7 +1092,7 @@ expandmeta(struct strlist *str, int flag)
 
 		INTOFF;
 		preglob(str->text);
-		expmeta(str->text);
+		expmeta(str->text, flags);
 		INTON;
 		if (exparg.lastp == savelastp) {
 			/*
@@ -1084,10 +1104,19 @@ nometa:
 			exparg.lastp = &str->next;
 		} else {
 			*exparg.lastp = NULL;
+#ifdef ENABLE_INTERNAL_COMPLETION
+			if (flags & EXP_COMPLETE)
+				savelastp = &(*savelastp)->next;
+#endif
 			*savelastp = sp = expsort(*savelastp);
-			while (sp->next != NULL)
-				sp = sp->next;
-			exparg.lastp = &sp->next;
+#ifdef ENABLE_INTERNAL_COMPLETION
+			if (sp)
+#endif
+			{
+				while (sp->next != NULL)
+					sp = sp->next;
+				exparg.lastp = &sp->next;
+			}
 		}
 		str = str->next;
 	}
@@ -1099,10 +1128,15 @@ nometa:
  */
 
 STATIC void
-expmeta1(char *expdir, char *enddir, char *name, int force)
+expmeta1(char *expdir, char *enddir, char *name, int flags)
 {
-	char *p;
+	char *p, *q, *r;
 	const char *cp;
+#ifdef ENABLE_INTERNAL_COMPLETION
+	char *cpend;
+	int cpdir;
+	char savec;
+#endif
 	char *start;
 	char *endname, saveendname, *startnext;
 	int metaflag;
@@ -1117,7 +1151,6 @@ expmeta1(char *expdir, char *enddir, char *name, int force)
 	for (p = name; *p;) {
 		switch (*p) {
 			int c;
-			char *q, *r;
 		case '\0':
 			break;
 		case '*':
@@ -1146,13 +1179,20 @@ expmeta1(char *expdir, char *enddir, char *name, int force)
 				break;
 		case '\\':
 				q = p + 1;
-				force = 1;
+#ifdef ENABLE_INTERNAL_COMPLETION
+				flags |= EXP_BACKSLASH;
+#else
+				flags = 1;
+#endif
 				break;
 			} while (0);
 			r = q;
 			if (*r == (char)CTLESC)
 				r++;
 			if (*r == '/') {
+#ifdef ENABLE_INTERNAL_COMPLETION
+				flags &= ~EXP_PATH;
+#endif
 				if (metaflag > 0)
 					break;
 				start = p = r + 1;
@@ -1168,25 +1208,57 @@ expmeta1(char *expdir, char *enddir, char *name, int force)
 		break;
 	}
 
-	if (metaflag <= 0) { /* we've reached the end of the file name */
-		if (force) {
-			p = name;
-			do {
-				if (enddir == expdir + PATH_MAX)
-					return;
-				if (*p == '\\' && p[1] != '\0')
-					p++;
-				if (*p == (char)CTLESC)
-					p++;
-				*enddir++ = *p;
-				} while (*p++);
-			if (lstat(expdir, &statb) >= 0)
-				addfname(expdir);
-		}
-		return;
-	}
-
 	endname = p;
+	atend = *endname == '\0';
+
+	if (metaflag <= 0) { /* we've reached the end of the file name */
+		int res;
+#ifdef ENABLE_INTERNAL_COMPLETION
+		if (!(flags & (EXP_COMPLETE | EXP_BACKSLASH | EXP_RECURSE)))
+#else
+		if (!flags)
+#endif
+			return;
+		p = name;
+		q = enddir;
+		res = 0;
+#ifdef ENABLE_INTERNAL_COMPLETION
+		if (q == expdir + PATH_MAX)
+			return;
+		if ((flags & (EXP_COMPLETE | EXP_RECURSE)) ==
+			(EXP_COMPLETE | EXP_RECURSE)) {
+			*q = '\0';
+			res = lstat(expdir, &statb);
+		}
+#endif
+		do {
+			if (q == expdir + PATH_MAX)
+				return;
+			if (*p == '\\' && p[1] != '\0')
+				p++;
+			if (*p == (char)CTLESC)
+				p++;
+			*q++ = *p;
+		} while (*p++);
+#ifdef ENABLE_INTERNAL_COMPLETION
+		if (!(flags & EXP_COMPLETE))
+#endif
+			res = lstat(expdir, &statb);
+		if (res >= 0)
+			addfname(expdir);
+#ifdef ENABLE_INTERNAL_COMPLETION
+		if (!(flags & EXP_COMPLETE))
+#endif
+			return;
+	}
+#ifdef ENABLE_INTERNAL_COMPLETION
+	else if (flags & EXP_COMPLETE && atend)
+		return;
+	flags |= EXP_RECURSE;
+#else
+	flags = 1;
+#endif
+
 	if (name < start) {
 		p = name;
 		do {
@@ -1199,31 +1271,54 @@ expmeta1(char *expdir, char *enddir, char *name, int force)
 			*enddir++ = *p++;
 		} while (p < start);
 	}
-	if (enddir == expdir) {
-		cp = ".";
-	} else if (enddir == expdir + 1 && *expdir == '/') {
-		cp = "/";
+#ifdef ENABLE_INTERNAL_COMPLETION
+	if (flags & EXP_PATH) {
+		cp = pathval();
+path_start:
+		cpend = strchrnul(cp, ':');
+		if (cpend == cp)
+			cp = ".";
+		savec = *cpend;
+		*cpend = '\0';
+		cpdir = open(cp, O_RDONLY);
+		if (cpdir < 0)
+			goto path_end;
+		if ((dirp = fdopendir(cpdir)) == NULL)
+			goto path_end;
 	} else {
-		cp = expdir;
-		enddir[-1] = '\0';
+		cpdir = AT_FDCWD;
+#endif
+		if (enddir == expdir) {
+			cp = ".";
+		} else if (enddir == expdir + 1 && *expdir == '/') {
+			cp = "/";
+		} else {
+			cp = expdir;
+			enddir[-1] = '\0';
+		}
+		if ((dirp = opendir(cp)) == NULL)
+			return;
+#ifdef ENABLE_INTERNAL_COMPLETION
 	}
-	if ((dirp = opendir(cp)) == NULL)
-		return;
+#endif
 	if (enddir != expdir)
 		enddir[-1] = '/';
-	if (*endname == 0) {
-		atend = 1;
-	} else {
-		atend = 0;
+	saveendname = *endname;
+	if (!atend) {
 		startnext = endname;
 		if (*startnext == '\\')
 			startnext++;
 		if (*startnext == (char)CTLESC)
 			startnext++;
 		startnext++;
-		saveendname = *endname;
 		*endname = '\0';
 	}
+#ifdef ENABLE_INTERNAL_COMPLETION
+	else if (flags & EXP_COMPLETE) {
+		endname[0] = '*';
+		endname[1] = '\0';
+	}
+#endif
 	matchdot = 0;
 	p = start;
 	if (*p == '\\')
@@ -1240,30 +1335,70 @@ expmeta1(char *expdir, char *enddir, char *name, int force)
 			cp = dp->d_name;
 			for (;;) {
 				if (p == expdir + PATH_MAX)
-					goto toolong;
+					goto skip;
 				if ((*p++ = *cp++) == '\0')
 					break;
 			}
 			if (atend) {
+#ifdef ENABLE_INTERNAL_COMPLETION
+				if (flags & EXP_COMPLETE) {
+					struct stat st;
+#ifdef _DIRENT_HAVE_D_TYPE
+					if (dp->d_type == DT_DIR)
+						goto dir;
+					if (!(flags & EXP_COMMAND) &&
+					    dp->d_type != DT_UNKNOWN &&
+					    dp->d_type != DT_LNK)
+						goto notdir;
+#endif
+					if (fstatat(cpdir, expdir, &st, 0)) {
+						if (flags & EXP_COMMAND)
+							goto skip;
+					} else if (S_ISDIR(st.st_mode)) {
+dir:
+						if (flags & EXP_PATH ||
+						    p == expdir + PATH_MAX)
+							goto skip;
+						p[-1] = '/';
+						p[0] = '\0';
+					} else {
+notdir:
+						if (flags & EXP_COMMAND &&
+						    !(st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)))
+							goto skip;
+					}
+				}
+#endif
 				addfname(expdir);
 			} else {
 				p[-1] = '/';
-				expmeta1(expdir, p, startnext, 1);
+				expmeta1(expdir, p, startnext, flags);
 			}
 		}
-toolong: ;
+skip: ;
 	}
 	closedir(dirp);
-	if (! atend)
-		*endname = saveendname;
+	*endname = saveendname;
+#ifdef ENABLE_INTERNAL_COMPLETION
+	if (flags & EXP_PATH) {
+path_end:
+		if (cpdir >= 0)
+			close(cpdir);
+		*cpend = savec;
+		if (savec) {
+			cp = cpend + 1;
+			goto path_start;
+		}
+	}
+#endif
 }
 
 
 STATIC void
-expmeta(char *name)
+expmeta(char *name, int flags)
 {
 	char expdir[PATH_MAX];
-	expmeta1(expdir, expdir, name, 0);
+	expmeta1(expdir, expdir, name, flags);
 }
 
 
@@ -1323,25 +1458,24 @@ msort(struct strlist *list, int len)
 	p = msort(p, len - half);		/* sort second half */
 	lpp = &list;
 	for (;;) {
-#ifndef WITH_LOCALE
-		int cmp = strcmp(p->text, q->text);
-#else
-		int cmp = strcoll(p->text, q->text);
+		int cmp;
+#ifdef WITH_LOCALE
+		cmp = strcoll(p->text, q->text);
+		if (!cmp)
 #endif
-		if (cmp < 0) {
+			cmp = strcmp(p->text, q->text);
+		if (cmp > 0) {
+			struct strlist *t = p;
+			p = q;
+			q = t;
+		}
+		if (cmp) {
 			*lpp = p;
 			lpp = &p->next;
-			if ((p = *lpp) == NULL) {
-				*lpp = q;
-				break;
-			}
-		} else {
+		}
+		if ((p = p->next) == NULL) {
 			*lpp = q;
-			lpp = &q->next;
-			if ((q = *lpp) == NULL) {
-				*lpp = p;
-				break;
-			}
+			break;
 		}
 	}
 	return list;
@@ -1626,9 +1760,9 @@ casematch(union node *pattern, char *val)
  */
 
 STATIC int
-cvtnum(intmax_t num, int flag)
+cvtnum(intmax_t num, int flags)
 {
-	int ctlesc = num < 0 && flag & QUOTES_ESC && flag & EXP_QUOTED;
+	int ctlesc = num < 0 && flags & QUOTES_ESC && flags & EXP_QUOTED;
 	int len = max_int_length(sizeof(num));
 
 	expdest = makestrspace(ctlesc + len, expdest);

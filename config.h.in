@@ -1,8 +1,17 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if you build with completion support. */
+#undef ENABLE_COMPLETION
+
 /* Define to 1 to keep extra privileges when started with effective UID/GID
    unequal to real UID/GID. */
 #undef ENABLE_DEFAULT_PRIVILEGED
+
+/* Define if you build with libedit's completion support. */
+#undef ENABLE_EXTERNAL_COMPLETION
+
+/* Define if you build with libedit's completion support. */
+#undef ENABLE_INTERNAL_COMPLETION
 
 /* Define to 1 if you have the <alloca.h> header file. */
 #undef HAVE_ALLOCA_H

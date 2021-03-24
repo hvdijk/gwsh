@@ -52,6 +52,15 @@ extern const char qchars[];
 extern const char illnum[];
 extern const char homestr[];
 
+/* Quote styles. In !ENABLE_INTERNAL_COMPLETION builds, only QS_AUTO and
+ * QS_AUTO_FORCE are supported. */
+#define QS_AUTO          0 /* determine automatically */
+#define QS_AUTO_FORCE    1 /* determine automatically, but force quoting */
+#define QS_DOLLAR_QUOTED 2
+#define QS_SINGLE_QUOTED 3
+#define QS_DOUBLE_QUOTED 4
+#define QS_UNQUOTED      5
+
 #if 0
 void scopyn(const char *, char *, int);
 #endif
@@ -61,8 +70,14 @@ intmax_t atomax(const char *, const char **, int);
 intmax_t atomax10(const char *);
 int number(const char *);
 int is_number(const char *);
-const char *shell_quote(const char *, int);
+#ifdef ENABLE_INTERNAL_COMPLETION
+#define shell_quote(a, b) _shell_quote((a), (b), NULL, NULL)
+char *_shell_quote(const char *, int, char **, char **);
+#else
+char *shell_quote(const char *, int);
+#endif
 char *sstrdup(const char *);
+char *smemdup(const char *, size_t n);
 int pstrcmp(const void *, const void *);
 const char *const *findstring(const char *, const char *const *, size_t);
 

@@ -76,31 +76,6 @@
 
 
 
-/* Flags for readtoken1(). */
-#define RT_HEREDOC    0x01
-#define RT_STRIPTABS  0x02
-/* Reserved           0x04 */
-#define RT_SQSYNTAX   0x08
-#define RT_DQSYNTAX   0x10
-#define RT_DSQSYNTAX  0x18
-#define RT_QSYNTAX    0x18
-#define RT_STRING     0x20
-#define RT_VARNEST    0x40
-#define RT_ARINEST    0x80
-#define RT_ARIPAREN   0x100
-#define RT_CHECKEND   0x200
-#define RT_CTOGGLE1   0x400
-#define RT_CTOGGLE2   0x800
-#ifdef WITH_LOCALE
-#define RT_ESCAPE     0x1000
-#define RT_MBCHAR     0x2000
-#else
-#define RT_ESCAPE     0
-#define RT_MBCHAR     0
-#endif
-
-
-
 struct heredoc {
 	struct heredoc *next;	/* next here document in list */
 	union node *here;		/* redirection node */
@@ -119,6 +94,9 @@ const char *lastprompt;		/* the last prompt */
 int lasttoken;			/* last token read */
 int tokpushback;		/* last token pushed back */
 char *wordtext;			/* text of last word returned by readtoken */
+#ifdef ENABLE_INTERNAL_COMPLETION
+int wordflags;
+#endif
 int checkkwd;
 struct nodelist *backquotelist;
 union node *redirnode;
@@ -140,7 +118,6 @@ STATIC int pgetc_eatbnl(void);
 STATIC int readtoken1(int, char *, int);
 STATIC void synerror(const char *) attribute((noreturn));
 STATIC void setprompt(int);
-
 
 /*
  * Read and parse a command.  Returns NEOF on end of file.  (NULL is a
@@ -165,7 +142,7 @@ parsecmd(int interact)
 	}
 	needprompt = 0;
 #ifndef SMALL
-	if (histop == H_APPEND)
+	if (parsefile->flags & PF_HIST && histop == H_APPEND)
 		histop = H_ENTER;
 #endif
 	cmd = list(1);
@@ -184,7 +161,7 @@ list(int nlflag)
 
 	n1 = NULL;
 	for (;;) {
-		checkkwd = (nlflag & 1 ? 0 : CHKNL) | CHKKWD | CHKALIAS;
+		checkkwd = (nlflag & 1 ? 0 : CHKNL) | CHKKWD | CHKALIAS | CHKCMD;
 		switch (readtoken()) {
 		case TNL:
 			parseheredoc();
@@ -274,7 +251,7 @@ andor(void)
 		n2->nbinary.ch1 = n;
 		n = n2;
 		np = &n->nbinary.ch2;
-		checkkwd = CHKNL | CHKKWD | CHKALIAS;
+		checkkwd = CHKNL | CHKKWD | CHKALIAS | CHKCMD;
 	}
 
 	tokpushback++;
@@ -295,7 +272,7 @@ pipeline(void)
 	TRACE(("pipeline: entered\n"));
 	if (readtoken() == TNOT) {
 		negate = !negate;
-		checkkwd = CHKKWD | CHKALIAS;
+		checkkwd = CHKKWD | CHKALIAS | CHKCMD;
 	} else
 		tokpushback++;
 	for (;;) {
@@ -318,7 +295,7 @@ pipeline(void)
 		lp->next = NULL;
 		prev->next = lp;
 		np = &lp->n;
-		checkkwd = CHKNL | CHKKWD | CHKALIAS;
+		checkkwd = CHKNL | CHKKWD | CHKALIAS | CHKCMD;
 	}
 	if (negate) {
 		union node *n2 = stalloc(sizeof (struct nnot));
@@ -397,7 +374,7 @@ TRACE(("expecting DO got %s %s\n", tokname[got], got == TWORD ? wordtext : ""));
 		n1->type = NFOR;
 		n1->nfor.linno = savelinno;
 		n1->nfor.var = wordtext;
-		checkkwd = CHKNL | CHKKWD | CHKALIAS;
+		checkkwd = CHKNL | CHKKWD | CHKALIAS | CHKCMD;
 		if (readtoken() == TIN) {
 			app = &ap;
 			while (readtoken() == TWORD) {
@@ -426,7 +403,7 @@ TRACE(("expecting DO got %s %s\n", tokname[got], got == TWORD ? wordtext : ""));
 			if (lasttoken != TSEMI)
 				tokpushback++;
 		}
-		checkkwd = CHKNL | CHKKWD | CHKALIAS;
+		checkkwd = CHKNL | CHKKWD | CHKALIAS | CHKCMD;
 		if (readtoken() != TDO)
 			synexpect(TDO);
 		n1->nfor.body = list(0);
@@ -443,7 +420,7 @@ TRACE(("expecting DO got %s %s\n", tokname[got], got == TWORD ? wordtext : ""));
 		n2->narg.text = wordtext;
 		n2->narg.backquote = backquotelist;
 		n2->narg.next = NULL;
-		checkkwd = CHKNL | CHKKWD | CHKALIAS;
+		checkkwd = CHKNL | CHKKWD | CHKALIAS | CHKCMD;
 		if (readtoken() != TIN)
 			synexpect(TIN);
 		cpp = &n1->ncase.cases;
@@ -527,7 +504,7 @@ need_word:
 
 redir:
 	/* Now check for redirection which may follow command */
-	checkkwd = CHKKWD | CHKALIAS;
+	checkkwd = CHKKWD | CHKALIAS | CHKCMD;
 	rpp = rpp2;
 	while (readtoken() == TREDIR) {
 		*rpp = n2 = redirnode;
@@ -567,7 +544,7 @@ simplecmd(void) {
 	redir = NULL;
 	rpp = &redir;
 
-	savecheckkwd = CHKALIAS;
+	savecheckkwd = CHKALIAS | CHKCMD;
 	savelinno = plinno;
 	for (;;) {
 		switch (readtoken()) {
@@ -610,7 +587,7 @@ simplecmd(void) {
 				)
 					synerror("Bad function name");
 				n->type = NDEFUN;
-				checkkwd = CHKNL | CHKKWD | CHKALIAS;
+				checkkwd = CHKNL | CHKKWD | CHKALIAS | CHKCMD;
 				n->ndefun.text = n->narg.text;
 				n->ndefun.linno = plinno;
 				n->ndefun.body = command();
@@ -719,7 +696,7 @@ parseheredoc(void)
 		if (needprompt) {
 			setprompt(2);
 		}
-		readtoken1(0, here->eofmark, here->striptabs | RT_HEREDOC | RT_CHECKEND | (here->here->type == NHERE ? RT_SQSYNTAX : RT_DQSYNTAX));
+		readtoken1(0, here->eofmark, here->striptabs | RT_HEREDOC | RT_CHECKEND | (here->here->type == NHERE ? RT_SQSYNTAX : RT_DQSYNTAX) | RT_NOCOMPLETE);
 		endaliasuse();
 		n = (union node *)stalloc(sizeof (struct narg));
 		n->narg.type = NARG;
@@ -827,6 +804,9 @@ xxreadtoken(void)
 		tokpushback = 0;
 		return lasttoken;
 	}
+#ifdef ENABLE_INTERNAL_COMPLETION
+	wordtext = NULL;
+#endif
 	if (needprompt) {
 		setprompt(2);
 	}
@@ -900,6 +880,9 @@ pgetc_eatbnl(void)
 	int c;
 
 	while ((c = pgetc()) == '\\') {
+#ifdef ENABLE_INTERNAL_COMPLETION
+		wordflags |= RT_NOCOMPLETE;
+#endif
 		if (pgetc() != '\n') {
 			pungetc();
 			break;
@@ -946,6 +929,11 @@ STATIC char *
 readtoken1_loop(char *out, int c, char *eofmark, int flags)
 {
 	int qsyntax;
+
+#ifdef ENABLE_INTERNAL_COMPLETION
+	wordtext = out;
+	wordflags = flags;
+#endif
 
 	if (!c)
 		goto nextchar;
@@ -1027,6 +1015,9 @@ output:
 			    && (flags & (RT_QSYNTAX | RT_ESCAPE | RT_MBCHAR)) != RT_DSQSYNTAX)
 				goto control;
 			quoteflag++;
+#ifdef ENABLE_INTERNAL_COMPLETION
+			wordflags |= RT_NOCOMPLETE;
+#endif
 			c = pgetc();
 			if (c == PEOF) {
 				pungetc();
@@ -1063,6 +1054,9 @@ output:
 					} while (0);
 					p = buf;
 					do {
+#ifdef ENABLE_INTERNAL_COMPLETION
+						wordflags |= RT_NOCOMPLETE;
+#endif
 						cc = pgetc();
 						if (!(ctype(cc) & lenbase)) {
 							pungetc();
@@ -1143,6 +1137,9 @@ output:
 		case '$':
 			if (flags & (RT_SQSYNTAX | RT_ESCAPE | RT_MBCHAR))
 				goto word;
+#ifdef ENABLE_INTERNAL_COMPLETION
+			wordflags |= RT_NOCOMPLETE;
+#endif
 			c = pgetc_eatbnl();
 			if (flags & RT_DQSYNTAX || c != '\'') {
 				out = readtoken1_parsesub(out, c, eofmark, flags);	/* parse substitution */
@@ -1169,9 +1166,12 @@ output:
 			}
 			if (quotemark)
 				USTPUTC(CTLQUOTEMARK, out);
-			out = readtoken1_loop(out, 0, eofmark, (flags & RT_STRIPTABS) | RT_STRING | qsyntax);
+			out = readtoken1_loop(out, 0, eofmark, (flags & (RT_STRIPTABS | RT_NOCOMPLETE)) | RT_STRING | qsyntax);
 			if (quotemark)
 				USTPUTC(CTLQUOTEMARK, out);
+#ifdef ENABLE_INTERNAL_COMPLETION
+			wordflags = flags;
+#endif
 			break;
 		case '}':
 			if ((flags ^ RT_VARNEST) & (RT_VARNEST | RT_ESCAPE | RT_MBCHAR))
@@ -1183,6 +1183,9 @@ output:
 				goto special;
 			USTPUTC(c, out);
 			out = readtoken1_loop(out, 0, eofmark, flags | RT_ARIPAREN);
+#ifdef ENABLE_INTERNAL_COMPLETION
+			wordflags = flags;
+#endif
 			break;
 		case ')':
 			if (!(flags & RT_ARINEST))
@@ -1191,6 +1194,9 @@ output:
 				USTPUTC(c, out);
 				return out;
 			} else {
+#ifdef ENABLE_INTERNAL_COMPLETION
+				wordflags |= RT_NOCOMPLETE;
+#endif
 				if (pgetc_eatbnl() == ')') {
 					USTPUTC(CTLENDARI, out);
 					return out;
@@ -1219,6 +1225,10 @@ special:
 			goto word;
 		}
 nextchar:
+#ifdef ENABLE_INTERNAL_COMPLETION
+		wordtext = out;
+		wordflags = flags;
+#endif
 		c = flags & (RT_SQSYNTAX | RT_MBCHAR) ? pgetc() : pgetc_eatbnl();
 	}
 endword:
@@ -1244,6 +1254,9 @@ readtoken1_endword(char *out, char *eofmark)
 	len = out - (char *)stackblock();
 	out = stackblock();
 
+#ifdef ENABLE_INTERNAL_COMPLETION
+	wordflags |= RT_NOCOMPLETE;
+#endif
 	c = pgetc();
 	if (eofmark == NULL) {
 		if ((c == '>' || c == '<')
@@ -1339,6 +1352,9 @@ readtoken1_parseredir(char *out, int c)
 	np = (union node *)stalloc(sizeof (struct nfile));
 	if (c == '>') {
 		np->nfile.fd = 1;
+#ifdef ENABLE_INTERNAL_COMPLETION
+		wordflags |= RT_NOCOMPLETE;
+#endif
 		c = pgetc_eatbnl();
 		if (c == '>')
 			np->type = NAPPEND;
@@ -1352,6 +1368,9 @@ readtoken1_parseredir(char *out, int c)
 		}
 	} else {	/* c == '<' */
 		np->nfile.fd = 0;
+#ifdef ENABLE_INTERNAL_COMPLETION
+		wordflags |= RT_NOCOMPLETE;
+#endif
 		switch (c = pgetc_eatbnl()) {
 		case '<':
 			if (sizeof (struct nfile) != sizeof (struct nhere)) {
@@ -1361,6 +1380,9 @@ readtoken1_parseredir(char *out, int c)
 			np->type = NHERE;
 			heredoc = (struct heredoc *)stalloc(sizeof (struct heredoc));
 			heredoc->here = np;
+#ifdef ENABLE_INTERNAL_COMPLETION
+			wordflags |= RT_NOCOMPLETE;
+#endif
 			if ((c = pgetc_eatbnl()) == '-') {
 				heredoc->striptabs = RT_STRIPTABS;
 			} else {
@@ -1403,6 +1425,9 @@ readtoken1_parsesub(char *out, int c, char *eofmark, int flags)
 	int vsflags = flags;
 	static const char types[] = "}-+?=";
 
+#ifdef ENABLE_INTERNAL_COMPLETION
+	wordflags |= RT_NOCOMPLETE;
+#endif
 	if (
 		(checkkwd & CHKEOFMARK) ||
 		(!is_in_name(c) && !is_specialdol(c))
@@ -1497,7 +1522,7 @@ badsub:
 		*((char *)stackblock() + typeloc) = subtype;
 		STPUTC('=', out);
 		if (subtype != VSNORMAL) {
-			out = readtoken1_loop(out, 0, eofmark, (vsflags & (RT_STRIPTABS | RT_DQSYNTAX)) | RT_VARNEST);
+			out = readtoken1_loop(out, 0, eofmark, (vsflags & (RT_STRIPTABS | RT_DQSYNTAX)) | RT_VARNEST | RT_NOCOMPLETE);
 		}
 	}
 	return out;
@@ -1581,7 +1606,7 @@ STATIC char *
 readtoken1_parsearith(char *out, char *eofmark, int flags)
 {
 	USTPUTC(CTLARI, out);
-	return readtoken1_loop(out, 0, eofmark, (flags & RT_STRIPTABS) | RT_ARINEST);
+	return readtoken1_loop(out, 0, eofmark, (flags & RT_STRIPTABS) | RT_ARINEST | RT_NOCOMPLETE);
 }
 
 
@@ -1760,6 +1785,9 @@ getprompt(void *unused)
 	uselocale(LC_GLOBAL_LOCALE);
 #endif
 	prompt = expandstr(prompt, 0);
+#ifdef ENABLE_INTERNAL_COMPLETION
+	grabstackstr(prompt);
+#endif
 #ifdef WITH_PARSER_LOCALE
 	uselocale(parselocale);
 #endif

@@ -182,7 +182,28 @@ if test "$use_libedit" != "yes"; then
 	AC_DEFINE([SMALL], [1], [Define if you build with -DSMALL])
 else
 	export LIBS="$LIBS -ledit"
-	AC_CHECK_FUNCS([_el_fn_complete _el_fn_sh_complete])
+	AC_ARG_ENABLE([completion], [AS_HELP_STRING([--enable-completion[[=internal/external]]],
+	                                            [Compile with completion support (default=external)])],
+	              [], [enable_completion=auto])
+	case $enable_completion in
+	internal)
+		AC_DEFINE([ENABLE_COMPLETION], [1], [Define if you build with completion support.])
+		AC_DEFINE([ENABLE_INTERNAL_COMPLETION], [1], [Define if you build with libedit's completion support.])
+		;;
+	external|yes|auto)
+		AC_CHECK_FUNCS([_el_fn_sh_complete _el_fn_complete], [break])
+		if test "$ac_cv_func__el_fn_sh_complete:$ac_cv_func__el_fn_complete" = "no:no"; then
+			if test "$enable_completion" != "auto"; then
+				AC_MSG_ERROR([cannot find completion function in libedit])
+			fi
+		else
+			AC_DEFINE([ENABLE_COMPLETION], [1])
+			AC_DEFINE([ENABLE_EXTERNAL_COMPLETION], [1], [Define if you build with libedit's completion support.])
+		fi
+		;;
+	no)
+		;;
+	esac
 fi
 AC_ARG_ENABLE([lineno], [AS_HELP_STRING([--disable-lineno], \
                                         [Disable LINENO support])])

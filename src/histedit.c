@@ -55,9 +55,13 @@
 #include "mystring.h"
 #include "error.h"
 #ifndef SMALL
+#include "mylocale.h"
 #include "myhistedit.h"
 #include "eval.h"
+#include "expand.h"
 #include "memalloc.h"
+#include "nodes.h"
+#include "system.h"
 
 #define MAXHISTLOOPS	4	/* max recursions through fc */
 #define DEFEDITOR	"ed"	/* default editor *should* be $EDITOR */
@@ -69,6 +73,10 @@ int histop = H_ENTER;
 static FILE *el_in, *el_out;
 
 STATIC const char *fc_replace(const char *, char *, char *);
+
+#ifdef ENABLE_INTERNAL_COMPLETION
+static unsigned char complete(EditLine *, int);
+#endif
 
 #ifdef DEBUG
 extern FILE *tracefile;
@@ -124,6 +132,7 @@ histedit(void)
 #else
 				el_set(el, EL_PROMPT, getprompt, 1);
 #endif
+#if defined ENABLE_EXTERNAL_COMPLETION
 #if defined(HAVE__EL_FN_SH_COMPLETE)
 				el_set(el, EL_ADDFN, "sh-complete",
 					"Filename completion",
@@ -132,6 +141,11 @@ histedit(void)
 				el_set(el, EL_ADDFN, "sh-complete",
 					"Filename completion",
 					_el_fn_complete);
+#endif
+#elif defined ENABLE_INTERNAL_COMPLETION
+				el_set(el, EL_ADDFN, "sh-complete",
+					"Filename completion",
+					complete);
 #endif
 			} else {
 bad:
@@ -149,7 +163,7 @@ bad:
 				el_set(el, EL_EDITOR, "vi");
 			else if (Eflag)
 				el_set(el, EL_EDITOR, "emacs");
-#if defined(HAVE__EL_FN_SH_COMPLETE) || defined(HAVE__EL_FN_COMPLETE)
+#if ENABLE_COMPLETION
 			el_set(el, EL_BIND, "^I", "sh-complete", NULL);
 #endif
 			el_source(el, NULL);
@@ -167,6 +181,149 @@ bad:
 		INTON;
 	}
 }
+
+#ifdef ENABLE_INTERNAL_COMPLETION
+extern int doprompt;
+extern char *wordtext;
+extern int wordflags;
+
+static unsigned char
+complete(EditLine *el, int ch)
+{
+	const LineInfo *li;
+	HistEvent he;
+
+	struct stackmark smark;
+	struct parsefile *file_stop = parsefile;
+	struct jmploc *savehandler = handler;
+	struct jmploc jmploc;
+
+	int saveprompt;
+
+	unsigned char result;
+
+	(void)ch;
+
+	savehandler = handler;
+	saveprompt = doprompt;
+	if (!setjmp(jmploc.loc)) {
+		handler = &jmploc;
+
+		pushstackmark(&smark, stackblocksize());
+
+		li = el_line(el);
+
+		setinputmem(li->buffer, li->cursor - li->buffer);
+		if (histop == H_APPEND && history(hist, &he, H_CURR) != -1)
+			pushstring(he.str, strlen(he.str), NULL);
+		parsefile->flags = PF_COMPLETING;
+
+		doprompt = 0;
+		errout.fd = -1;
+		for (;;)
+			parsecmd(0);
+	}
+
+	if (exception == EXEOF && !(wordflags & RT_NOCOMPLETE)) {
+		char *p;
+		int flags = EXP_FULL | EXP_TILDE | EXP_COMPLETE;
+		size_t inlen, completelen, maxlen, start;
+		union node n;
+		struct arglist arglist;
+		struct strlist *strlist;
+		int partial;
+		if (checkkwd & CHKCMD)
+			flags |= EXP_COMMAND | EXP_PATH;
+		p = wordtext;
+		if (!p)
+			STARTSTACKSTR(p);
+		inlen = p - (char *)stackblock();
+		CHECKSTRSPACE(2, p);
+		USTPUTC('\0', p);
+		USTPUTC('\0', p);
+		p = (char *)stackblock();
+		grabstackblock(inlen + 2);
+		n.narg.type = NARG;
+		n.narg.next = NULL;
+		n.narg.text = p;
+		n.narg.backquote = NULL;
+		arglist.lastp = &arglist.list;
+		expandarg(&n, &arglist, flags);
+		*arglist.lastp = NULL;
+		if (!(strlist = arglist.list))
+			goto beep;
+		inlen = strlen(strlist->text);
+		p = strrchr(strlist->text, '/');
+		start = p ? p - strlist->text + 1 : 0;
+		if (!(strlist = arglist.list = strlist->next))
+			goto beep;
+		if (strlist->next) {
+			maxlen = completelen = strlen(strlist->text);
+			while ((strlist = strlist->next)) {
+				size_t curlen;
+				p = strlist->text;
+				for (;;) {
+					char *q = p;
+					int c;
+					GETC(c, q);
+					if (q > strlist->text + completelen ||
+					    memcmp(arglist.list->text + (p - strlist->text),
+					           p, q - p))
+						break;
+					p = q;
+				}
+				completelen = p - strlist->text;
+				curlen = p + strlen(p) - strlist->text;
+				if (maxlen < curlen)
+					maxlen = curlen;
+			}
+			if (completelen < inlen)
+				goto beep;
+			if (completelen > inlen) {
+				arglist.list->text[completelen] = '\0';
+				partial = 1;
+				goto docomplete;
+			}
+			fprintf(el_out, "\n");
+			for (strlist = arglist.list; strlist; strlist = strlist->next)
+				fprintf(el_out, "%s\n", &strlist->text[start]);
+			result = CC_REDISPLAY;
+		} else {
+			int style;
+			char *startp, *endp;
+			STATIC_ASSERT(RT_SQSYNTAX  >> 3 == 1);
+			STATIC_ASSERT(RT_DQSYNTAX  >> 3 == 2);
+			STATIC_ASSERT(RT_DSQSYNTAX >> 3 == 3);
+			partial = 0;
+docomplete:
+			style = "\5\3\4\2"[(wordflags >> 3) & 3];
+			_shell_quote(arglist.list->text + inlen, style, &startp, &endp);
+			partial |= endp[-1] == '/';
+			if (partial)
+				*endp = '\0';
+			el_insertstr(el, startp);
+			if (!partial)
+				el_insertstr(el, " ");
+			result = CC_REFRESH;
+		}
+	} else {
+beep:
+		el_beep(el);
+		result = CC_NORM;
+	}
+
+	unwindfiles(file_stop);
+	popstackmark(&smark);
+
+	doprompt = saveprompt;
+	errout.fd = 2;
+	handler = savehandler;
+
+	FORCEINTON;
+
+	return result;
+}
+#endif
 
 static int
 readwrite_histfile(int cmd)

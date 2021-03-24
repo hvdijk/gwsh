@@ -338,8 +338,13 @@ static int preadbuffer(void)
 		return 0;
 	}
 	if (unlikely(parsefile->p.nleft == EOF_NLEFT ||
-		     parsefile->buf == NULL))
+		     parsefile->buf == NULL)) {
+#ifdef ENABLE_INTERNAL_COMPLETION
+		if (parsefile->flags & PF_COMPLETING)
+			exraise(EXEOF);
+#endif
 		return PEOF;
+	}
 	flushall();
 
 	more = parsefile->lleft;
@@ -441,7 +446,7 @@ pungetc(void)
  * We handle aliases this way.
  */
 void
-pushstring(char *s, size_t len, void *ap)
+pushstring(const char *s, size_t len, void *ap)
 {
 	struct strpush *sp;
 
@@ -557,10 +562,16 @@ setinputfd(int fd, int push)
 void
 setinputstring(const char *string)
 {
+	setinputmem(string, strlen(string));
+}
+
+void
+setinputmem(const char *string, size_t len)
+{
 	INTOFF;
 	pushfile();
 	parsefile->p.nextc = string;
-	parsefile->p.nleft = strlen(string);
+	parsefile->p.nleft = len;
 	parsefile->buf = NULL;
 	plinno = 1;
 	INTON;

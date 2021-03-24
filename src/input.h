@@ -83,7 +83,7 @@ struct strpush {
 	struct parsefilepush p;
 	struct strpush *prev;	/* preceding string on stack */
 	struct alias *ap;	/* if push was associated with an alias */
-	char *string;		/* remember the string since it may change */
+	const char *string;	/* remember the string since it may change */
 };
 
 /*
@@ -103,9 +103,12 @@ struct parsefile {
 	int flags;
 };
 
-#define PF_NONUL 0x01 /* do not allow NUL bytes on the first line */
+#define PF_NONUL      0x01 /* do not allow NUL bytes on the first line */
 #ifndef SMALL
-#define PF_HIST  0x02 /* create history entries */
+#define PF_HIST       0x02 /* create history entries */
+#ifdef ENABLE_INTERNAL_COMPLETION
+#define PF_COMPLETING 0x04 /* processing input for tab completion */
+#endif
 #endif
 
 extern struct parsefile *parsefile;
@@ -122,10 +125,11 @@ extern locale_t parselocale;
 
 int pgetc(void);
 void pungetc(void);
-void pushstring(char *, size_t, void *);
+void pushstring(const char *, size_t, void *);
 void popstring(void);
 int setinputfile(const char *, int);
 void setinputstring(const char *);
+void setinputmem(const char *, size_t);
 void popfile(void);
 void unwindfiles(struct parsefile *);
 void popallfiles(void);

@@ -198,30 +198,43 @@ is_number(const char *p)
 
 
 /*
- * Produce a possibly quoted string suitable as input to the shell.
- * If force is set, the result will definitely be quoted.
- * The return string is allocated on the stack.
+ * Produce a possibly quoted string suitable as input to the shell.  The style
+ * parameter determines how the result is quoted.  If style is QS_AUTO or
+ * QS_AUTO_FORCE, the style is determined automatically, with QS_AUTO_FORCE
+ * ensuring at least some form of quoting is used.  The return string is
+ * allocated on the stack.
  */
 
-const char *
-shell_quote(const char *s, int force) {
+char *
+#ifdef ENABLE_INTERNAL_COMPLETION
+_shell_quote(const char *s, int style, char **startp, char **endp)
+#else
+shell_quote(const char *s, int style)
+#endif
+{
 	const char *p, *q;
 	char *r;
 #ifdef WITH_LOCALE
 	int c;
 #else
-	char c;
+	unsigned char c;
 #endif
-	// 0: unquoted
-	// 1: single-quoted
-	// 2: dollar-single-quoted
-	int style = force || !*s;
 	int bs = 0;
 
-	const char *sqchars = " |&;<>()$`\\\"*?[#~=%";
+	style = style ? style : !*s;
+
+#ifdef ENABLE_INTERNAL_COMPLETION
+	const char *bqchars = nullstr;
+#define QCHARS (&"' #%&()*;<=>?[|~\"$`\\"[1])
+#else
+#define QCHARS "' #%&()*;<=>?[|~\"$`\\"
+#endif
+	const char *sqchars = QCHARS;
 #define ESCSEQCH "\\\'abefnrtv"
 #define ESCCHARS "\\\'\a\b\e\f\n\r\t\v"
-	const char *dqchars = &ESCSEQCH "\0" ESCCHARS [sizeof ESCSEQCH + 1];
+	const char *dlqchars = &ESCSEQCH "\0" ESCCHARS [sizeof ESCSEQCH + 1];
+
+	const char *fmt;
 
 #ifdef WITH_PARSER_LOCALE
 	uselocale(parselocale);
@@ -231,25 +244,80 @@ shell_quote(const char *s, int force) {
 
 	r = makestrspace(4, r);
 	USTPUTC('$', r);
+#ifdef ENABLE_INTERNAL_COMPLETION
+	USTPUTC(style == QS_DOUBLE_QUOTED ? '"' : '\'', r);
+#else
 	USTPUTC('\'', r);
+#endif
 
-	for (p = s; *p; p = q) {
+	p = s;
+
+	switch (style) {
+#ifdef ENABLE_INTERNAL_COMPLETION
+	case QS_DOLLAR_QUOTED:
+#endif
+switchdlq:
+		sqchars = nullstr;
+		dlqchars--;
+
+		/* If any backslashes were seen before we committed
+		 * to a dollar-quoted string, they have not been
+		 * escaped yet. Restart from the beginning. */
+		if (bs) {
+			q = s;
+			r = (char *) stackblock() + 2;
+		}
+		break;
+
+#ifdef ENABLE_INTERNAL_COMPLETION
+	case QS_SINGLE_QUOTED:
+		bqchars = "'";
+		sqchars = nullstr;
+		dlqchars = nullstr;
+		break;
+
+	case QS_DOUBLE_QUOTED:
+		bqchars = &QCHARS[15];
+		sqchars = nullstr;
+		dlqchars = nullstr;
+		break;
+
+	case QS_UNQUOTED:
+		bqchars = &QCHARS[-1];
+		sqchars = nullstr;
+		dlqchars = nullstr;
+		break;
+#endif
+	}
+
+	for (; *p; p = q) {
 #ifdef WITH_LOCALE
 		r = makestrspace((MB_LEN_MAX > 10 ? MB_LEN_MAX : 10) + 2, r);
 #else
 		r = makestrspace(6, r);
 #endif
-		c = *p;
+		q = p;
+		c = *q++;
+#ifdef ENABLE_INTERNAL_COMPLETION
+		if (strchr(bqchars, c)) {
+			if (style == QS_SINGLE_QUOTED) {
+				fmt = "'\\''";
+				goto fmt;
+			}
+escape:
+			*r++ = '\\';
+			goto output;
+		}
+#endif
 		if (strchr(sqchars, c)) {
-			style = 1;
+			style = QS_AUTO_FORCE;
 			bs |= c == '\\';
 		}
-		if ((q = strchr(dqchars, c))) {
+		if ((q = strchr(dlqchars, c))) {
 			c = q[-sizeof ESCSEQCH];
-			USTPUTC('\\', r);
-			USTPUTC(c, r);
 			q = p + 1;
-			goto dq;
+			fmt = "\\%c";
+			goto fmt;
 		}
 		q = p;
 		GETC(c, q);
@@ -260,47 +328,69 @@ oct:
 #else
 		if (c < ' ' || c > '~') {
 #endif
-			r += sprintf(r, "\\%03o", (unsigned char) c);
-			goto dq;
+#ifdef ENABLE_INTERNAL_COMPLETION
+			if (style == QS_SINGLE_QUOTED)
+				goto output;
+			if (style >= QS_DOUBLE_QUOTED)
+				goto escape;
+#endif
+			fmt = "\\%03o";
+			goto fmt;
 		} /* } */
 #ifdef WITH_LOCALE
 		if (!iswprint(c) || (c != ' ' && iswblank(c))) {
 			if (c < 128)
 				goto oct;
-			r += sprintf(r, c >= 0x10000 ? "\\U%08x" : "\\u%04x", c);
-			goto dq;
+			fmt = c >= 0x10000 ? "\\U%08x" : "\\u%04x";
+			goto fmt;
 		}
+#endif
+#ifdef ENABLE_INTERNAL_COMPLETION
+output:
+#endif
+#ifdef WITH_LOCALE
 		r = mempcpy(r, p, q - p);
 #else
 		USTPUTC(c, r);
 #endif
 		continue;
 
-dq:
-		if (style == 2)
+fmt:
+		r += sprintf(r, fmt, c);
+		if (style >= QS_DOLLAR_QUOTED)
 			continue;
-		style = 2;
-		sqchars = nullstr;
-		dqchars--;
-
-		/* If any backslashes were seen before we committed
-		 * to a dollar-quoted string, they have not been
-		 * escaped yet. Restart from the beginning. */
-		if (bs) {
-			q = s;
-			r = (char *) stackblock() + 2;
-		}
+		style = QS_DOLLAR_QUOTED;
+		p = q;
+		goto switchdlq;
 	}
 
+#ifdef ENABLE_INTERNAL_COMPLETION
+	if (endp)
+		*endp = r;
+
+	if (style % QS_UNQUOTED)
+		USTPUTC(style == QS_DOUBLE_QUOTED ? '"' : '\'', r);
+#else
 	if (style)
 		USTPUTC('\'', r);
-	USTPUTC(0, r);
+#endif
+
+	USTPUTC('\0', r);
 
 #ifdef WITH_PARSER_LOCALE
 	uselocale(LC_GLOBAL_LOCALE);
 #endif
 
-	return (char *) stackblock() + 2 - style;
+	r = (char *) stackblock() + 2;
+
+#ifdef ENABLE_INTERNAL_COMPLETION
+	if (startp)
+		*startp = r;
+
+	return r - "\0\1\2\1\1"[style];
+#else
+	return r - style;
+#endif
 }
 
 /*
@@ -310,8 +400,13 @@ dq:
 char *
 sstrdup(const char *p)
 {
-	size_t len = strlen(p) + 1;
-	return memcpy(stalloc(len), p, len);
+	return smemdup(p, strlen(p) + 1);
+}
+
+char *
+smemdup(const char *p, size_t n)
+{
+	return memcpy(stalloc(n), p, n);
 }
 
 /*

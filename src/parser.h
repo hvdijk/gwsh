@@ -84,6 +84,35 @@
 #define CHKKWD		0x2
 #define CHKNL		0x4
 #define CHKEOFMARK	0x8
+#define CHKCMD		0x10
+
+/* Flags for readtoken1(). */
+#define RT_HEREDOC    0x01
+#define RT_STRIPTABS  0x02
+/* Reserved           0x04 */
+#define RT_SQSYNTAX   0x08
+#define RT_DQSYNTAX   0x10
+#define RT_DSQSYNTAX  0x18
+#define RT_QSYNTAX    0x18
+#define RT_STRING     0x20
+#define RT_VARNEST    0x40
+#define RT_ARINEST    0x80
+#define RT_ARIPAREN   0x100
+#define RT_CHECKEND   0x200
+#define RT_CTOGGLE1   0x400
+#define RT_CTOGGLE2   0x800
+#ifdef WITH_LOCALE
+#define RT_ESCAPE     0x1000
+#define RT_MBCHAR     0x2000
+#else
+#define RT_ESCAPE     0
+#define RT_MBCHAR     0
+#endif
+#ifdef ENABLE_INTERNAL_COMPLETION
+#define RT_NOCOMPLETE 0x4000
+#else
+#define RT_NOCOMPLETE 0
+#endif
 
 
 /*

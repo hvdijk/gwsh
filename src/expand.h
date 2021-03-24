@@ -65,8 +65,16 @@ struct arglist {
 #define EXP_CASE	0x20	/* keeps quotes around for CASE pattern */
 #define EXP_WORD	0x80	/* expand word in parameter expansion */
 #define EXP_QUOTED	0x100	/* expand word in double quotes */
-#define EXP_DISCARD	0x200   /* discard result of expansion */
+#define EXP_DISCARD	0x200	/* discard result of expansion */
 #define EXP_XTRACE	0x400	/* expand xtrace prompt; disable xtrace */
+#ifdef ENABLE_INTERNAL_COMPLETION
+#define EXP_BACKSLASH	0x800	/* got unquoted backslash */
+#define EXP_RECURSE	0x1000	/* recursive expansion */
+#define EXP_COMPLETE	0x2000	/* expand completion */
+#define EXP_NOMETA	0x4000	/* expand to no words if no matches are found */
+#define EXP_COMMAND	0x8000	/* expand command */
+#define EXP_PATH	0x10000	/* search in $PATH */
+#endif
 
 
 union node;
