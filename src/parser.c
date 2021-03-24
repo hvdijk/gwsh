@@ -253,27 +253,32 @@ list(int nlflag)
 STATIC union node *
 andor(void)
 {
-	union node *n1, *n2, *n3;
-	int t;
+	union node *n;
+	union node **np = &n;
 
-	n1 = pipeline();
 	for (;;) {
-		if ((t = readtoken()) == TAND) {
+		int t;
+		union node *n2;
+
+		*np = pipeline();
+
+		if ((t = readtoken()) == TAND)
 			t = NAND;
-		} else if (t == TOR) {
+		else if (t == TOR)
 			t = NOR;
-		} else {
-			tokpushback++;
-			return n1;
-		}
+		else
+			break;
+
+		n2 = stalloc(sizeof (struct nbinary));
+		n2->type = t;
+		n2->nbinary.ch1 = n;
+		n = n2;
+		np = &n->nbinary.ch2;
 		checkkwd = CHKNL | CHKKWD | CHKALIAS;
-		n2 = pipeline();
-		n3 = (union node *)stalloc(sizeof (struct nbinary));
-		n3->type = t;
-		n3->nbinary.ch1 = n1;
-		n3->nbinary.ch2 = n2;
-		n1 = n3;
 	}
+
+	tokpushback++;
+	return n;
 }
 
 
@@ -281,8 +286,9 @@ andor(void)
 STATIC union node *
 pipeline(void)
 {
-	union node *n1, *n2, *pipenode;
-	struct nodelist *lp, *prev;
+	union node *n;
+	union node **np = &n;
+	struct nodelist *lp = NULL, *prev;
 	int negate;
 
 	negate = 0;
@@ -292,32 +298,35 @@ pipeline(void)
 		checkkwd = CHKKWD | CHKALIAS;
 	} else
 		tokpushback++;
-	n1 = command();
-	if (readtoken() == TPIPE) {
-		pipenode = (union node *)stalloc(sizeof (struct npipe));
-		pipenode->type = NPIPE;
-		pipenode->npipe.backgnd = 0;
-		lp = (struct nodelist *)stalloc(sizeof (struct nodelist));
-		pipenode->npipe.cmdlist = lp;
-		lp->n = n1;
-		do {
-			prev = lp;
-			lp = (struct nodelist *)stalloc(sizeof (struct nodelist));
-			checkkwd = CHKNL | CHKKWD | CHKALIAS;
-			lp->n = command();
-			prev->next = lp;
-		} while (readtoken() == TPIPE);
+	for (;;) {
+		*np = command();
+		if (readtoken() != TPIPE) {
+			tokpushback++;
+			break;
+		}
+		if (!lp) {
+			union node *pipenode = stalloc(sizeof (struct npipe));
+			pipenode->type = NPIPE;
+			pipenode->npipe.backgnd = 0;
+			lp = stalloc(sizeof (struct nodelist));
+			pipenode->npipe.cmdlist = lp;
+			lp->n = n;
+			n = pipenode;
+		}
+		prev = lp;
+		lp = stalloc(sizeof (struct nodelist));
 		lp->next = NULL;
-		n1 = pipenode;
+		prev->next = lp;
+		np = &lp->n;
+		checkkwd = CHKNL | CHKKWD | CHKALIAS;
 	}
-	tokpushback++;
 	if (negate) {
-		n2 = (union node *)stalloc(sizeof (struct nnot));
+		union node *n2 = stalloc(sizeof (struct nnot));
 		n2->type = NNOT;
-		n2->nnot.com = n1;
-		return n2;
-	} else
-		return n1;
+		n2->nnot.com = n;
+		n = n2;
+	}
+	return n;
 }
 
 
