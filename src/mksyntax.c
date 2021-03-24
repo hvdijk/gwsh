@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2020
+ * Copyright (c) 2018-2021
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -56,14 +56,13 @@ struct synclass {
  * you may have to change the definition of the is_in_name macro.
  */
 struct synclass is_entry[] = {
-	{ "ISDIGIT",	"a digit" },
-	{ "ISUPPER",	"an upper case letter" },
-	{ "ISLOWER",	"a lower case letter" },
+	{ "ISSPACE",	"a space character" },
+	{ "ISALPHA",	"a letter" },
+	{ "ISUNDER",	"an underscore" },
 	{ "ISODIGIT",	"an octal digit" },
 	{ "ISXDIGIT",	"a hexadecimal digit" },
-	{ "ISUNDER",	"an underscore" },
-	{ "ISSPECL",	"the name of a special parameter" },
-	{ "ISSPACE",	"a space character" },
+	{ "ISSPECLDOL",	"a character that is special after a dollar" },
+	{ "ISSPECLVAR",	"the name of a special parameter" },
 	{ NULL, 	NULL }
 };
 
@@ -135,14 +134,15 @@ main(int argc, char **argv)
 	fputs("#include \"syntax.h\"\n\n", cfile);
 	filltable("0");
 	fputs("\n/* character classification table */\n", cfile);
-	add("01234567", "ISODIGIT | ISDIGIT | ISXDIGIT");
-	add("89", "ISDIGIT | ISXDIGIT");
-	add("abcdef", "ISLOWER | ISXDIGIT");
-	add("ABCDEF", "ISUPPER | ISXDIGIT");
-	add("ghijklmnopqrstuvwxyz", "ISLOWER");
-	add("GHIJKLMNOPQRSTUVWXYZ", "ISUPPER");
+	add("01234567", "ISODIGIT | ISXDIGIT");
+	add("89", "ISXDIGIT");
+	add("abcdef", "ISALPHA | ISXDIGIT");
+	add("ABCDEF", "ISALPHA | ISXDIGIT");
+	add("ghijklmnopqrstuvwxyz", "ISALPHA");
+	add("GHIJKLMNOPQRSTUVWXYZ", "ISALPHA");
 	add("_", "ISUNDER");
-	add("#?$!-*@", "ISSPECL");
+	add("#?$!-*@", "ISSPECLDOL | ISSPECLVAR");
+	add("({", "ISSPECLDOL");
 	add(" \f\n\r\t\v", "ISSPACE");
 	print("is_type");
 	exit(0);
@@ -210,11 +210,12 @@ static char *macro[] = {
 	"#define is_odigit(c)\t((unsigned) ((c) - '0') <= 7)\n",
 	"#define is_digit(c)\t((unsigned) ((c) - '0') <= 9)\n",
 	"#define is_xdigit(c)\t(ctype((c)) & ISXDIGIT)\n",
-	"#define is_alpha(c)\t(ctype((c)) & (ISUPPER|ISLOWER))\n",
-	"#define is_alnum(c)\t(ctype((c)) & (ISUPPER|ISLOWER|ISDIGIT))\n",
-	"#define is_name(c)\t(ctype((c)) & (ISUPPER|ISLOWER|ISUNDER))\n",
-	"#define is_in_name(c)\t(ctype((c)) & (ISUPPER|ISLOWER|ISUNDER|ISDIGIT))\n",
-	"#define is_special(c)\t(ctype((c)) & (ISSPECL|ISDIGIT))\n",
+	"#define is_alpha(c)\t(ctype((c)) & ISALPHA)\n",
+	"#define is_alnum(c)\t(ctype((c)) & (ISALPHA|ISXDIGIT))\n",
+	"#define is_name(c)\t(ctype((c)) & (ISALPHA|ISUNDER))\n",
+	"#define is_in_name(c)\t(ctype((c)) & (ISALPHA|ISUNDER|ISXDIGIT))\n",
+	"#define is_specialdol(c)\t(ctype((c)) & ISSPECLDOL)\n",
+	"#define is_specialvar(c)\t(ctype((c)) & ISSPECLVAR)\n",
 	"#define is_space(c)\t(ctype((c)) & ISSPACE)\n",
 	NULL
 };

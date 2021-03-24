@@ -1043,6 +1043,8 @@ output:
 				case '4': case '5': case '6': case '7':
 					do {
 						pungetc();
+						STATIC_ASSERT(ISODIGIT == 8);
+						STATIC_ASSERT(ISXDIGIT == 16);
 						lenbase = 0x0208; break;
 				case 'x':	lenbase = 0x0110; break;
 #ifdef WITH_LOCALE
@@ -1394,7 +1396,7 @@ readtoken1_parsesub(char *out, int c, char *eofmark, int flags)
 
 	if (
 		(checkkwd & CHKEOFMARK) ||
-		(c != '(' && c != '{' && !is_name(c) && !is_special(c))
+		(!is_in_name(c) && !is_specialdol(c))
 	) {
 		USTPUTC('$', out);
 		pungetc();
@@ -1415,23 +1417,23 @@ readtoken1_parsesub(char *out, int c, char *eofmark, int flags)
 			subtype = 0;
 		}
 varname:
-		if (is_name(c)) {
-			do {
-				STPUTC(c, out);
-				c = pgetc_eatbnl();
-			} while (is_in_name(c));
-		} else if (is_digit(c)) {
+		if (is_digit(c)) {
 			do {
 				STPUTC(c, out);
 				c = pgetc_eatbnl();
 			} while (subtype != VSNORMAL && is_digit(c));
-		} else if (is_special(c)) {
+		} else if (is_name(c)) {
+			do {
+				STPUTC(c, out);
+				c = pgetc_eatbnl();
+			} while (is_in_name(c));
+		} else if (is_specialvar(c)) {
 			int cc = c;
 
 			c = pgetc_eatbnl();
 
 			if (!subtype && cc == '#') {
-				if (is_name(c) || is_digit(c) || is_special(c)) {
+				if (is_in_name(c) || is_specialvar(c)) {
 					subtype = VSLENGTH;
 					goto varname;
 				}
