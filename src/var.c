@@ -128,8 +128,13 @@ struct var varinit[] = {
 STATIC struct var *vartab[VTABSIZE];
 
 STATIC struct var **hashvar(const char *);
-STATIC int vpcmp(const void *, const void *);
 STATIC struct var **findvar(struct var **, const char *);
+
+#ifndef WITH_LOCALE
+#define vpcmp pstrcmp
+#else
+STATIC int vpcmp(const void *, const void *);
+#endif
 
 /*
  * Initialize the varable symbol tables and import the environment
@@ -754,17 +759,15 @@ varcmp(const char *p, const char *q)
 	return c - d;
 }
 
+#ifdef WITH_LOCALE
 STATIC int
 vpcmp(const void *a, const void *b)
 {
 	const char *pa = *(const char **)a;
 	const char *pb = *(const char **)b;
-#ifndef WITH_LOCALE
-	return strcmp(pa, pb);
-#else
 	return strcoll(pa, pb);
-#endif
 }
+#endif
 
 STATIC struct var **
 findvar(struct var **vpp, const char *name)
