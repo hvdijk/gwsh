@@ -264,7 +264,7 @@ switchdlq:
 		 * to a dollar-quoted string, they have not been
 		 * escaped yet. Restart from the beginning. */
 		if (bs) {
-			q = s;
+			p = s;
 			r = (char *) stackblock() + 2;
 		}
 		break;
