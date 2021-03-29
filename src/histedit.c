@@ -42,6 +42,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
 /*
  * Editline and history functions (and glue).
  */
@@ -187,6 +190,25 @@ extern int doprompt;
 extern char *wordtext;
 extern int wordflags;
 
+#ifdef WITH_LOCALE
+static int
+str_width(const char *p)
+{
+	int result = 0;
+	while (*p) {
+		int c, w;
+		GETC(c, p);
+		if (c < 0)
+			return -1;
+		w = wcwidth(c);
+		if (w < 0)
+			return -1;
+		result += w;
+	}
+	return result;
+}
+#endif
+
 static unsigned char
 complete(EditLine *el, int ch)
 {
@@ -227,7 +249,7 @@ complete(EditLine *el, int ch)
 	if (exception == EXEOF && !(wordflags & RT_NOCOMPLETE)) {
 		char *p;
 		int flags = EXP_FULL | EXP_TILDE | EXP_COMPLETE;
-		size_t inlen, completelen, maxlen, start;
+		size_t inlen, completelen, start;
 		union node n;
 		struct arglist arglist;
 		struct strlist *strlist;
@@ -258,9 +280,16 @@ complete(EditLine *el, int ch)
 		if (!(strlist = arglist.list = strlist->next))
 			goto beep;
 		if (strlist->next) {
-			maxlen = completelen = strlen(strlist->text);
+			size_t maxwidth, screenwidth, colwidth, matches, cols;
+			completelen = strlen(strlist->text);
+#ifdef WITH_LOCALE
+			maxwidth = str_width(&strlist->text[start]);
+#else
+			maxwidth = completelen;
+#endif
+			matches = 1;
 			while ((strlist = strlist->next)) {
-				size_t curlen;
+				size_t curwidth;
 				p = strlist->text;
 				for (;;) {
 					char *q = p;
@@ -273,9 +302,14 @@ complete(EditLine *el, int ch)
 					p = q;
 				}
 				completelen = p - strlist->text;
-				curlen = p + strlen(p) - strlist->text;
-				if (maxlen < curlen)
-					maxlen = curlen;
+#ifdef WITH_LOCALE
+				curwidth = str_width(&strlist->text[start]);
+#else
+				curwidth = p + strlen(p) - strlist->text - start;
+#endif
+				if (maxwidth < curwidth)
+					maxwidth = curwidth;
+				matches++;
 			}
 			if (completelen < inlen)
 				goto beep;
@@ -284,10 +318,61 @@ complete(EditLine *el, int ch)
 				partial = 1;
 				goto docomplete;
 			}
-			fprintf(el_out, "\n");
-			for (strlist = arglist.list; strlist; strlist = strlist->next)
-				fprintf(el_out, "%s\n", &strlist->text[start]);
-			result = CC_REDISPLAY;
+			fputc('\n', el_out);
+			screenwidth = 0;
+#if defined(TIOCGWINSZ)
+			{
+				struct winsize ws;
+				if (ioctl(0, TIOCGWINSZ, &ws) != -1)
+					screenwidth = ws.ws_col;
+			}
+#endif
+#if defined(TIOCGSIZE)
+			{
+				struct ttysize ts;
+				if (ioctl(0, TIOCGSIZE, &ts) != -1)
+					screenwidth = ts.ts_cols;
+			}
+#endif
+			colwidth = maxwidth + 1;
+			cols = (screenwidth + 1) / colwidth;
+			if ((screenwidth + 1) % colwidth >= cols - 1)
+				colwidth++;
+			if (cols > 1) {
+				int rows = (matches - 1) / cols + 1;
+				int row, col, i;
+				strlist = arglist.list;
+				for (row = 0; row < rows; ++row) {
+					struct strlist *strlist_col = strlist;
+					for (col = 0; col < cols; ++col) {
+						const char *s = &strlist_col->text[start];
+#ifdef WITH_LOCALE
+						size_t curwidth = str_width(s);
+						fprintf(el_out, "%s%*s", s,
+						        col + 1 == cols ? 0 :
+						        (int) (colwidth - curwidth),
+						        "");
+#else
+						fprintf(el_out, "%-*s",
+						        col + 1 == cols ? 0 :
+						        (int) colwidth, s);
+#endif
+						for (i = 0; i < rows; ++i) {
+							strlist_col = strlist_col->next;
+							if (!strlist_col)
+								goto endrow;
+						}
+					}
+endrow:
+					fputc('\n', el_out);
+					strlist = strlist->next;
+				}
+			} else {
+				for (strlist = arglist.list; strlist; strlist = strlist->next)
+					fprintf(el_out, "%s\n", &strlist->text[start]);
+			}
+			el_set(el, EL_REFRESH);
+			result = CC_NORM;
 		} else {
 			int style;
 			char *startp, *endp;

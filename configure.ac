@@ -56,7 +56,7 @@ fi
 dnl Checks for libraries.
 
 dnl Checks for header files.
-AC_CHECK_HEADERS([alloca.h paths.h xlocale.h])
+AC_CHECK_HEADERS([alloca.h paths.h sys/ioctl.h xlocale.h])
 
 dnl Check for declarations
 AC_CHECK_DECL([_PATH_BSHELL],,[AC_DEFINE_UNQUOTED([_PATH_BSHELL], ["/bin/sh"], [Define to system shell path])],[
