@@ -2,7 +2,7 @@
 #	The Regents of the University of California.  All rights reserved.
 # Copyright (c) 1997-2005
 #	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
-# Copyright (c) 2019-2020
+# Copyright (c) 2019-2021
 #	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
 #
 # This code is derived from software contributed to Berkeley by
@@ -45,12 +45,9 @@
 #	nodeptr - a pointer to a node
 #	nodelist - a pointer to a list of nodes
 #	string - a pointer to a nul terminated string
+#	tempstring - a string that doesn't have to be copied
 #	int - an integer
 #	uchar - an unsigned char
-#	other - any type that can be copied by assignment
-#	temp - a field that doesn't have to be copied when the node is copied
-# The last two types should be followed by the text of a C declaration for
-# the field.
 
 NCMD ncmd			# a simple command
 	type	  uchar
@@ -132,7 +129,7 @@ NAPPEND nfile			# fd>> fname
 	next	  nodeptr		# next redirection in list
 	fd	  int			# file descriptor being redirected
 	fname	  nodeptr		# file name, in a NARG node
-	expfname  temp	char *expfname	# actual file name
+	expfname  tempstring		# actual file name
 
 NTOFD ndup			# fd<&dupfd
 NFROMFD ndup			# fd>&dupfd

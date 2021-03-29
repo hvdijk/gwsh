@@ -15,29 +15,28 @@ bin_PROGRAMS = gwsh
 gwsh_CFILES = \
 	alias.c arith_yacc.c arith_yylex.c cd.c error.c eval.c exec.c expand.c \
 	histedit.c input.c jobs.c mail.c main.c memalloc.c miscbltin.c \
-	mylocale.c mystring.c options.c parser.c priv.c redir.c show.c signames.c \
-	trap.c output.c bltin/printf.c system.c bltin/test.c bltin/times.c var.c
+	mylocale.c mystring.c options.c parser.c priv.c redir.c show.c \
+	signames.c trap.c output.c syntax.c system.c var.c bltin/printf.c \
+	bltin/test.c bltin/times.c
 gwsh_SOURCES = \
 	$(gwsh_CFILES) \
 	alias.h arith_yacc.h bltin/bltin.h cd.h error.h eval.h exec.h \
 	expand.h \
 	init.h input.h jobs.h machdep.h mail.h main.h memalloc.h miscbltin.h \
 	myhistedit.h mylocale.h mystring.h options.h output.h parser.h priv.h \
-	redir.h shell.h show.h system.h trap.h var.h
-nodist_gwsh_SOURCES = builtins.c init.c nodes.c syntax.c
+	redir.h shell.h show.h syntax.h system.h trap.h var.h
+nodist_gwsh_SOURCES = builtins.c init.c nodes.c
 
-HELPERS = mkinit mksyntax mknodes
-
-BUILT_SOURCES = builtins.h nodes.h syntax.h token.h token_vars.h
+BUILT_SOURCES = builtins.h nodes.h token.h token_vars.h
 CLEANFILES = \
 	builtins.def builtins.c builtins.h init.c nodes.c nodes.h \
-	syntax.c syntax.h token.h token_vars.h $(HELPERS)
+	token.h token_vars.h $(HELPERS)
 
 man_MANS = gwsh.1
 EXTRA_DIST = \
 	$(man_MANS) \
-	mktokens mkbuiltins builtins.def.in mkinit.c \
-	mknodes.c nodetypes nodes.c.pat mksyntax.c
+	mktokens mkbuiltins builtins.def.in mkinit.awk \
+	mknodes.awk nodetypes nodes.c.pat nodes.h.pat
 
 token.h token_vars.h: mktokens
 	$(AM_V_GEN)$(SHELL) $(srcdir)/mktokens
@@ -48,22 +47,13 @@ builtins.def: builtins.def.in $(top_builddir)/config.h
 builtins.c builtins.h: mkbuiltins builtins.def
 	$(AM_V_GEN)$(SHELL) $(srcdir)/mkbuiltins builtins.def
 
-init.c: mkinit $(gwsh_CFILES)
-	$(AM_V_GEN)./mkinit `echo " $(gwsh_CFILES)" | sed -e 's: : $(srcdir)/:g'`
+init.c: mkinit.awk $(gwsh_CFILES)
+	$(AM_V_GEN)awk -f $(srcdir)/mkinit.awk `echo " $(gwsh_CFILES)" | sed -e 's: : $(srcdir)/:g'` > init.c \
+		|| (rm -f init.c; exit 1)
 
-nodes.c nodes.h: mknodes nodetypes nodes.c.pat
-	$(AM_V_GEN)./mknodes $(srcdir)/nodetypes $(srcdir)/nodes.c.pat
-
-syntax.c syntax.h: mksyntax
-	$(AM_V_GEN)./mksyntax
-
-mksyntax: token.h
-
-CCBUILD = $(AM_V_CC)$(COMPILE_FOR_BUILD) -o $@
-
-mkinit: mkinit.c
-	$(CCBUILD) $(srcdir)/mkinit.c
-mknodes: mknodes.c
-	$(CCBUILD) $(srcdir)/mknodes.c
-mksyntax: mksyntax.c
-	$(CCBUILD) $(srcdir)/mksyntax.c
+nodes.c nodes.h: mknodes.awk nodetypes nodes.c.pat nodes.h.pat
+	$(AM_V_GEN)awk -f $(srcdir)/mknodes.awk \
+		-v nodes_c_pat=$(srcdir)/nodes.c.pat -v nodes_c=nodes.c \
+		-v nodes_h_pat=$(srcdir)/nodes.h.pat -v nodes_h=nodes.h \
+		$(srcdir)/nodetypes \
+		|| (rm -f nodes.c nodes.h; exit 1)

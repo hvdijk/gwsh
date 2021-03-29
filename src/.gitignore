@@ -3,9 +3,5 @@ builtins.[ch]
 builtins.def
 gwsh
 init.c
-mkinit
-mknodes
-mksyntax
 nodes.[ch]
-syntax.[ch]
 token.h
