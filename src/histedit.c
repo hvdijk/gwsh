@@ -69,6 +69,10 @@
 #define MAXHISTLOOPS	4	/* max recursions through fc */
 #define DEFEDITOR	"ed"	/* default editor *should* be $EDITOR */
 
+#ifdef mkinit
+INCLUDE "myhistedit.h"
+#endif
+
 History *hist;	/* history cookie */
 EditLine *el;	/* editline cookie */
 int displayhist;

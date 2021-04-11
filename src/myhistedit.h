@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2019
+ * Copyright (c) 2019, 2021
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
 #ifndef H_MYHISTEDIT
 #define H_MYHISTEDIT 1
 
+#ifndef SMALL
 #include <histedit.h>
 
 extern History *hist;
@@ -51,5 +52,6 @@ void write_histfile(void);
 int histcmd(int, char **);
 int not_fcnumber(char *);
 int str_to_event(const char *, int);
+#endif
 
 #endif

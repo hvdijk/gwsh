@@ -38,7 +38,6 @@
 
 /*
  * The follow should be set to reflect the type of system you have:
- *	JOBS -> 1 if you have Berkeley job control, 0 otherwise.
  *	SHORTNAMES -> 1 if your linker cannot handle long names.
  *	define SYSV if you are running under System V.
  *	define DEBUG=1 to compile in debugging ('set -o debug' to turn on)
@@ -52,10 +51,6 @@
 
 #ifndef H_SHELL
 #define H_SHELL 1
-
-#ifndef JOBS
-#define JOBS 1
-#endif
 
 #ifndef DO_SHAREDVFORK
 #if __NetBSD_Version__ >= 104000000

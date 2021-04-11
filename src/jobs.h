@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2019, 2021
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -69,19 +69,15 @@ struct procstat {
 struct job {
 	struct procstat ps0;	/* status of process */
 	struct procstat *ps;	/* status or processes when more than one */
-#if JOBS
 	int stopstatus;		/* status of a stopped job */
-#endif
 	unsigned
 		nprocs: 16,	/* number of processes */
 		state: 8,
 #define	JOBRUNNING	0	/* at least one proc running */
 #define	JOBSTOPPED	1	/* all procs are stopped */
 #define	JOBDONE		2	/* all procs are completed */
-#if JOBS
 		sigint: 1,	/* job was killed by SIGINT */
 		jobctl: 1,	/* job running under job control */
-#endif
 		waited: 1,	/* true if this entry has been waited for */
 		used: 1,	/* true if this entry is in used */
 		changed: 1,	/* true if status has changed */
@@ -91,15 +87,12 @@ struct job {
 
 extern pid_t backgndpid;	/* pid of last background process */
 extern int job_warning;		/* user was warned about stopped jobs */
-#if JOBS
-extern int jobctl;		/* true if doing job control */
-#else
-#define jobctl 0
-#endif
 
 union node;
 
+void setinteractive(int);
 void setjobctl(int);
+void releasetty(void);
 int killcmd(int, char **);
 int fgcmd(int, char **);
 int jobscmd(int, char **);
@@ -111,9 +104,5 @@ int forkshell(struct job *, union node *, int);
 int waitforjob(struct job *);
 int stoppedjobs(void);
 void resetjobs(void);
-
-#if ! JOBS
-#define setjobctl(on) ((void)(on))	/* do nothing */
-#endif
 
 #endif

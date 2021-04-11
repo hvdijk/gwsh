@@ -199,10 +199,10 @@ optschanged(void)
 	opentrace();
 #endif
 	setinteractive(iflag);
+	setjobctl(mflag);
 #ifndef SMALL
 	histedit();
 #endif
-	setjobctl(mflag);
 	setprivileged(pflag);
 }
 

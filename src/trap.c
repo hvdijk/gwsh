@@ -95,7 +95,7 @@ INIT {
 	sigfillset(&sigset_full);
 	sigprocmask(SIG_SETMASK, &sigset_empty, 0);
 	sigmode[SIGCHLD - 1] = S_DFL;
-	setsignal(SIGCHLD);
+	setsignal(SIGCHLD, 0);
 }
 #endif
 
@@ -160,7 +160,7 @@ trapcmd(int argc, char **argv)
 			}
 			trap[signo] = action;
 			if (signo != 0)
-				setsignal(signo);
+				setsignal(signo, 0);
 			sigprocmask(SIG_SETMASK, &sigset_empty, 0);
 		}
 		ap++;
@@ -187,7 +187,7 @@ clear_traps(void)
 				ckfree(*tp);
 				*tp = NULL;
 			} else if (tp != &trap[0])
-				setsignal(tp - trap);
+				setsignal(tp - trap, 0);
 		}
 	}
 	INTON;
@@ -208,7 +208,7 @@ RESET {
  */
 
 void
-setsignal(int signo)
+setsignal(int signo, int subshell)
 {
 	int action;
 	char *t, tsig;
@@ -222,10 +222,10 @@ setsignal(int signo)
 		action = S_CATCH;
 	else
 		action = S_DFL;
-	if (rootshell && action == S_DFL) {
+	if (action == S_DFL && !subshell) {
 		switch (signo) {
 		case SIGINT:
-			if (iflag || minusc || sflag == 0)
+			if (iflag)
 				action = S_CATCH;
 			break;
 		case SIGQUIT:
@@ -238,13 +238,12 @@ setsignal(int signo)
 			if (iflag)
 				action = S_IGN;
 			break;
-#if JOBS
 		case SIGTSTP:
+		case SIGTTIN:
 		case SIGTTOU:
 			if (mflag)
 				action = S_IGN;
 			break;
-#endif
 		}
 	}
 
@@ -373,26 +372,6 @@ void dotrap(void)
 
 
 /*
- * Controls whether the shell is interactive or not.
- */
-
-
-void
-setinteractive(int on)
-{
-	static int is_interactive;
-
-	if (++on == is_interactive)
-		return;
-	is_interactive = on;
-	setsignal(SIGINT);
-	setsignal(SIGQUIT);
-	setsignal(SIGTERM);
-}
-
-
-
-/*
  * Called to exit the shell.
  */
 
@@ -417,13 +396,9 @@ exitshell(void)
 		}
 	}
 out:
-	/*
-	 * Disable job control so that whoever had the foreground before we
-	 * started can get it back.
-	 */
-	if (likely(!setjmp(loc.loc)))
-		setjobctl(0);
+	setjmp(loc.loc);
 	flushall();
+	releasetty();
 	_exit(savestatus);
 	/* NOTREACHED */
 }

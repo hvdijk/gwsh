@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2020
+ * Copyright (c) 2018-2021
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -306,6 +306,9 @@ setstatus:
 		break;
 	}
 out:
+	if (mflag)
+		showjobs(out2, SHOW_CHANGED);
+
 	if (checkexit & status)
 		goto exexit;
 
@@ -470,7 +473,7 @@ evalsubshell(union node *n, int flags)
 	errlinno = lineno = n->nredir.linno;
 
 	expredir(n->nredir.redirect);
-	if (!backgnd && flags & EV_EXIT && !have_traps()) {
+	if (!backgnd && flags & EV_EXIT && !have_traps() && !mflag) {
 		reset(1);
 		goto nofork;
 	}
@@ -847,7 +850,7 @@ bail:
 	switch (cmdentry.cmdtype) {
 	default:
 		/* Fork off a child process if necessary. */
-		if (!(flags & EV_EXIT) || have_traps()) {
+		if (!(flags & EV_EXIT) || have_traps() || mflag) {
 			INTOFF;
 			jp = makejob(cmd, 1);
 			if (forkshell(jp, cmd, FORK_FG) != 0)
