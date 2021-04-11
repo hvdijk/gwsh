@@ -336,6 +336,8 @@ complete(EditLine *el, int ch)
 #endif
 			colwidth = maxwidth + 1;
 			cols = (screenwidth + 1) / colwidth;
+			if (cols > matches)
+				cols = matches;
 			if ((screenwidth + 1) % colwidth >= cols - 1)
 				colwidth++;
 			if (cols > 1) {
