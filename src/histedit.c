@@ -239,7 +239,8 @@ complete(EditLine *el, int ch)
 
 		li = el_line(el);
 
-		setinputmem(li->buffer, li->cursor - li->buffer);
+		setinputmem("a", 1);
+		pushstring(li->buffer, li->cursor - li->buffer, NULL);
 		if (histop == H_APPEND && history(hist, &he, H_CURR) != -1)
 			pushstring(he.str, strlen(he.str), NULL);
 		parsefile->flags = PF_COMPLETING;
@@ -250,7 +251,7 @@ complete(EditLine *el, int ch)
 			parsecmd(0);
 	}
 
-	if (exception == EXEOF && !(wordflags & RT_NOCOMPLETE)) {
+	if (exception == EXEOF && wordtext && !(wordflags & RT_NOCOMPLETE)) {
 		char *p;
 		int flags = EXP_FULL | EXP_TILDE | EXP_COMPLETE;
 		size_t inlen, completelen, start;
@@ -260,15 +261,15 @@ complete(EditLine *el, int ch)
 		int partial;
 		if (checkkwd & CHKCMD)
 			flags |= EXP_COMMAND | EXP_PATH;
-		p = wordtext;
-		if (!p)
-			STARTSTACKSTR(p);
+		p = wordtext - 1;
 		inlen = p - (char *)stackblock();
-		CHECKSTRSPACE(2, p);
+		CHECKSTRSPACE(4, p);
+		USTPUTC(CTLQUOTEMARK, p);
+		USTPUTC(CTLQUOTEMARK, p);
 		USTPUTC('\0', p);
 		USTPUTC('\0', p);
 		p = (char *)stackblock();
-		grabstackblock(inlen + 2);
+		grabstackblock(inlen + 4);
 		n.narg.type = NARG;
 		n.narg.next = NULL;
 		n.narg.text = p;
