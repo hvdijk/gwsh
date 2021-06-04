@@ -232,10 +232,10 @@ complete(EditLine *el, int ch)
 
 	savehandler = handler;
 	saveprompt = doprompt;
+	pushstackmark(&smark, stackblocksize());
+
 	if (!setjmp(jmploc.loc)) {
 		handler = &jmploc;
-
-		pushstackmark(&smark, stackblocksize());
 
 		li = el_line(el);
 

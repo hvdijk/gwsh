@@ -135,7 +135,7 @@ stalloc(size_t nbytes)
 		INTOFF;
 		sp = ckmalloc(len);
 		sp->prev = stackp;
-		stacknxt = sp->space;
+		stacknxt = (char *)sp + offsetof(struct stack_block, space);
 		stacknleft = blocksize;
 		sstrend = stacknxt + blocksize;
 		stackp = sp;
@@ -228,9 +228,9 @@ growstackblock(void)
 		sp = ckrealloc((pointer)sp, grosslen);
 		sp->prev = prevstackp;
 		stackp = sp;
-		stacknxt = sp->space;
+		stacknxt = (char *)sp + offsetof(struct stack_block, space);
 		stacknleft = newlen;
-		sstrend = sp->space + newlen;
+		sstrend = stacknxt + newlen;
 		INTON;
 	} else {
 		char *oldspace = stacknxt;

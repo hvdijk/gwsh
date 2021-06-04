@@ -810,13 +810,11 @@ growjobtab(void)
 		/* Relocate pointers */
 		size_t l = len;
 
-		jq = (struct job *)((char *)jq + l);
 		while (l) {
 			l -= sizeof(*jp);
-			jq--;
 #define joff(p) ((struct job *)((char *)(p) + l))
 #define jmove(p) (p) = (void *)((char *)(p) + offset)
-			if (likely(joff(jp)->ps == &jq->ps0))
+			if (likely(joff(jp)->ps == &((struct job *)((char *)jq + l))->ps0))
 				jmove(joff(jp)->ps);
 			if (joff(jp)->prev_job)
 				jmove(joff(jp)->prev_job);

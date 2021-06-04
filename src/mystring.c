@@ -314,7 +314,7 @@ escape:
 			bs |= c == '\\';
 		}
 		if ((q = strchr(dlqchars, c))) {
-			c = q[-sizeof ESCSEQCH];
+			c = *(q - sizeof ESCSEQCH);
 			q = p + 1;
 			fmt = "\\%c";
 			goto fmt;
