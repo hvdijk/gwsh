@@ -184,7 +184,7 @@ state3:
 	read_histfile();
 #endif
 	if (minusc)
-		evalstring(minusc, sflag ? 0 : EV_EXIT);
+		evalstring(minusc, (sflag ? 0 : EV_EXIT) | EV_LINENO);
 
 state4:
 	if (sflag || minusc == NULL) {

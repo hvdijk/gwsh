@@ -103,11 +103,12 @@ struct parsefile {
 	int flags;
 };
 
-#define PF_NONUL      0x01 /* do not allow NUL bytes on the first line */
+#define PF_LINENO     0x01 /* track line numbers */
+#define PF_NONUL      0x02 /* do not allow NUL bytes on the first line */
 #ifndef SMALL
-#define PF_HIST       0x02 /* create history entries */
+#define PF_HIST       0x04 /* create history entries */
 #ifdef ENABLE_INTERNAL_COMPLETION
-#define PF_COMPLETING 0x04 /* processing input for tab completion */
+#define PF_COMPLETING 0x08 /* processing input for tab completion */
 #endif
 #endif
 

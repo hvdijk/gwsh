@@ -169,6 +169,11 @@ evalstring(const char *s, int flags)
 
 	p = sstrdup(s);
 	setinputstring(p);
+	if (flags & EV_LINENO) {
+		parsefile->flags |= PF_LINENO;
+		plinno = 1;
+	}
+
 	setstackmark(&smark);
 
 	status = 0;

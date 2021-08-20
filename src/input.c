@@ -63,6 +63,7 @@
 #include "parser.h"
 #include "main.h"
 #include "system.h"
+#include "var.h"
 #ifndef SMALL
 #include "myhistedit.h"
 #endif
@@ -92,7 +93,7 @@ INCLUDE "error.h"
 INIT {
 	basepf.p.nextc = basepf.buf = basebuf;
 	basepf.linno = 1;
-	basepf.flags = PF_NONUL
+	basepf.flags = PF_LINENO | PF_NONUL
 #ifndef SMALL
 		| PF_HIST
 #endif
@@ -551,6 +552,7 @@ setinputfd(int fd, int push)
 	if (parsefile->buf == NULL)
 		parsefile->buf = ckmalloc(IBUFSIZ);
 	parsefile->lleft = parsefile->p.nleft = 0;
+	parsefile->flags |= PF_LINENO;
 	plinno = 1;
 }
 
@@ -573,7 +575,7 @@ setinputmem(const char *string, size_t len)
 	parsefile->p.nextc = string;
 	parsefile->p.nleft = len;
 	parsefile->buf = NULL;
-	plinno = 1;
+	plinno = lineno;
 	INTON;
 }
 

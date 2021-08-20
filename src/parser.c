@@ -769,14 +769,14 @@ out:
 
 void nlprompt(void)
 {
-	plinno++;
+	plinno += parsefile->flags & PF_LINENO;
 	if (doprompt)
 		setprompt(2);
 }
 
 static void nlnoprompt(void)
 {
-	plinno++;
+	plinno += parsefile->flags & PF_LINENO;
 	needprompt = doprompt;
 }
 

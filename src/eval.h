@@ -51,10 +51,11 @@ struct backcmd {		/* result of evalbackcmd */
 	struct job *jp;		/* job structure for command */
 };
 
-/* flags in argument to evaltree */
-#define EV_EXIT 01		/* exit after evaluating tree */
-#define EV_TESTED 02		/* exit status is checked; ignore -e flag */
-#define EV_XTRACE 04		/* expanding xtrace prompt; ignore -x flag */
+/* flags in argument to eval* family of functions */
+#define EV_EXIT   1		/* exit after evaluating tree */
+#define EV_TESTED 2		/* exit status is checked; ignore -e flag */
+#define EV_XTRACE 4		/* expanding xtrace prompt; ignore -x flag */
+#define EV_LINENO 8		/* for evalstring(): track line numbers when parsing */
 
 int evalstring(const char *, int);
 union node;	/* BLETCH for ansi C */
