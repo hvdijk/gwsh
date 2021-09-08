@@ -387,7 +387,9 @@ TRACE(("expecting DO got %s %s\n", tokname[got], got == TWORD ? wordtext : ""));
 			}
 			*app = NULL;
 			n1->nfor.args = ap;
-			if (lasttoken != TNL && lasttoken != TSEMI)
+			if (lasttoken == TNL)
+				parseheredoc();
+			else if (lasttoken != TSEMI)
 				synexpect(-1);
 		} else {
 			n2 = (union node *)stalloc(sizeof (struct narg));
