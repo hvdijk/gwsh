@@ -254,7 +254,7 @@ evaltree(union node *n, int flags)
 	case NCMD:
 		evalfn = evalcommand;
 checkexit:
-		if (eflag && !(flags & EV_TESTED))
+		if (!(flags & EV_TESTED))
 			checkexit = ~0;
 		goto calleval;
 	case NFOR:
@@ -314,7 +314,7 @@ out:
 	if (mflag)
 		showjobs(out2, SHOW_CHANGED);
 
-	if (checkexit & status)
+	if (checkexit & status && eflag)
 		goto exexit;
 
 	dotrap();
