@@ -1136,6 +1136,9 @@ stoppedjobs(void)
 	retval = 0;
 	if (job_warning)
 		goto out;
+
+	while (dowait(DOWAIT_NORMAL, 0) > 0);
+
 	jp = curjob;
 	if (jp && jp->state == JOBSTOPPED) {
 		out2str("You have stopped jobs.\n");

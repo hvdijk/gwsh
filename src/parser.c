@@ -52,6 +52,7 @@
 #include "expand.h"	/* defines rmescapes() */
 #include "exec.h"	/* defines find_builtin() */
 #include "syntax.h"
+#include "jobs.h"
 #include "options.h"
 #include "input.h"
 #include "output.h"
@@ -1710,6 +1711,9 @@ setprompt(int which)
 
 	needprompt = 0;
 	whichprompt = which;
+
+	if (mflag)
+		showjobs(out2, SHOW_CHANGED);
 
 #ifdef SMALL
 	show = 1;

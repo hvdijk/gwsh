@@ -234,15 +234,13 @@ cmdloop(int top)
 		n = parsecmd(inter);
 		/* showtree(n); DEBUG */
 		if (n == NEOF) {
-			if (!top || numeof >= 50)
+			if (!top || !iflag || numeof >= 50)
 				break;
+			out2c('\n');
 			if (!stoppedjobs()) {
-				if (!iflag)
-					break;
-				else if (Iflag)
-					out2str("\nUse \"exit\" to leave shell.\n");
+				if (Iflag)
+					out2str("Use \"exit\" to leave shell.\n");
 				else {
-					out2c('\n');
 					flushall();
 					break;
 				}
@@ -360,13 +358,13 @@ dotcmd(int argc, char **argv)
 int
 exitcmd(int argc, char **argv)
 {
-	if (stoppedjobs())
-		return 0;
-
 	if (argc > 1)
 		exitstatus = number(argv[1]);
 	else if (savestatus >= 0)
 		exitstatus = savestatus;
+
+	if (iflag && stoppedjobs())
+		return exitstatus;
 
 	exraise(EXEXIT);
 	/* NOTREACHED */

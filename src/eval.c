@@ -311,9 +311,6 @@ setstatus:
 		break;
 	}
 out:
-	if (mflag)
-		showjobs(out2, SHOW_CHANGED);
-
 	if (checkexit & status && eflag)
 		goto exexit;
 
