@@ -1,0 +1,46 @@
+name: CI
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, ubuntu-20.04, macos-10.15, macos-11]
+        compiler: [gcc, clang]
+        configure: [--disable-locale, --enable-locale]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Touch files
+      run: git ls-files | xargs touch -r configure
+    - name: Configure
+      run: ./configure ${{ matrix.configure }} CC=${{ matrix.compiler }}
+    - name: Make
+      run: make
+  scan:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Install Coverity Scan
+      run: |
+        curl -d "token=$COVERITY_TOKEN&project=$COVERITY_PROJECT" -X POST https://scan.coverity.com/download/linux64 -o cov-analysis-linux64.tgz
+        sudo mkdir /opt/cov-analysis-linux64
+        sudo tar -C /opt/cov-analysis-linux64 --strip-components=1 -xf cov-analysis-linux64.tgz
+      env:
+        COVERITY_TOKEN: ${{ secrets.COVERITY_TOKEN }}
+        COVERITY_PROJECT: ${{ secrets.COVERITY_PROJECT }}
+    - uses: actions/checkout@v2
+    - name: Touch files
+      run: git ls-files | xargs touch -r configure
+    - name: Configure
+      run: ./configure
+    - name: Make
+      run: /opt/cov-analysis-linux64/bin/cov-build --dir cov-int make
+    - name: Submit results
+      run: |
+        tar -czf cov-int.tgz cov-int
+        curl --form token="$COVERITY_TOKEN" --form email="$COVERITY_EMAIL" --form file=@cov-int.tgz --form version="${{ github.sha }}" --form description="${{ github.ref }}" "https://scan.coverity.com/builds?project=$COVERITY_PROJECT"
+      env:
+        COVERITY_TOKEN: ${{ secrets.COVERITY_TOKEN }}
+        COVERITY_PROJECT: ${{ secrets.COVERITY_PROJECT }}
+        COVERITY_EMAIL: ${{ secrets.COVERITY_EMAIL }}
