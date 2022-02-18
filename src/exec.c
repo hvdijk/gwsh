@@ -216,7 +216,8 @@ int padvance(const char **path, const char **pathopt, const char *name)
 	if (p != start) {
 		memcpy(q, start, p - start);
 		q += p - start;
-		*q++ = '/';
+		if (p[-1] != '/')
+			*q++ = '/';
 	}
 	strcpy(q, name);
 	if (pathopt) {
