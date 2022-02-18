@@ -215,7 +215,7 @@ recheck:
 			argv++;
 			argc--;
 		} else if (!strcmp(argv[0], "!")) {
-			res = 0;
+			res = !res;
 			goto recheck;
 		}
 	}
