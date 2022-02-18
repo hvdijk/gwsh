@@ -380,6 +380,9 @@ fgcmd(int argc, char **argv)
 	int mode;
 	int retval;
 
+	if (!mflag)
+		sh_error("job control disabled");
+
 	mode = (**argv == 'f') ? FORK_FG : FORK_BG;
 	nextopt(nullstr);
 	argv = argptr;
