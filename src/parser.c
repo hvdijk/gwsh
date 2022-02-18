@@ -355,19 +355,15 @@ command(void)
 		t = TFI;
 		break;
 	case TWHILE:
-	case TUNTIL: {
-		int got;
+	case TUNTIL:
 		n1 = (union node *)stalloc(sizeof (struct nbinary));
 		n1->type = (lasttoken == TWHILE)? NWHILE : NUNTIL;
 		n1->nbinary.ch1 = list(0);
-		if ((got=readtoken()) != TDO) {
-TRACE(("expecting DO got %s %s\n", tokname[got], got == TWORD ? wordtext : ""));
+		if (readtoken() != TDO)
 			synexpect(TDO);
-		}
 		n1->nbinary.ch2 = list(0);
 		t = TDONE;
 		break;
-	}
 	case TFOR:
 		if (readtoken() != TWORD || quoteflag || ! goodname(wordtext))
 			synerror("Bad for loop variable");
@@ -1374,7 +1370,7 @@ readtoken1_parseredir(char *out, int c)
 #ifdef ENABLE_INTERNAL_COMPLETION
 		wordflags |= RT_NOCOMPLETE;
 #endif
-		switch (c = pgetc_eatbnl()) {
+		switch (pgetc_eatbnl()) {
 		case '<':
 			if (sizeof (struct nfile) != sizeof (struct nhere)) {
 				np = (union node *)stalloc(sizeof (struct nhere));
@@ -1386,7 +1382,7 @@ readtoken1_parseredir(char *out, int c)
 #ifdef ENABLE_INTERNAL_COMPLETION
 			wordflags |= RT_NOCOMPLETE;
 #endif
-			if ((c = pgetc_eatbnl()) == '-') {
+			if (pgetc_eatbnl() == '-') {
 				heredoc->striptabs = RT_STRIPTABS;
 			} else {
 				heredoc->striptabs = 0;

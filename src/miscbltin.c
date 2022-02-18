@@ -230,12 +230,10 @@ umaskcmd(int argc, char **argv)
 {
 	char *ap;
 	int mask;
-	int i;
 	int symbolic_mode = 0;
 
-	while ((i = nextopt("S")) != '\0') {
+	while (nextopt("S") != '\0')
 		symbolic_mode = 1;
-	}
 
 	INTOFF;
 	mask = umask(0);
@@ -248,7 +246,7 @@ umaskcmd(int argc, char **argv)
 	if (ap == NULL) {
 		if (symbolic_mode) {
 			char buf[18];
-			int j;
+			int i, j;
 
 			mask = ~mask;
 			ap = buf;

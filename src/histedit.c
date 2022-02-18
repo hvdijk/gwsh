@@ -221,7 +221,7 @@ complete(EditLine *el, int ch)
 
 	struct stackmark smark;
 	struct parsefile *file_stop = parsefile;
-	struct jmploc *savehandler = handler;
+	struct jmploc *savehandler;
 	struct jmploc jmploc;
 
 	int saveprompt;

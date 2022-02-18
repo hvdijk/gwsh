@@ -212,7 +212,6 @@ updatepwd(const char *dir)
 {
 	char *new;
 	char *p;
-	char *cdcomppath;
 	const char *lim;
 
 #ifdef __CYGWIN__
@@ -226,7 +225,7 @@ updatepwd(const char *dir)
 	dir = pathbuf;
 #endif
 
-	p = cdcomppath = sstrdup(dir);
+	p = sstrdup(dir);
 	STARTSTACKSTR(new);
 	if (*p != '/') {
 		if (!*curdir)

@@ -247,7 +247,7 @@ hashcmd(int argc, char **argv)
 	struct cmdentry entry;
 	char *name;
 
-	while ((c = nextopt("r")) != '\0') {
+	while (nextopt("r") != '\0') {
 		clearcmdentry();
 		return 0;
 	}
