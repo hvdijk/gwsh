@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2020
+ * Copyright (c) 2018-2020, 2022
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -139,12 +139,12 @@ openredirect(union node *redir)
 	switch (redir->nfile.type) {
 	case NFROM:
 		fname = redir->nfile.expfname;
-		if ((f = open(fname, O_RDONLY)) < 0)
+		if ((f = xopen(fname, O_RDONLY)) < 0)
 			goto eopen;
 		break;
 	case NFROMTO:
 		fname = redir->nfile.expfname;
-		if ((f = open(fname, O_RDWR|O_CREAT, 0666)) < 0)
+		if ((f = xopen(fname, O_RDWR|O_CREAT)) < 0)
 			goto ecreate;
 		break;
 	case NTO:
@@ -152,10 +152,10 @@ openredirect(union node *redir)
 		if (Cflag) {
 			fname = redir->nfile.expfname;
 			if (stat(fname, &sb) < 0) {
-				if ((f = open(fname, O_WRONLY|O_CREAT|O_EXCL, 0666)) < 0)
+				if ((f = xopen(fname, O_WRONLY|O_CREAT|O_EXCL)) < 0)
 					goto ecreate;
 			} else if (!S_ISREG(sb.st_mode)) {
-				if ((f = open(fname, O_WRONLY, 0666)) < 0)
+				if ((f = xopen(fname, O_WRONLY)) < 0)
 					goto ecreate;
 				if (!fstat(f, &sb) && S_ISREG(sb.st_mode)) {
 					close(f);
@@ -171,12 +171,12 @@ openredirect(union node *redir)
 		/* FALLTHROUGH */
 	case NCLOBBER:
 		fname = redir->nfile.expfname;
-		if ((f = open(fname, O_WRONLY|O_CREAT|O_TRUNC, 0666)) < 0)
+		if ((f = xopen(fname, O_WRONLY|O_CREAT|O_TRUNC)) < 0)
 			goto ecreate;
 		break;
 	case NAPPEND:
 		fname = redir->nfile.expfname;
-		if ((f = open(fname, O_WRONLY|O_CREAT|O_APPEND, 0666)) < 0)
+		if ((f = xopen(fname, O_WRONLY|O_CREAT|O_APPEND)) < 0)
 			goto ecreate;
 		break;
 	case NTOFD:

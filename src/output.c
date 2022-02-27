@@ -54,6 +54,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <fcntl.h>
 
 #include "shell.h"
 #include "syntax.h"
@@ -284,4 +285,14 @@ xvsnprintf(char *outbuf, size_t length, const char *fmt, va_list ap)
 	ret = vsnprintf(outbuf, length, fmt, ap);
 	INTON;
 	return ret;
+}
+
+int
+xopen(const char *path, int oflag)
+{
+  int fd;
+  do {
+    fd = open(path, oflag, 0666);
+  } while (fd < 0 && errno == EINTR);
+  return fd;
 }

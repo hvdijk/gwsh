@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2019
+ * Copyright (c) 2019, 2022
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -76,6 +76,7 @@ int xasprintf(char **, const char *, ...);
 int xvasprintf(char **, size_t, const char *, va_list);
 int doformat(struct output *, const char *, va_list);
 int xwrite(int, const void *, size_t);
+int xopen(const char *, int);
 
 static inline void
 freestdout(void)

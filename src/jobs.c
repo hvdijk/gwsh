@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2021
+ * Copyright (c) 2018-2022
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -164,7 +164,7 @@ gettty(int block)
 {
 	int fd = ttyfd;
 	if (fd < 0) {
-		fd = open(_PATH_TTY, O_RDWR);
+		fd = xopen(_PATH_TTY, O_RDWR);
 		if (fd < 0)
 			goto out;
 		ttyfd = fd = savefd(fd, fd);
@@ -880,7 +880,7 @@ forkchild(struct job *jp, union node *n, int mode)
 		ignoresig(SIGQUIT);
 		if (jp->nprocs == 0) {
 			close(0);
-			if (open(_PATH_DEVNULL, O_RDONLY) != 0)
+			if (xopen(_PATH_DEVNULL, O_RDONLY) != 0)
 				sh_error("Can't open %s", _PATH_DEVNULL);
 		}
 	}
