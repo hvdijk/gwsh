@@ -371,7 +371,7 @@ command(void)
 		n1->type = NFOR;
 		n1->nfor.linno = savelinno;
 		n1->nfor.var = wordtext;
-		checkkwd = CHKNL | CHKKWD | CHKALIAS | CHKCMD;
+		checkkwd = CHKNL | CHKALIAS | CHKCMD | CHKKWDMASK(TIN) | CHKKWDMASK(TDO);
 		if (readtoken() == TIN) {
 			app = &ap;
 			while (readtoken() == TWORD) {
@@ -402,7 +402,7 @@ command(void)
 			if (lasttoken != TSEMI)
 				tokpushback++;
 		}
-		checkkwd = CHKNL | CHKKWD | CHKALIAS | CHKCMD;
+		checkkwd = CHKNL | CHKALIAS | CHKCMD | CHKKWDMASK(TIN) | CHKKWDMASK(TDO);
 		if (readtoken() != TDO)
 			synexpect(TDO);
 		n1->nfor.body = list(0);
@@ -419,12 +419,12 @@ command(void)
 		n2->narg.text = wordtext;
 		n2->narg.backquote = backquotelist;
 		n2->narg.next = NULL;
-		checkkwd = CHKNL | CHKKWD | CHKALIAS | CHKCMD;
+		checkkwd = CHKNL | CHKALIAS | CHKCMD | CHKKWDMASK(TIN);
 		if (readtoken() != TIN)
 			synexpect(TIN);
 		cpp = &n1->ncase.cases;
-next_case:
 		checkkwd = CHKNL | CHKKWD;
+next_case:
 		t = readtoken();
 		switch (t) {
 		case TLP:
@@ -470,6 +470,7 @@ need_word:
 			case TENDCASEFT:
 				cp->type++;
 			case TENDCASE:
+				checkkwd = CHKNL | CHKKWDMASK(TESAC);
 				goto next_case;
 			case TESAC:
 				break;
@@ -739,9 +740,12 @@ top:
 		const char *const *pp;
 
 		if ((pp = findkwd(wordtext))) {
-			lasttoken = t = pp - parsekwd + KWDOFFSET;
-			TRACE(("keyword %s recognized\n", tokname[t]));
-			goto out;
+			int kwdt = pp - parsekwd + KWDOFFSET;
+			if (kwd & CHKKWDMASK(kwdt)) {
+				lasttoken = t = kwdt;
+				TRACE(("keyword %s recognized\n", tokname[t]));
+				goto out;
+			}
 		}
 	}
 

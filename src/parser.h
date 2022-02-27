@@ -81,10 +81,11 @@
 
 /* values of checkkwd variable */
 #define CHKALIAS	0x1
-#define CHKKWD		0x2
-#define CHKNL		0x4
-#define CHKEOFMARK	0x8
-#define CHKCMD		0x10
+#define CHKNL		0x2
+#define CHKEOFMARK	0x4
+#define CHKCMD		0x8
+#define CHKKWD		-0x10
+#define CHKKWDMASK(x)	(0x10 << ((x) - (KWDOFFSET)))
 
 /* Flags for readtoken1(). */
 #define RT_HEREDOC    0x01
