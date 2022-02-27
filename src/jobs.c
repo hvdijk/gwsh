@@ -95,7 +95,7 @@ static struct job *curjob;
 
 STATIC void set_curjob(struct job *, unsigned);
 STATIC int jobno(const struct job *);
-STATIC int sprint_status(char *, int, int);
+STATIC int sprint_status(char *, int);
 STATIC void freejob(struct job *);
 STATIC struct job *getjob(const char *, int);
 STATIC struct job *growjobtab(void);
@@ -430,7 +430,7 @@ out:
 }
 
 STATIC int
-sprint_status(char *s, int status, int sigonly)
+sprint_status(char *s, int status)
 {
 	int col;
 	int st;
@@ -441,26 +441,19 @@ sprint_status(char *s, int status, int sigonly)
 		st = WSTOPSIG(status);
 		if (!WIFSTOPPED(status))
 			st = WTERMSIG(status);
-		if (sigonly) {
-			if (st == SIGINT || st == SIGPIPE)
-				goto out;
-			if (WIFSTOPPED(status))
-				goto out;
-		}
 		col = fmtstr(s, 32, "%s", strsignal(st));
 #ifdef WCOREDUMP
 		if (WCOREDUMP(status)) {
 			col += fmtstr(s + col, 16, " (core dumped)");
 		}
 #endif
-	} else if (!sigonly) {
+	} else {
 		if (st)
 			col = fmtstr(s, 16, "Done(%d)", st);
 		else
 			col = fmtstr(s, 16, "Done");
 	}
 
-out:
 	return col;
 }
 
@@ -501,7 +494,7 @@ showjob(struct output *out, struct job *jp, int mode)
 		int status = psend[-1].status;
 		if (jp->state == JOBSTOPPED)
 			status = jp->stopstatus;
-		col += sprint_status(s + col, status, 0);
+		col += sprint_status(s + col, status);
 	}
 
 	goto start;
@@ -1066,19 +1059,6 @@ gotjob:
 
 out:
 	INTON;
-
-	if (thisjob && thisjob == job) {
-		char s[48 + 1];
-		int len;
-
-		len = sprint_status(s, status, 1);
-		if (len) {
-			s[len] = '\n';
-			s[len + 1] = 0;
-			outstr(s, out2);
-			flushall();
-		}
-	}
 
 	return pid;
 }
