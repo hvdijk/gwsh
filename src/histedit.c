@@ -134,6 +134,9 @@ histedit(void)
 			if (el != NULL) {
 				if (hist)
 					el_set(el, EL_HIST, history, hist);
+#ifdef EL_SAFEREAD
+				el_set(el, EL_SAFEREAD, 1);
+#endif
 #ifdef EL_PROMPT_ESC
 				el_set(el, EL_PROMPT_ESC, getprompt, 1);
 #else
