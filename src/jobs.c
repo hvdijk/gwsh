@@ -92,8 +92,6 @@ MKINIT pid_t ttypgrp;
 
 /* current job */
 static struct job *curjob;
-/* number of presumed living untracked jobs */
-static int jobless;
 
 STATIC void set_curjob(struct job *, unsigned);
 STATIC int jobno(const struct job *);
@@ -896,11 +894,8 @@ STATIC inline void
 forkparent(struct job *jp, union node *n, int mode, pid_t pid)
 {
 	TRACE(("In parent shell:  child = %d\n", pid));
-	if (!jp) {
-		while (jobless && dowait(DOWAIT_NORMAL, 0) > 0);
-		jobless++;
+	if (!jp)
 		return;
-	}
 	if (mode != FORK_NOJOB && jp->jobctl) {
 		int pgrp;
 
@@ -1054,8 +1049,6 @@ dowait(int block, struct job *job)
 		if (thisjob)
 			goto gotjob;
 	}
-	if (!WIFSTOPPED(status))
-		jobless--;
 	goto out;
 
 gotjob:
@@ -1160,7 +1153,6 @@ resetjobs(void)
 
 	for (jp = curjob; jp; jp = jp->prev_job)
 		freejob(jp);
-	jobless = 0;
 }
 
 #ifdef mkinit

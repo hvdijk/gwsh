@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2021
+ * Copyright (c) 2018-2022
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -314,6 +314,7 @@ out:
 	if (checkexit & status && eflag)
 		goto exexit;
 
+	waitforjob(NULL);
 	dotrap();
 
 	if (flags & EV_EXIT) {
