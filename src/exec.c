@@ -145,6 +145,7 @@ shellexec(char **argv, const char *path, int idx)
 	default:
 		exerrno = 126;
 		break;
+	case 0:
 	case ELOOP:
 	case ENAMETOOLONG:
 	case ENOENT:
