@@ -244,8 +244,6 @@ RESET {
 		/* This belongs in histedit.c, but is here to make sure
 		 * it executes before optschanged(). */
 		el = NULL;
-		hist = NULL;
-
 #endif
 		optschanged();
 	}

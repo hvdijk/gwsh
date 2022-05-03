@@ -184,10 +184,6 @@ bad:
 			el_end(el);
 			el = NULL;
 		}
-		if (hist) {
-			history_end(hist);
-			hist = NULL;
-		}
 		INTON;
 	}
 }
