@@ -52,6 +52,7 @@
 #include "options.h"
 #include "output.h"
 #include "error.h"
+#include "expand.h"
 #include "show.h"
 #include "eval.h"
 #include "parser.h"
@@ -160,6 +161,7 @@ exverror(int cond, const char *msg, va_list ap)
 		exvwarning(-1, msg, ap);
 
 	flushall();
+	ifsfree();
 	exraise(cond);
 	/* NOTREACHED */
 }

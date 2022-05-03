@@ -1049,7 +1049,8 @@ add:
 	arglist->lastp = &sp->next;
 }
 
-void ifsfree(void)
+void
+ifsfree(void)
 {
 	struct ifsregion *p = ifsfirst.next;
 
