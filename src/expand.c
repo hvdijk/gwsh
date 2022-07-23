@@ -333,8 +333,13 @@ addquote:
 			}
 			goto start;
 		case CTLBACKQ:
-			if (!(flags & EXP_DISCARD))
+			if (!(flags & EXP_DISCARD)) {
+#ifdef ENABLE_INTERNAL_COMPLETION
+				if (flags & EXP_COMPLETE)
+					exraise(EXERROR);
+#endif
 				expbackq(argbackq->n, flags);
+			}
 			argbackq = argbackq->next;
 			goto start;
 		case CTLARI:
@@ -479,11 +484,6 @@ expbackq(union node *cmd, int flags)
 	char *dest;
 	int startloc;
 	struct stackmark smark;
-
-#ifdef ENABLE_INTERNAL_COMPLETION
-	if (flags & EXP_COMPLETE)
-		exraise(EXERROR);
-#endif
 
 	INTOFF;
 	startloc = expdest - (char *)stackblock();
