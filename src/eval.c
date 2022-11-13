@@ -246,16 +246,15 @@ evaltree(union node *n, int flags)
 		pushredir(n->nredir.redirect);
 		status = redirectsafe(n->nredir.redirect, REDIR_PUSH);
 		if (!status)
-			status = evaltree(
-			    n->nredir.n, (flags & ~EV_EXIT) | EV_TESTED);
+			status = evaltree(n->nredir.n, flags & ~EV_EXIT);
 		if (n->nredir.redirect)
 			popredir(0);
+		checkexit = -!(flags & EV_TESTED);
 		goto setstatus;
 	case NCMD:
 		evalfn = evalcommand;
 checkexit:
-		if (!(flags & EV_TESTED))
-			checkexit = ~0;
+		checkexit = -!(flags & EV_TESTED);
 		goto calleval;
 	case NFOR:
 		evalfn = evalfor;
