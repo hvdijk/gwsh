@@ -5,3 +5,4 @@ gwsh
 init.c
 nodes.[ch]
 token.h
+token_vars.h
