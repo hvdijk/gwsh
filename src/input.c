@@ -102,10 +102,6 @@ INIT {
 }
 
 RESET {
-	/* clear rest of current line */
-	basepf.p.nextc += basepf.p.nleft;
-	basepf.p.nleft = 0;
-	basepf.p.unget = 0;
 	basepf.p.backq = 1;
 	basepf.p.dqbackq = 0;
 	popallfiles();
@@ -295,7 +291,7 @@ retry:
 
 	} else
 #endif
-		nr = read(parsefile->fd, buf, IBUFSIZ - 1);
+		nr = read(parsefile->fd, buf, parsefile->fd == 0 ? 1 : IBUFSIZ - 1);
 
 
 	if (nr < 0) {

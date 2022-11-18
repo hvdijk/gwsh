@@ -639,7 +639,7 @@ void fixredir(union node *n, const char *text, int err)
 	else {
 
 		if (err)
-			synerror("Bad fd number");
+			sh_error("Bad fd number");
 		else
 			n->ndup.vname = makename();
 	}
@@ -770,17 +770,27 @@ out:
 	return (t);
 }
 
-void nlprompt(void)
+void
+nlprompt(void)
 {
 	plinno += parsefile->flags & PF_LINENO;
 	if (doprompt)
 		setprompt(2);
 }
 
-static void nlnoprompt(void)
+static void
+nlnoprompt(void)
 {
 	plinno += parsefile->flags & PF_LINENO;
 	needprompt = doprompt;
+}
+
+
+static void
+skipline(void)
+{
+	int c;
+	while ((c = pgetc()) != '\n' && c != PEOF);
 }
 
 
@@ -824,7 +834,7 @@ xxreadtoken(void)
 			endaliasuse();
 			continue;
 		case '#':
-			while ((c = pgetc()) != '\n' && c != PEOF);
+			skipline();
 			pungetc();
 			continue;
 		case '\n':
@@ -1699,6 +1709,12 @@ synerror(const char *msg)
 	uselocale(LC_GLOBAL_LOCALE);
 #endif
 	errlinno = plinno;
+
+	/* If we see a syntax error in a command, read the rest of the
+	 * line now before reporting the error. This ensures we get error
+	 * reporting that does not depend on buffering details. */
+	skipline();
+
 	sh_error("Syntax error: %s", msg);
 	/* NOTREACHED */
 }
