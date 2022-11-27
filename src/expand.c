@@ -664,7 +664,7 @@ record:
 		if (easy)
 			recordregion(startloc, expdest - (char *)stackblock(), quoted);
 discard:
-		if (subtype & ~VSNORMAL)
+		if (subtype != VSNORMAL)
 			return argstr(p, flags | EXP_DISCARD);
 		return p;
 	}

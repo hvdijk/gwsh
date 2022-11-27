@@ -1462,7 +1462,40 @@ readtoken1_parsesub(char *out, int c, char *eofmark, int flags)
 		if (likely(c == '{')) {
 			c = pgetc_eatbnl();
 			subtype = 0;
+
+			if (unlikely(c == '#')) {
+				int cc = c;
+
+				c = pgetc_eatbnl();
+
+				if (is_in_name(c)) {
+					subtype = VSLENGTH;
+					goto varname;
+				}
+
+				/* ${#} is $#.
+				 * ${#?} is the length of $?.
+				 * ${#+} is an error as $+ does not exist.
+				 * ${#?a} is $#, but show an error if it is
+				 * unset (which is never). */
+				if (c != '}') {
+					int cc2 = cc;
+					cc = c;
+					c = pgetc_eatbnl();
+					if (c == '}') {
+						subtype = is_specialvar(cc) ? VSLENGTH : VSNUL;
+					} else {
+						pungetc();
+						c = cc;
+						cc = cc2;
+					}
+				}
+
+				USTPUTC(cc, out);
+				goto special;
+			}
 		}
+
 varname:
 		if (is_digit(c)) {
 			do {
@@ -1475,28 +1508,13 @@ varname:
 				c = pgetc_eatbnl();
 			} while (is_in_name(c));
 		} else if (is_specialvar(c)) {
-			int cc = c;
-
+			USTPUTC(c, out);
 			c = pgetc_eatbnl();
-
-			if (!subtype && cc == '#') {
-				if (is_in_name(c) || is_specialvar(c)) {
-					subtype = VSLENGTH;
-					goto varname;
-				}
-			}
-
-			if (subtype == VSLENGTH && c != '}') {
-				subtype = 0;
-				pungetc();
-				c = cc;
-				cc = '#';
-			}
-
-			USTPUTC(cc, out);
+special:;
+		} else {
+badsub:
+			subtype = VSNUL;
 		}
-		else
-			goto badsub;
 
 		if (subtype == 0) {
 			switch (c) {
@@ -1529,7 +1547,6 @@ varname:
 				}
 			}
 		} else {
-badsub:
 			pungetc();
 		}
 		*((char *)stackblock() + typeloc) = subtype;
