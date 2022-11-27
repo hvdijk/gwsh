@@ -78,7 +78,7 @@ int funcnest;			/* depth of function calls */
 
 
 char *dotfile;
-char *commandname;
+const char *commandname;
 int exitstatus;			/* exit status of last command */
 int back_exitstatus;		/* exit status of backquoted command */
 int savestatus = -1;		/* exit status of last command outside traps */
@@ -906,7 +906,7 @@ out:
 STATIC int
 evalbltin(const struct builtincmd *cmd, int argc, char **argv, int flags)
 {
-	char *volatile savecmdname;
+	const char *volatile savecmdname;
 	struct jmploc *volatile savehandler;
 	struct jmploc jmploc;
 	struct parsefile *saveparsefile;

@@ -34,6 +34,9 @@
  * SUCH DAMAGE.
  */
 
+#ifndef H_NODES
+#define H_NODES 1
+
 %DEFINE
 
 %STRUCT
@@ -55,3 +58,5 @@ struct funcnode {
 
 struct funcnode *copyfunc(union node *);
 void freefunc(struct funcnode *);
+
+#endif

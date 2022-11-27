@@ -82,7 +82,7 @@ volatile sig_atomic_t pending_sig;
 int gotsigchld;
 
 extern const char *signal_names[];
-extern int signal_names_length;
+extern const int signal_names_length;
 
 static int decode_signum(const char *);
 

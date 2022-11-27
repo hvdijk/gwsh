@@ -73,11 +73,18 @@ TEND	1	"}"
 !
 nl=`wc -l /tmp/ka$$`
 exec > token.h
+echo '#ifndef H_TOKEN
+#define H_TOKEN 1
+'
 awk '{print "#define " $1 " " NR-1}' /tmp/ka$$
+echo '
+#endif'
 
 exec > token_vars.h
 
-echo '
+echo '#ifndef H_TOKEN_VARS
+#define H_TOKEN_VARS 1
+
 /* Array indicating which tokens mark the end of a list */
 static const char tokendlist[] = {'
 awk '{print "\t" $2 ","}' /tmp/ka$$
@@ -94,5 +101,7 @@ sed 's/"//g' /tmp/ka$$ | awk '
       print "static const char *const parsekwd[] = {"}
 /TNOT/,/neverfound/{if (last) print "	\"" last "\","; last = $3}
 END{print "	\"" last "\"\n};"}'
+echo '
+#endif'
 
 rm /tmp/ka$$

@@ -38,7 +38,7 @@
 #define H_EVAL 1
 
 extern char *dotfile;		/* currently executing . file */
-extern char *commandname;	/* currently executing command */
+extern const char *commandname;	/* currently executing command */
 extern int exitstatus;		/* exit status of last command */
 extern int back_exitstatus;	/* exit status of backquoted command */
 extern int savestatus;		/* exit status of last command outside traps */
