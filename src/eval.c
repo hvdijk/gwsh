@@ -371,7 +371,7 @@ evalloop(union node *n, int flags)
 		i = evaltree(n->nbinary.ch1,
 			     (flags & ~EV_EXIT) | EV_TESTED);
 		skip = skiploop();
-		if (skip == SKIPFUNC)
+		if (skip & SKIPFUNC)
 			status = i;
 		if (skip)
 			continue;
@@ -1075,13 +1075,13 @@ returncmd(int argc, char **argv)
 	 * If called outside a function, do what ksh does;
 	 * skip the rest of the file.
 	 */
-	if (ns)
+	if (ns) {
 		status = number(ns);
-	else if (savestatus >= 0)
-		status = savestatus;
-	else
+		evalskip = SKIPFUNCR;
+	} else {
 		status = exitstatus;
-	evalskip = SKIPFUNC;
+		evalskip = SKIPFUNCNR;
+	}
 
 	return status;
 }

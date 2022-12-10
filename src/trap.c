@@ -362,7 +362,7 @@ void dotrap(void)
 
 		p = trap[i + 1];
 		evalstring(p, 0);
-		if (evalskip != SKIPFUNC)
+		if (!(evalskip & SKIPFUNCR))
 			exitstatus = savestatus;
 	}
 

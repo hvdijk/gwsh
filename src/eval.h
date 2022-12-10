@@ -66,8 +66,10 @@ extern int evalskip		/* set if we are skipping commands */;
 extern int funcnest;		/* depth of function calls */
 
 /* reasons for skipping commands (see comment on breakcmd routine) */
-#define SKIPBREAK	(1 << 0)
-#define SKIPCONT	(1 << 1)
-#define SKIPFUNC	(1 << 2)
+#define SKIPBREAK	(1 << 0) /* break */
+#define SKIPCONT	(1 << 1) /* continue */
+#define SKIPFUNCNR	(1 << 2) /* return without a value */
+#define SKIPFUNCR	(1 << 3) /* return with a value */
+#define SKIPFUNC	(SKIPFUNCNR | SKIPFUNCR)
 
 #endif
