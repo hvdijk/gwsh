@@ -77,7 +77,7 @@ int *gwsh_errno;
 short profile_buf[16384];
 extern int etext();
 #endif
-MKINIT struct jmploc main_handler;
+MKINIT jmp_buf main_handler;
 
 #ifdef mkinit
 RESET {
@@ -118,7 +118,7 @@ main(int argc, char **argv)
 #if PROFILE
 	monitor(4, etext, profile_buf, sizeof profile_buf, 50);
 #endif
-	if (unlikely(setjmp(main_handler.loc))) {
+	if (unlikely(setjmp(main_handler))) {
 		int e;
 #if HAVE_COMPUTED_GOTO
 		void *s;

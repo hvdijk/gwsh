@@ -368,17 +368,17 @@ redirectsafe(union node *redir, int flags)
 {
 	int err;
 	volatile int saveint;
-	struct jmploc *volatile savehandler = handler;
-	struct jmploc jmploc;
+	jmp_buf *volatile savehandler = handler;
+	jmp_buf jmploc;
 
 	SAVEINT(saveint);
-	if (!(err = setjmp(jmploc.loc) * 2)) {
+	if (!(err = setjmp(jmploc) * 2)) {
 		handler = &jmploc;
 		redirect(redir, flags);
 	}
 	handler = savehandler;
 	if (err && exception != EXERROR)
-		longjmp(handler->loc, 1);
+		longjmp(*handler, 1);
 	RESTOREINT(saveint);
 	return err;
 }

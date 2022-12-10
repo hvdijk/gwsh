@@ -220,8 +220,8 @@ complete(EditLine *el, int ch)
 
 	struct stackmark smark;
 	struct parsefile *file_stop = parsefile;
-	struct jmploc *savehandler;
-	struct jmploc jmploc;
+	jmp_buf *savehandler;
+	jmp_buf jmploc;
 
 	int saveprompt;
 
@@ -233,7 +233,7 @@ complete(EditLine *el, int ch)
 	saveprompt = doprompt;
 	pushstackmark(&smark, stackblocksize());
 
-	if (!setjmp(jmploc.loc)) {
+	if (!setjmp(jmploc)) {
 		handler = &jmploc;
 
 		li = el_line(el);
@@ -486,8 +486,8 @@ histcmd(int argc, char **argv)
 	int first, last, direction;
 	char *pat = NULL, *repl;	/* ksh "fc old=new" crap */
 	static int active = 0;
-	struct jmploc jmploc;
-	struct jmploc *volatile savehandler;
+	jmp_buf jmploc;
+	jmp_buf *volatile savehandler;
 	int saveactive;
 	static char editfile[PATH_MAX + 1];
 	FILE *efp;
@@ -530,12 +530,12 @@ histcmd(int argc, char **argv)
 		 * Catch interrupts to reset active counter and
 		 * cleanup temp files.
 		 */
-		if (setjmp(jmploc.loc)) {
+		if (setjmp(jmploc)) {
 			if (*editfile)
 				unlink(editfile);
 			active = saveactive;
 			handler = savehandler;
-			longjmp(handler->loc, 1);
+			longjmp(*handler, 1);
 		}
 		handler = &jmploc;
 		if (++active > MAXHISTLOOPS) {

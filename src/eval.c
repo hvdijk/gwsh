@@ -874,7 +874,7 @@ bail:
 		    !(exception == EXERROR && spclbltin <= 0)) {
 			exception &= ~EXEXT;
 raise:
-			longjmp(handler->loc, 1);
+			longjmp(*handler, 1);
 		}
 		break;
 
@@ -907,8 +907,8 @@ STATIC int
 evalbltin(const struct builtincmd *cmd, int argc, char **argv, int flags)
 {
 	const char *volatile savecmdname;
-	struct jmploc *volatile savehandler;
-	struct jmploc jmploc;
+	jmp_buf *volatile savehandler;
+	jmp_buf jmploc;
 	struct parsefile *saveparsefile;
 	int status, error;
 	int i;
@@ -916,7 +916,7 @@ evalbltin(const struct builtincmd *cmd, int argc, char **argv, int flags)
 	savecmdname = commandname;
 	savehandler = handler;
 	saveparsefile = parsefile;
-	if ((i = setjmp(jmploc.loc))) {
+	if ((i = setjmp(jmploc))) {
 		if (parsefile != saveparsefile)
 			exception |= EXEXT;
 		goto cmddone;
@@ -948,8 +948,8 @@ STATIC int
 evalfun(struct funcnode *func, int argc, char **argv, int flags)
 {
 	volatile struct shparam saveparam;
-	struct jmploc *volatile savehandler;
-	struct jmploc jmploc;
+	jmp_buf *volatile savehandler;
+	jmp_buf jmploc;
 	int e;
 	int savefuncnest;
 	int saveloopnest;
@@ -958,7 +958,7 @@ evalfun(struct funcnode *func, int argc, char **argv, int flags)
 	savefuncnest = funcnest;
 	saveloopnest = loopnest;
 	savehandler = handler;
-	if ((e = setjmp(jmploc.loc))) {
+	if ((e = setjmp(jmploc))) {
 		goto funcdone;
 	}
 	INTOFF;

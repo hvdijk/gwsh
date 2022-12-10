@@ -45,8 +45,7 @@
 #include <signal.h>
 
 /*
- * We enclose jmp_buf in a structure so that we can declare pointers to
- * jump locations.  The global variable handler contains the location to
+ * The global variable handler contains the location to
  * jump to when an exception occurs, and the global variable exception
  * contains a code identifying the exeception.  To implement nested
  * exception handlers, the user should save the value of handler on entry
@@ -54,11 +53,7 @@
  * inner scope, and restore handler on exit from the scope.
  */
 
-struct jmploc {
-	jmp_buf loc;
-};
-
-extern struct jmploc *handler;
+extern jmp_buf *handler;
 extern int exception;
 
 /* exceptions */

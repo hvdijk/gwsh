@@ -64,7 +64,7 @@
  * Code to handle exceptions in C.
  */
 
-struct jmploc *handler;
+jmp_buf *handler;
 int exception;
 int suppressint;
 volatile sig_atomic_t intpending;
@@ -90,7 +90,7 @@ exraise(int e)
 	INTOFF;
 
 	exception = e;
-	longjmp(handler->loc, 1);
+	longjmp(*handler, 1);
 }
 
 

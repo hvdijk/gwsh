@@ -378,12 +378,12 @@ void dotrap(void)
 void
 exitshell(void)
 {
-	struct jmploc loc;
+	jmp_buf loc;
 	char *p;
 
 	savestatus = exitstatus;
 	TRACE(("pid %d, exitshell(%d)\n", getpid(), savestatus));
-	if (setjmp(loc.loc)) {
+	if (setjmp(loc)) {
 		savestatus = exitstatus;
 		goto out;
 	}
@@ -396,7 +396,7 @@ exitshell(void)
 		}
 	}
 out:
-	setjmp(loc.loc);
+	setjmp(loc);
 	flushall();
 	releasetty();
 	_exit(savestatus);
