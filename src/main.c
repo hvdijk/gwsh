@@ -358,8 +358,13 @@ dotcmd(int argc, char **argv)
 int
 exitcmd(int argc, char **argv)
 {
-	if (argc > 1)
-		exitstatus = number(argv[1]);
+	const char *ns;
+
+	ns = nextarg(0);
+	endargs();
+
+	if (ns)
+		exitstatus = number(ns);
 	else if (savestatus >= 0)
 		exitstatus = savestatus;
 
