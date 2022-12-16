@@ -463,6 +463,9 @@ ulimitcmd(int argc, char **argv)
 #ifdef RLIMIT_LOCKS
 			       "w"
 #endif
+#ifdef RLIMIT_RTPRIO
+			       "r"
+#endif
 	)) != '\0')
 		switch (optc) {
 		case 'H':
