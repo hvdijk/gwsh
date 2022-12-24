@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2021
+ * Copyright (c) 2018-2022
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -106,6 +106,7 @@ enum {
 	VLC_COLLATE,
 	VLC_CTYPE,
 	VLC_MESSAGES,
+	VLC_NUMERIC,
 	VLANG,
 #endif
 #ifndef SMALL
@@ -132,6 +133,7 @@ enum {
 #define vlc_collate varinit[VLC_COLLATE]
 #define vlc_ctype varinit[VLC_CTYPE]
 #define vlc_messages varinit[VLC_MESSAGES]
+#define vlc_numeric varinit[VLC_NUMERIC]
 #define vlang varinit[VLANG]
 #endif
 #ifndef SMALL
@@ -176,6 +178,7 @@ extern char linenovar[];
 #define lc_collateval()	(vlc_collate.text + 11)
 #define lc_ctypeval()	(vlc_ctype.text + 9)
 #define lc_messagesval()	(vlc_messages.text + 12)
+#define lc_numericval()	(vlc_numeric.text + 11)
 #define langval()	(vlang.text + 5)
 #endif
 #ifndef SMALL
