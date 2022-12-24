@@ -229,6 +229,8 @@ eof:
 				goto output;
 			}
 			lasttoken = TEOF;
+			parsefile->p.backq = 1;
+			parsefile->p.dqbackq = 0;
 			synexpect(TENDBQUOTE);
 		}
 		if (!len)
