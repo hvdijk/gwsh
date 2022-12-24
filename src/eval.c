@@ -872,7 +872,7 @@ bail:
 		} else
 			skiptoplocalvars();
 		if (evalbltin(cmdentry.u.cmd, argc, argv, flags) &&
-		    !(exception == EXERROR && spclbltin <= 0)) {
+		    !(exception == EXERROR && spclbltin <= 0) && !iflag) {
 			exception &= ~EXEXT;
 raise:
 			longjmp(*handler, 1);
