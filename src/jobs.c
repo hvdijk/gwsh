@@ -92,11 +92,14 @@ MKINIT pid_t ttypgrp;
 
 /* current job */
 static struct job *curjob;
+/* whether the current jobs were inherited from a parent shell */
+static int parjob;
 
 STATIC void set_curjob(struct job *, unsigned);
 STATIC int jobno(const struct job *);
 STATIC int sprint_status(char *, int);
 STATIC void freejob(struct job *);
+STATIC void freejobs(void);
 STATIC struct job *getjob(const char *, int);
 STATIC struct job *growjobtab(void);
 STATIC void forkchild(struct job *, union node *, int);
@@ -756,6 +759,9 @@ makejob(union node *node, int nprocs)
 	int i;
 	struct job *jp;
 
+	if (parjob)
+		freejobs();
+
 	for (i = njobs, jp = jobtab ; ; jp++) {
 		if (--i < 0) {
 			jp = growjobtab();
@@ -878,6 +884,8 @@ forkchild(struct job *jp, union node *n, int mode)
 		setsignal(SIGQUIT, 1);
 		setsignal(SIGTERM, 1);
 	}
+	if (jp)
+		freejob(jp);
 	reset(1);
 }
 
@@ -1124,13 +1132,23 @@ out:
 	return retval;
 }
 
-void
-resetjobs(void)
+static void
+freejobs(void)
 {
 	struct job *jp;
 
 	for (jp = curjob; jp; jp = jp->prev_job)
 		freejob(jp);
+	parjob = 0;
+}
+
+void
+resetjobs(void)
+{
+	if (parjob)
+		freejobs();
+	else
+		parjob++;
 }
 
 #ifdef mkinit
