@@ -272,10 +272,16 @@ retry:
 		static int el_len;
 
 		if (rl_cp == NULL) {
+#ifdef WITH_PARSER_LOCALE
+			locale_t savelocale = uselocale(LC_GLOBAL_LOCALE);
+#endif
 			struct stackmark smark;
 			pushstackmark(&smark, stackblocksize());
 			rl_cp = el_gets(el, &el_len);
 			popstackmark(&smark);
+#ifdef WITH_PARSER_LOCALE
+			uselocale(savelocale);
+#endif
 		}
 		if (rl_cp == NULL)
 			nr = 0;
