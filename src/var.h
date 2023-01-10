@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2022
+ * Copyright (c) 2018-2023
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -208,7 +208,24 @@ int unsetcmd(int, char **);
 void unsetvar(const char *);
 int varcmp(const char *, const char *);
 
-static inline int varequal(const char *a, const char *b) {
+static inline unsigned int
+hashval(const char *p)
+{
+	unsigned int hashval;
+
+	hashval = ((unsigned char) *p) << 4;
+	while (*p) {
+		hashval += (unsigned char) *p++;
+		if (*p == '=')
+			break;
+	}
+
+	return hashval;
+}
+
+
+static inline int
+varequal(const char *a, const char *b) {
 	return !varcmp(a, b);
 }
 
@@ -216,7 +233,8 @@ static inline int varequal(const char *a, const char *b) {
  * Search the environment of a builtin command.
  */
 
-static inline char *bltinlookup(const char *name)
+static inline char *
+bltinlookup(const char *name)
 {
 	return lookupvar(name);
 }

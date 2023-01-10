@@ -45,6 +45,7 @@
 #include "mystring.h"
 #include "alias.h"
 #include "options.h"	/* XXX for argptr (should remove?) */
+#include "var.h"
 
 #define ATABSIZE 39
 
@@ -61,25 +62,26 @@ void
 setalias(const char *name, const char *val)
 {
 	struct alias *ap, **app;
+	size_t namelen;
 
 	app = __lookupalias(name);
 	ap = *app;
 	INTOFF;
 	if (ap) {
 		if (!(ap->flag & ALIASINUSE)) {
-			ckfree(ap->val);
+			ckfree(ap->name);
 		}
-		ap->val	= savestr(val);
 		ap->flag &= ~ALIASDEAD;
 	} else {
 		/* not found */
 		ap = ckmalloc(sizeof (struct alias));
-		ap->name = savestr(name);
-		ap->val = savestr(val);
 		ap->flag = 0;
 		ap->next = 0;
 		*app = ap;
 	}
+	namelen = val - name;
+	ap->name = savestr(name);
+	ap->val = ap->name + namelen;
 	INTON;
 }
 
@@ -154,8 +156,7 @@ aliascmd(int argc, char **argv)
 			} else
 				printalias(ap);
 		} else {
-			*v++ = '\0';
-			setalias(n, v);
+			setalias(n, v + 1);
 		}
 		argv++;
 	}
@@ -194,14 +195,13 @@ freealias(struct alias ***appp) {
 	} else {
 		*app = ap->next;
 		ckfree(ap->name);
-		ckfree(ap->val);
 		ckfree(ap);
 	}
 }
 
 void
 printalias(const struct alias *ap) {
-	out1fmt("%s=%s\n", ap->name, shell_quote(ap->val, 0));
+	out1fmt("%s\n", shell_quote(ap->name, 0));
 }
 
 
@@ -221,23 +221,12 @@ endaliasuse(void) {
 
 STATIC struct alias **
 __lookupalias(const char *name) {
-	unsigned int hashval;
 	struct alias **app;
-	const char *p;
-	unsigned int ch;
 
-	p = name;
-
-	ch = (unsigned char)*p;
-	hashval = ch << 4;
-	while (ch) {
-		hashval += ch;
-		ch = (unsigned char)*++p;
-	}
-	app = &atab[hashval % ATABSIZE];
+	app = &atab[hashval(name) % ATABSIZE];
 
 	for (; *app; app = &(*app)->next) {
-		if (equal(name, (*app)->name)) {
+		if (varequal(name, (*app)->name)) {
 			break;
 		}
 	}
