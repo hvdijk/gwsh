@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2022
+ * Copyright (c) 2018-2023
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -1730,7 +1730,8 @@ synerror(const char *msg)
 	/* If we see a syntax error in a command, read the rest of the
 	 * line now before reporting the error. This ensures we get error
 	 * reporting that does not depend on buffering details. */
-	skipline();
+	if (lasttoken != TNL)
+		skipline();
 
 	sh_error("Syntax error: %s", msg);
 	/* NOTREACHED */
