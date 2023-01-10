@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2019
+ * Copyright (c) 2018-2019, 2023
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -147,7 +147,7 @@ aliascmd(int argc, char **argv)
 		return (0);
 	}
 	while ((n = *argv) != NULL) {
-		if ((v = strchr(n+1, '=')) == NULL) { /* n+1: funny ksh stuff */
+		if (!*n || !(v = strchr(n+1, '='))) { /* n+1: funny ksh stuff */
 			if ((ap = *__lookupalias(n)) == NULL) {
 				outfmt(out2, "%s: %s not found\n", "alias", n);
 				ret = 1;
