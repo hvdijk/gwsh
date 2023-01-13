@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2022
+ * Copyright (c) 2018-2023
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -872,7 +872,7 @@ bail:
 		} else if (cmdentry.u.cmd == LOCALCMD)
 			poplocalvars(0);
 		if (evalbltin(cmdentry.u.cmd, argc, argv, flags) &&
-		    !(exception == EXERROR && spclbltin <= 0) && !iflag) {
+		    !(exception == EXERROR && (spclbltin <= 0 || iflag))) {
 			exception &= ~EXEXT;
 raise:
 			longjmp(*handler, 1);
