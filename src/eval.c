@@ -869,8 +869,8 @@ bail:
 			poplocalvars(1);
 			if (execcmd && argc > 1)
 				listsetvar(varlist.list, VEXPORT);
-		} else
-			skiptoplocalvars();
+		} else if (cmdentry.u.cmd == LOCALCMD)
+			poplocalvars(0);
 		if (evalbltin(cmdentry.u.cmd, argc, argv, flags) &&
 		    !(exception == EXERROR && spclbltin <= 0) && !iflag) {
 			exception &= ~EXEXT;

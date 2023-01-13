@@ -202,7 +202,6 @@ int localcmd(int, char **);
 void mklocal(char *);
 struct localvar_list *pushlocalvars(void);
 void poplocalvars(int);
-void skiptoplocalvars(void);
 void unwindlocalvars(struct localvar_list *stop, int keep);
 int unsetcmd(int, char **);
 void unsetvar(const char *);

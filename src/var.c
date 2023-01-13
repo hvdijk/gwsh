@@ -83,7 +83,6 @@ struct localvar_list {
 };
 
 MKINIT struct localvar_list *localvar_stack;
-struct localvar_list *localvar_cur;
 
 const char defpathvar[] =
 	"PATH\0/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\0";
@@ -539,7 +538,7 @@ mklocal(char *name)
 
 	opts = name[0] == '-' && name[1] == '\0';
 	if (opts) {
-		if (unlikely(!localvar_cur))
+		if (unlikely(!localvar_stack))
 			goto out;
 	} else {
 		eq = strchr(name, '=') != NULL;
@@ -548,14 +547,13 @@ mklocal(char *name)
 		vp = *vpp;
 		vpl = vp == NULL ? NULL : vp->local;
 
-		if (unlikely(vpl == localvar_stack
-		          || vpl == localvar_cur))
+		if (unlikely(vpl == localvar_stack))
 			goto setvar;
 	}
 
 	lvp = ckmalloc(sizeof (struct localvar));
-	lvp->next = localvar_cur->lv;
-	localvar_cur->lv = lvp;
+	lvp->next = localvar_stack->lv;
+	localvar_stack->lv = lvp;
 
 	if (opts) {
 		char *p;
@@ -570,14 +568,14 @@ mklocal(char *name)
 		else
 			vp = setvar(name, NULL, VSTRFIXED);
 		lvp->vp = vp;
-		vp->local = localvar_cur;
+		vp->local = localvar_stack;
 	} else {
 		lvp->vp = vp;
 		lvp->flags = vp->flags;
 		lvp->text = vp->text;
 		lvp->local = vp->local;
 		vp->flags |= VSTRFIXED|VTEXTFIXED;
-		vp->local = localvar_cur;
+		vp->local = localvar_stack;
 setvar:
 		if (eq)
 			setvareq(name, 0);
@@ -602,7 +600,6 @@ poplocalvars(int keep)
 	INTOFF;
 	ll = localvar_stack;
 	localvar_stack = ll->next;
-	localvar_cur = localvar_stack;
 
 	next = ll->lv;
 	ckfree(ll);
@@ -666,17 +663,9 @@ struct localvar_list *pushlocalvars(void)
 	ll->lv = NULL;
 	ll->next = localvar_stack;
 	localvar_stack = ll;
-	localvar_cur = ll;
 	INTON;
 
 	return ll->next;
-}
-
-
-void
-skiptoplocalvars(void)
-{
-	localvar_cur = localvar_cur->next;
 }
 
 
