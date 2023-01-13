@@ -529,53 +529,59 @@ localcmd(int argc, char **argv)
 void
 mklocal(char *name)
 {
-	struct localvar *lvp;
 	struct var **vpp;
 	struct var *vp;
+	struct localvar_list *vpl;
+	struct localvar *lvp;
+	int opts, eq;
 
 	INTOFF;
-	lvp = ckmalloc(sizeof (struct localvar));
-	if (name[0] == '-' && name[1] == '\0') {
-		char *p;
-		p = ckmalloc(sizeof(optlist));
-		lvp->text = memcpy(p, optlist, sizeof(optlist));
-		vp = NULL;
-	} else {
-		char *eq;
 
+	opts = name[0] == '-' && name[1] == '\0';
+	if (opts) {
+		if (unlikely(!localvar_cur))
+			goto out;
+	} else {
+		eq = strchr(name, '=') != NULL;
 		vpp = hashvar(name);
-		vp = *findvar(vpp, name);
-		eq = strchr(name, '=');
-		if (vp == NULL) {
-			if (eq)
-				vp = setvareq(name, VSTRFIXED);
-			else
-				vp = setvar(name, NULL, VSTRFIXED);
-			lvp->local = NULL;
-			lvp->flags = VUNSET;
-		} else {
-			lvp->local = vp->local;
-			lvp->text = vp->text;
-			lvp->flags = vp->flags;
-			vp->flags |= VSTRFIXED|VTEXTFIXED;
-			if (eq)
-				setvareq(name, 0);
-			if (unlikely(vp->local == localvar_stack
-				  || vp->local == localvar_cur))
-				goto free;
-		}
-		vp->local = localvar_cur;
+		vpp = findvar(vpp, name);
+		vp = *vpp;
+		vpl = vp == NULL ? NULL : vp->local;
+
+		if (unlikely(vpl == localvar_stack
+		          || vpl == localvar_cur))
+			goto setvar;
 	}
-	if (!localvar_cur) {
-free:
-		if (!(lvp->flags & (VTEXTFIXED|VSTACK|VUNSET)))
-			ckfree(lvp->text);
-		ckfree(lvp);
-		goto out;
-	}
-	lvp->vp = vp;
+
+	lvp = ckmalloc(sizeof (struct localvar));
 	lvp->next = localvar_cur->lv;
 	localvar_cur->lv = lvp;
+
+	if (opts) {
+		char *p;
+		p = ckmalloc(sizeof(optlist));
+		lvp->vp = NULL;
+		lvp->text = memcpy(p, optlist, sizeof(optlist));
+	} else if (vp == NULL) {
+		lvp->flags = VUNSET;
+		lvp->local = NULL;
+		if (eq)
+			vp = setvareq(name, VSTRFIXED);
+		else
+			vp = setvar(name, NULL, VSTRFIXED);
+		lvp->vp = vp;
+		vp->local = localvar_cur;
+	} else {
+		lvp->vp = vp;
+		lvp->flags = vp->flags;
+		lvp->text = vp->text;
+		lvp->local = vp->local;
+		vp->flags |= VSTRFIXED|VTEXTFIXED;
+		vp->local = localvar_cur;
+setvar:
+		if (eq)
+			setvareq(name, 0);
+	}
 out:
 	INTON;
 }
