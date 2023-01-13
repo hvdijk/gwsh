@@ -495,7 +495,7 @@ histcmd(int argc, char **argv)
 	if (hist == NULL)
 		sh_error("history not active");
 
-	while (not_fcnumber(*argptr) &&
+	while (((optptr && *optptr) || not_fcnumber(*argptr)) &&
 	       (ch = nextopt("e:lnrs")) != '\0')
 		switch ((char)ch) {
 		case 'e':
