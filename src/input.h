@@ -77,6 +77,7 @@ struct parsefilepush {
 
 	int backq;		/* old-style cmdsubsts depth */
 	int dqbackq;		/* whether each cmdsubst was double-quoted */
+	int flags;
 };
 
 struct strpush {
@@ -100,7 +101,6 @@ struct parsefile {
 	char *buf;		/* input buffer */
 	struct strpush *strpush; /* for pushing strings at this level */
 	struct strpush basestrpush; /* so pushing one is fast */
-	int flags;
 };
 
 #define PF_LINENO     0x01 /* track line numbers */

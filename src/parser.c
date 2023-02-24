@@ -143,7 +143,7 @@ parsecmd(int interact)
 	}
 	needprompt = 0;
 #ifndef SMALL
-	if (parsefile->flags & PF_HIST && histop == H_APPEND)
+	if (parsefile->p.flags & PF_HIST && histop == H_APPEND)
 		histop = H_ENTER;
 #endif
 	cmd = list(1);
@@ -773,7 +773,7 @@ out:
 void
 nlprompt(void)
 {
-	plinno += parsefile->flags & PF_LINENO;
+	plinno += parsefile->p.flags & PF_LINENO;
 	if (doprompt)
 		setprompt(2);
 }
@@ -781,7 +781,7 @@ nlprompt(void)
 static void
 nlnoprompt(void)
 {
-	plinno += parsefile->flags & PF_LINENO;
+	plinno += parsefile->p.flags & PF_LINENO;
 	needprompt = doprompt;
 }
 

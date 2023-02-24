@@ -93,7 +93,7 @@ INCLUDE "error.h"
 INIT {
 	basepf.p.nextc = basepf.buf = basebuf;
 	basepf.linno = 1;
-	basepf.flags = PF_LINENO | PF_NONUL
+	basepf.p.flags = PF_LINENO | PF_NONUL
 #ifndef SMALL
 		| PF_HIST
 #endif
@@ -345,7 +345,7 @@ static int preadbuffer(void)
 	if (unlikely(parsefile->p.nleft == EOF_NLEFT ||
 		     parsefile->buf == NULL)) {
 #ifdef ENABLE_INTERNAL_COMPLETION
-		if (parsefile->flags & PF_COMPLETING)
+		if (parsefile->p.flags & PF_COMPLETING)
 			exraise(EXEOF);
 #endif
 		return PEOF;
@@ -374,7 +374,7 @@ again:
 		c = *q;
 
 		if (!c) {
-			if (parsefile->flags & PF_NONUL) {
+			if (parsefile->p.flags & PF_NONUL) {
 				sh_warnx("cannot execute binary file");
 				flushall();
 				_exit(126);
@@ -409,13 +409,13 @@ again:
 		}
 	}
 	parsefile->lleft = more;
-	parsefile->flags &= ~PF_NONUL;
+	parsefile->p.flags &= ~PF_NONUL;
 
 	savec = *q;
 	*q = '\0';
 
 #ifndef SMALL
-	if (parsefile->flags & PF_HIST && hist && something) {
+	if (parsefile->p.flags & PF_HIST && hist && something) {
 		HistEvent he;
 		INTOFF;
 		history(hist, &he, H_FIRST);
@@ -468,6 +468,7 @@ pushstring(const char *s, size_t len, void *ap)
 	if (ap) {
 		((struct alias *)ap)->flag |= ALIASINUSE;
 		sp->string = s;
+		parsefile->p.flags &= ~PF_LINENO;
 	}
 #ifdef WITH_LOCALE
 	parsefile->p.mbp = NULL;
@@ -556,7 +557,7 @@ setinputfd(int fd, int push)
 	if (parsefile->buf == NULL)
 		parsefile->buf = ckmalloc(IBUFSIZ);
 	parsefile->lleft = parsefile->p.nleft = 0;
-	parsefile->flags |= PF_LINENO;
+	parsefile->p.flags |= PF_LINENO;
 	plinno = 1;
 }
 
@@ -606,7 +607,7 @@ pushfile(void)
 	pf->p.unget = 0;
 	pf->p.backq = 1;
 	pf->p.dqbackq = 0;
-	pf->flags = 0;
+	pf->p.flags = 0;
 	parsefile = pf;
 }
 

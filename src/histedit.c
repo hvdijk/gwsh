@@ -242,7 +242,7 @@ complete(EditLine *el, int ch)
 		pushstring(li->buffer, li->cursor - li->buffer, NULL);
 		if (histop == H_APPEND && history(hist, &he, H_CURR) != -1)
 			pushstring(he.str, strlen(he.str), NULL);
-		parsefile->flags = PF_COMPLETING;
+		parsefile->p.flags = PF_COMPLETING;
 
 		doprompt = 0;
 		errout.fd = -1;
@@ -668,7 +668,7 @@ histcmd(int argc, char **argv)
 		setinputfile(editfile, INPUT_PUSH_FILE);
 		unlink(editfile);
 		*editfile = '\0';
-		parsefile->flags |= PF_HIST;
+		parsefile->p.flags |= PF_HIST;
 		histop = H_REPLACE;
 		cmdloop(0);
 		popfile();

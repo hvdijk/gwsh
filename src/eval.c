@@ -170,7 +170,7 @@ evalstring(const char *s, int flags)
 	p = sstrdup(s);
 	setinputstring(p);
 	if (flags & EV_LINENO) {
-		parsefile->flags |= PF_LINENO;
+		parsefile->p.flags |= PF_LINENO;
 		plinno = 1;
 	}
 
