@@ -239,10 +239,10 @@ complete(EditLine *el, int ch)
 		li = el_line(el);
 
 		setinputmem("a", 1);
+		parsefile->p.flags = PF_COMPLETING;
 		pushstring(li->buffer, li->cursor - li->buffer, NULL);
 		if (histop == H_APPEND && history(hist, &he, H_CURR) != -1)
 			pushstring(he.str, strlen(he.str), NULL);
-		parsefile->p.flags = PF_COMPLETING;
 
 		doprompt = 0;
 		errout.fd = -1;
