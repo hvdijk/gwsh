@@ -1746,8 +1746,10 @@ setprompt(int which)
 	needprompt = 0;
 	whichprompt = which;
 
-	if (mflag)
+	if (mflag) {
 		showjobs(out2, SHOW_CHANGED);
+		flushall();
+	}
 
 #ifdef SMALL
 	show = 1;
