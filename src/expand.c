@@ -117,23 +117,23 @@ static struct ifsregion *ifslastp;
 /* holds expanded arg list */
 static struct arglist exparg;
 
-STATIC char *argstr(char *, int);
-STATIC char *exptilde(char *, char *, int);
-STATIC char *expari(char *, int);
-STATIC void expbackq(union node *, int);
-STATIC const char *subevalvar(char *, char *, int, int, int, int, int);
-STATIC char *evalvar(char *, int);
-STATIC size_t strtodest(const char *, int);
-STATIC void memtodest(const char *, size_t, int);
-STATIC ssize_t varvalue(char *, int, int);
-STATIC void expandmeta(struct strlist *, int);
-STATIC void expmeta(char *, int);
-STATIC struct strlist *expsort(struct strlist *);
-STATIC struct strlist *msort(struct strlist *, int);
-STATIC void addfname(char *);
-STATIC int patmatch(char *, const char *);
-STATIC const char *pmatch(char *, const char *, int);
-STATIC int cvtnum(intmax_t, int);
+static char *argstr(char *, int);
+static char *exptilde(char *, char *, int);
+static char *expari(char *, int);
+static void expbackq(union node *, int);
+static const char *subevalvar(char *, char *, int, int, int, int, int);
+static char *evalvar(char *, int);
+static size_t strtodest(const char *, int);
+static void memtodest(const char *, size_t, int);
+static ssize_t varvalue(char *, int, int);
+static void expandmeta(struct strlist *, int);
+static void expmeta(char *, int);
+static struct strlist *expsort(struct strlist *);
+static struct strlist *msort(struct strlist *, int);
+static void addfname(char *);
+static int patmatch(char *, const char *);
+static const char *pmatch(char *, const char *, int);
+static int cvtnum(intmax_t, int);
 
 
 /*
@@ -142,7 +142,7 @@ STATIC int cvtnum(intmax_t, int);
  * Returns an stalloced string.
  */
 
-STATIC inline char *
+static inline char *
 preglob(char *pattern) {
 	return _rmescapes(pattern, 1);
 }
@@ -223,7 +223,7 @@ out:
  * $@ like $* since no splitting will be performed.
  */
 
-STATIC char *
+static char *
 argstr(char *p, int flags)
 {
 	static const char spclchars[] = {
@@ -349,7 +349,7 @@ addquote:
 	}
 }
 
-STATIC char *
+static char *
 exptilde(char *startp, char *p, int flags)
 {
 	signed char c;
@@ -439,7 +439,7 @@ removerecordregions(int endoff)
 /*
  * Expand arithmetic expression.
  */
-STATIC char *
+static char *
 expari(char *start, int flags)
 {
 	struct stackmark sm;
@@ -474,7 +474,7 @@ out:
  * Expand stuff in backwards quotes.
  */
 
-STATIC void
+static void
 expbackq(union node *cmd, int flags)
 {
 	struct backcmd in;
@@ -532,7 +532,7 @@ read:
 }
 
 
-STATIC const char *
+static const char *
 subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varflags, int flags)
 {
 	int quotes = flags & QUOTES_ESC;
@@ -588,7 +588,7 @@ subevalvar(char *p, char *str, int strloc, int subtype, int startloc, int varfla
  * Expand a variable, and return a pointer to the next character in the
  * input string.
  */
-STATIC char *
+static char *
 evalvar(char *p, int flags)
 {
 	int subtype;
@@ -704,7 +704,7 @@ discard:
  * Put a string on the stack.
  */
 
-STATIC void
+static void
 memtodest(const char *p, size_t len, int quotes) {
 	char *q;
 
@@ -736,7 +736,7 @@ memtodest(const char *p, size_t len, int quotes) {
 }
 
 
-STATIC size_t
+static size_t
 strtodest(const char *p, int quotes)
 {
 	size_t len = strlen(p);
@@ -749,7 +749,7 @@ strtodest(const char *p, int quotes)
  * Add the value of a specialized variable to the stack string.
  */
 
-STATIC ssize_t
+static ssize_t
 varvalue(char *name, int varflags, int flags)
 {
 	int num;
@@ -1078,7 +1078,7 @@ out:
  * should be escapes.  The results are stored in the list exparg.
  */
 
-STATIC void
+static void
 expandmeta(struct strlist *str, int flags)
 {
 	/* TODO - EXP_REDIR */
@@ -1128,7 +1128,7 @@ nometa:
  * Do metacharacter (i.e. *, ?, [...]) expansion.
  */
 
-STATIC void
+static void
 expmeta1(char *expdir, char *enddir, char *name, int flags)
 {
 	char *p, *q, *r;
@@ -1395,7 +1395,7 @@ path_end:
 }
 
 
-STATIC void
+static void
 expmeta(char *name, int flags)
 {
 	char expdir[PATH_MAX];
@@ -1407,7 +1407,7 @@ expmeta(char *name, int flags)
  * Add a file name to the list.
  */
 
-STATIC void
+static void
 addfname(char *name)
 {
 	struct strlist *sp;
@@ -1425,7 +1425,7 @@ addfname(char *name)
  * work.
  */
 
-STATIC struct strlist *
+static struct strlist *
 expsort(struct strlist *str)
 {
 	int len;
@@ -1438,7 +1438,7 @@ expsort(struct strlist *str)
 }
 
 
-STATIC struct strlist *
+static struct strlist *
 msort(struct strlist *list, int len)
 {
 	struct strlist *p, *q = NULL;
@@ -1487,14 +1487,14 @@ msort(struct strlist *list, int len)
  * Returns true if the pattern matches the string.
  */
 
-STATIC inline int
+static inline int
 patmatch(char *pattern, const char *string)
 {
 	return !!pmatch(preglob(pattern), string, 0);
 }
 
 
-STATIC int
+static int
 ccmatch(char *p, int chr, char **r)
 {
 	char *q;
@@ -1560,7 +1560,7 @@ ccmatch(char *p, int chr, char **r)
 #endif
 }
 
-STATIC const char *
+static const char *
 pmatch(char *pattern, const char *string, int flags)
 {
 	char *p;
@@ -1760,7 +1760,7 @@ casematch(union node *pattern, char *val)
  * Our own itoa().
  */
 
-STATIC int
+static int
 cvtnum(intmax_t num, int flags)
 {
 	int ctlesc = num < 0 && flags & QUOTES_ESC && flags & EXP_QUOTED;

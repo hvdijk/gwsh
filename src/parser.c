@@ -105,20 +105,20 @@ struct heredoc *heredoc;
 int quoteflag;			/* set if (part of) last token was quoted */
 
 
-STATIC union node *list(int);
-STATIC union node *andor(void);
-STATIC union node *pipeline(void);
-STATIC union node *command(void);
-STATIC union node *simplecmd(void);
-STATIC union node *makename(void);
-STATIC void parsefname(void);
-STATIC void parseheredoc(void);
-STATIC int readtoken(void);
-STATIC int xxreadtoken(void);
-STATIC int pgetc_eatbnl(void);
-STATIC int readtoken1(int, char *, int);
-STATIC void synerror(const char *) attribute((noreturn));
-STATIC void setprompt(int);
+static union node *list(int);
+static union node *andor(void);
+static union node *pipeline(void);
+static union node *command(void);
+static union node *simplecmd(void);
+static union node *makename(void);
+static void parsefname(void);
+static void parseheredoc(void);
+static int readtoken(void);
+static int xxreadtoken(void);
+static int pgetc_eatbnl(void);
+static int readtoken1(int, char *, int);
+static void synerror(const char *) attribute((noreturn));
+static void setprompt(int);
 
 /*
  * Read and parse a command.  Returns NEOF on end of file.  (NULL is a
@@ -154,7 +154,7 @@ parsecmd(int interact)
 }
 
 
-STATIC union node *
+static union node *
 list(int nlflag)
 {
 	union node *n1, *n2, *n3;
@@ -228,7 +228,7 @@ list(int nlflag)
 
 
 
-STATIC union node *
+static union node *
 andor(void)
 {
 	union node *n;
@@ -261,7 +261,7 @@ andor(void)
 
 
 
-STATIC union node *
+static union node *
 pipeline(void)
 {
 	union node *n;
@@ -309,7 +309,7 @@ pipeline(void)
 
 
 
-STATIC union node *
+static union node *
 command(void)
 {
 	union node *n1, *n2;
@@ -528,7 +528,7 @@ redir:
 }
 
 
-STATIC union node *
+static union node *
 simplecmd(void) {
 	union node *args, **app;
 	union node *n = NULL;
@@ -613,7 +613,7 @@ out:
 	return n;
 }
 
-STATIC union node *
+static union node *
 makename(void)
 {
 	union node *n;
@@ -646,7 +646,7 @@ void fixredir(union node *n, const char *text, int err)
 }
 
 
-STATIC void
+static void
 parsefname(void)
 {
 	union node *n = redirnode;
@@ -683,7 +683,7 @@ parsefname(void)
  * Input any here documents.
  */
 
-STATIC void
+static void
 parseheredoc(void)
 {
 	struct heredoc *here;
@@ -708,7 +708,7 @@ parseheredoc(void)
 	}
 }
 
-STATIC int
+static int
 readtoken(void)
 {
 	int t;
@@ -810,7 +810,7 @@ skipline(void)
  *  have parseword (readtoken1?) handle both words and redirection.]
  */
 
-STATIC int
+static int
 xxreadtoken(void)
 {
 	if (tokpushback) {
@@ -917,16 +917,16 @@ pgetc_eatbnl(void)
  * is the first character of the input token or document.
  */
 
-STATIC char *readtoken1_loop(char *, int, char *, int);
-STATIC int readtoken1_endword(char *, char *);
-STATIC void readtoken1_checkend(int *, char *, int);
-STATIC void readtoken1_parseredir(char *, int);
-STATIC char *readtoken1_parsesub(char *, int, char *, int);
-STATIC char *readtoken1_parsebackq(char *, int, int);
-STATIC char *readtoken1_parsearith(char *, char *, int);
-STATIC char *readtoken1_parseheredoc(char *);
+static char *readtoken1_loop(char *, int, char *, int);
+static int readtoken1_endword(char *, char *);
+static void readtoken1_checkend(int *, char *, int);
+static void readtoken1_parseredir(char *, int);
+static char *readtoken1_parsesub(char *, int, char *, int);
+static char *readtoken1_parsebackq(char *, int, int);
+static char *readtoken1_parsearith(char *, char *, int);
+static char *readtoken1_parseheredoc(char *);
 
-STATIC int
+static int
 readtoken1(int firstc, char *eofmark, int flags)
 {
 	char *out;
@@ -938,7 +938,7 @@ readtoken1(int firstc, char *eofmark, int flags)
 	return readtoken1_endword(out, eofmark);
 }
 
-STATIC char *
+static char *
 readtoken1_loop(char *out, int c, char *eofmark, int flags)
 {
 	int qsyntax;
@@ -1257,7 +1257,7 @@ endword:
 	return out;
 }
 
-STATIC int
+static int
 readtoken1_endword(char *out, char *eofmark)
 {
 	size_t len;
@@ -1298,7 +1298,7 @@ readtoken1_endword(char *out, char *eofmark)
  * we are at the end of the here document, this routine sets the c to PEOF.
  */
 
-STATIC void
+static void
 readtoken1_checkend(int *c, char *eofmark, int flags)
 {
 	char *p;
@@ -1356,7 +1356,7 @@ more_heredoc:
  * first character of the redirection operator.
  */
 
-STATIC void
+static void
 readtoken1_parseredir(char *out, int c)
 {
 	char fd = *out;
@@ -1429,7 +1429,7 @@ readtoken1_parseredir(char *out, int c)
  * and nothing else.
  */
 
-STATIC char *
+static char *
 readtoken1_parsesub(char *out, int c, char *eofmark, int flags)
 {
 	int subtype;
@@ -1566,7 +1566,7 @@ badsub:
  * characters on the top of the stack which must be preserved.
  */
 
-STATIC char *
+static char *
 readtoken1_parsebackq(char *out, int flags, int oldstyle)
 {
 	struct nodelist **nlpp;
@@ -1632,7 +1632,7 @@ readtoken1_parsebackq(char *out, int flags, int oldstyle)
  * Parse an arithmetic expansion (indicate start of one and set state)
  */
 
-STATIC char *
+static char *
 readtoken1_parsearith(char *out, char *eofmark, int flags)
 {
 	USTPUTC(CTLARI, out);
@@ -1644,7 +1644,7 @@ readtoken1_parsearith(char *out, char *eofmark, int flags)
  * Parse a nested heredoc.
  */
 
-STATIC char *
+static char *
 readtoken1_parseheredoc(char *out)
 {
 	char *str;
@@ -1719,7 +1719,7 @@ synexpect(int token)
 }
 
 
-STATIC void
+static void
 synerror(const char *msg)
 {
 #ifdef WITH_PARSER_LOCALE
@@ -1737,7 +1737,7 @@ synerror(const char *msg)
 	/* NOTREACHED */
 }
 
-STATIC void
+static void
 setprompt(int which)
 {
 	struct stackmark smark;

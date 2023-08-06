@@ -95,28 +95,28 @@ static struct job *curjob;
 /* whether the current jobs were inherited from a parent shell */
 static int parjob;
 
-STATIC void set_curjob(struct job *, unsigned);
-STATIC int jobno(const struct job *);
-STATIC int sprint_status(char *, int);
-STATIC void freejob(struct job *);
-STATIC void freejobs(void);
-STATIC struct job *getjob(const char *, int);
-STATIC struct job *growjobtab(void);
-STATIC void forkchild(struct job *, union node *, int);
-STATIC void forkparent(struct job *, union node *, int, pid_t);
-STATIC int dowait(int, struct job *);
-STATIC int waitproc(int, int *);
-STATIC char *commandtext(union node *);
-STATIC void cmdtxt(union node *);
-STATIC void cmdlist(union node *, int);
-STATIC void cmdputs(const char *);
-STATIC void showpipe(struct job *, struct output *);
-STATIC int getstatus(struct job *);
+static void set_curjob(struct job *, unsigned);
+static int jobno(const struct job *);
+static int sprint_status(char *, int);
+static void freejob(struct job *);
+static void freejobs(void);
+static struct job *getjob(const char *, int);
+static struct job *growjobtab(void);
+static void forkchild(struct job *, union node *, int);
+static void forkparent(struct job *, union node *, int, pid_t);
+static int dowait(int, struct job *);
+static int waitproc(int, int *);
+static char *commandtext(union node *);
+static void cmdtxt(union node *);
+static void cmdlist(union node *, int);
+static void cmdputs(const char *);
+static void showpipe(struct job *, struct output *);
+static int getstatus(struct job *);
 
 static int restartjob(struct job *, int);
 static void xtcsetpgrp(pid_t);
 
-STATIC void
+static void
 set_curjob(struct job *jp, unsigned mode)
 {
 	struct job *jp1;
@@ -365,7 +365,7 @@ err:
 	return i;
 }
 
-STATIC int
+static int
 jobno(const struct job *jp)
 {
 	return jp - jobtab + 1;
@@ -401,7 +401,7 @@ fgcmd(int argc, char **argv)
 }
 
 
-STATIC int
+static int
 restartjob(struct job *jp, int mode)
 {
 	struct procstat *ps;
@@ -430,7 +430,7 @@ out:
 	return status;
 }
 
-STATIC int
+static int
 sprint_status(char *s, int status)
 {
 	int col;
@@ -580,7 +580,7 @@ showjobs(struct output *out, int mode)
  * Mark a job structure as unused.
  */
 
-STATIC void
+static void
 freejob(struct job *jp)
 {
 	struct procstat *ps;
@@ -670,7 +670,7 @@ sigout:
  * Convert a job name to a job structure.
  */
 
-STATIC struct job *
+static struct job *
 getjob(const char *name, int getctl)
 {
 	struct job *jp;
@@ -792,7 +792,7 @@ makejob(union node *node, int nprocs)
 	return jp;
 }
 
-STATIC struct job *
+static struct job *
 growjobtab(void)
 {
 	size_t len;
@@ -851,7 +851,7 @@ growjobtab(void)
  * Called with interrupts off.
  */
 
-STATIC inline void
+static inline void
 forkchild(struct job *jp, union node *n, int mode)
 {
 	TRACE(("Child shell %d\n", getpid()));
@@ -889,7 +889,7 @@ forkchild(struct job *jp, union node *n, int mode)
 	reset(1);
 }
 
-STATIC inline void
+static inline void
 forkparent(struct job *jp, union node *n, int mode, pid_t pid)
 {
 	TRACE(("In parent shell:  child = %d\n", pid));
@@ -1006,7 +1006,7 @@ waitforjob(struct job *jp)
  * Wait for a process to terminate.
  */
 
-STATIC int
+static int
 dowait(int block, struct job *job)
 {
 	int pid;
@@ -1077,7 +1077,7 @@ out:
  * rather than blocking.
  */
 
-STATIC int
+static int
 waitproc(int block, int *status)
 {
 	int flags = block == DOWAIT_BLOCK ? 0 : WNOHANG;
@@ -1164,9 +1164,9 @@ RESET {
  * jobs command).
  */
 
-STATIC char *cmdnextc;
+static char *cmdnextc;
 
-STATIC char *
+static char *
 commandtext(union node *n)
 {
 	char *name;
@@ -1179,7 +1179,7 @@ commandtext(union node *n)
 }
 
 
-STATIC void
+static void
 cmdtxt(union node *n)
 {
 	union node *np;
@@ -1333,7 +1333,7 @@ redir:
 	}
 }
 
-STATIC void
+static void
 cmdlist(union node *np, int sep)
 {
 	for (; np; np = np->narg.next) {
@@ -1346,7 +1346,7 @@ cmdlist(union node *np, int sep)
 }
 
 
-STATIC void
+static void
 cmdputs(const char *s)
 {
 	const char *p, *str;
@@ -1433,7 +1433,7 @@ dostr:
 }
 
 
-STATIC void
+static void
 showpipe(struct job *jp, struct output *out)
 {
 	struct procstat *sp;
@@ -1446,7 +1446,7 @@ showpipe(struct job *jp, struct output *out)
 }
 
 
-STATIC void
+static void
 xtcsetpgrp(pid_t pgrp)
 {
 	int err;
@@ -1463,7 +1463,7 @@ xtcsetpgrp(pid_t pgrp)
 }
 
 
-STATIC int
+static int
 getstatus(struct job *job) {
 	int status;
 	int retval;

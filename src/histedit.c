@@ -79,7 +79,7 @@ int displayhist;
 int histop = H_ENTER;
 static FILE *el_in, *el_out;
 
-STATIC const char *fc_replace(const char *, char *, char *);
+static const char *fc_replace(const char *, char *, char *);
 
 #ifdef ENABLE_INTERNAL_COMPLETION
 static unsigned char complete(EditLine *, int);
@@ -680,7 +680,7 @@ histcmd(int argc, char **argv)
 	return 0;
 }
 
-STATIC const char *
+static const char *
 fc_replace(const char *s, char *p, char *r)
 {
 	char *dest;

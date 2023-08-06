@@ -69,14 +69,14 @@
 #define CD_PHYSICAL 1
 #define CD_PRINT 2
 
-STATIC int docd(const char *, int);
-STATIC const char *updatepwd(const char *);
-STATIC int cdopt(void);
+static int docd(const char *, int);
+static const char *updatepwd(const char *);
+static int cdopt(void);
 
-STATIC const char *curdir = nullstr;	/* current working directory */
-STATIC const char *physdir = nullstr;	/* physical working directory */
+static const char *curdir = nullstr;	/* current working directory */
+static const char *physdir = nullstr;	/* physical working directory */
 
-STATIC int
+static int
 cdopt(void)
 {
 	int flags = 0;
@@ -167,7 +167,7 @@ out:
  * know that the current directory has changed.
  */
 
-STATIC int
+static int
 docd(const char *dest, int flags)
 {
 	const char *dir = 0;
@@ -207,7 +207,7 @@ out:
  * cd command.
  */
 
-STATIC const char *
+static const char *
 updatepwd(const char *dir)
 {
 	char *new;

@@ -53,11 +53,11 @@ struct alias *atab[ATABSIZE];
 
 struct alias *aliasdone;
 
-STATIC void setalias(const char *, const char *);
-STATIC void freealias(struct alias ***);
-STATIC struct alias **__lookupalias(const char *);
+static void setalias(const char *, const char *);
+static void freealias(struct alias ***);
+static struct alias **__lookupalias(const char *);
 
-STATIC
+static
 void
 setalias(const char *name, const char *val)
 {
@@ -185,7 +185,7 @@ unaliascmd(int argc, char **argv)
 	return (i);
 }
 
-STATIC void
+static void
 freealias(struct alias ***appp) {
 	struct alias **app = *appp, *ap = *app;
 
@@ -219,7 +219,7 @@ endaliasuse(void) {
 }
 
 
-STATIC struct alias **
+static struct alias **
 __lookupalias(const char *name) {
 	struct alias **app;
 

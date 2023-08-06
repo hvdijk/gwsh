@@ -91,15 +91,15 @@ struct tblentry {
 };
 
 
-STATIC struct tblentry *cmdtable[CMDTABLESIZE];
+static struct tblentry *cmdtable[CMDTABLESIZE];
 
-STATIC void tryexec(char *, char **, char **);
-STATIC void printentry(struct tblentry *);
-STATIC void clearcmdentry(void);
-STATIC struct tblentry *cmdlookup(const char *, int);
-STATIC void delete_cmd_entry(void);
-STATIC void addcmdentry(char *, struct cmdentry *);
-STATIC int describe_command(struct output *, char *, const char *, const char *, int);
+static void tryexec(char *, char **, char **);
+static void printentry(struct tblentry *);
+static void clearcmdentry(void);
+static struct tblentry *cmdlookup(const char *, int);
+static void delete_cmd_entry(void);
+static void addcmdentry(char *, struct cmdentry *);
+static int describe_command(struct output *, char *, const char *, const char *, int);
 
 
 /*
@@ -161,7 +161,7 @@ shellexec(char **argv, const char *path, int idx)
 }
 
 
-STATIC void
+static void
 tryexec(char *cmd, char **argv, char **envp)
 {
 #ifdef SELF_EXEC_PATH
@@ -277,7 +277,7 @@ hashcmd(int argc, char **argv)
 }
 
 
-STATIC void
+static void
 printentry(struct tblentry *cmdp)
 {
 	int idx;
@@ -534,7 +534,7 @@ changepath(const char *newval)
  * Clear out command entries.
  */
 
-STATIC void
+static void
 clearcmdentry(void)
 {
 	struct tblentry **tblp;
@@ -572,7 +572,7 @@ clearcmdentry(void)
 struct tblentry **lastcmdentry;
 
 
-STATIC struct tblentry *
+static struct tblentry *
 cmdlookup(const char *name, int add)
 {
 	unsigned int hashval;
@@ -606,7 +606,7 @@ cmdlookup(const char *name, int add)
  * Delete the command entry returned on the last lookup.
  */
 
-STATIC void
+static void
 delete_cmd_entry(void)
 {
 	struct tblentry *cmdp;
@@ -644,7 +644,7 @@ getcmdentry(char *name, struct cmdentry *entry)
  * the same name - except special builtins.
  */
 
-STATIC void
+static void
 addcmdentry(char *name, struct cmdentry *entry)
 {
 	struct tblentry *cmdp;
@@ -707,7 +707,7 @@ typecmd(int argc, char **argv)
 	return err;
 }
 
-STATIC int
+static int
 describe_command(
 	struct output *out, char *command, const char *path,
 	const char *fpath, int verbose)

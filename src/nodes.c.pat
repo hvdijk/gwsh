@@ -57,11 +57,11 @@ char   *funcstring;		/* block to allocate strings from */
 %SIZES
 
 
-STATIC void calcsize(union node *);
-STATIC void sizenodelist(struct nodelist *);
-STATIC union node *copynode(union node *);
-STATIC struct nodelist *copynodelist(struct nodelist *);
-STATIC char *nodesavestr(char *);
+static void calcsize(union node *);
+static void sizenodelist(struct nodelist *);
+static union node *copynode(union node *);
+static struct nodelist *copynodelist(struct nodelist *);
+static char *nodesavestr(char *);
 
 
 
@@ -89,7 +89,7 @@ copyfunc(union node *n)
 
 
 
-STATIC void
+static void
 calcsize(union node *n)
 {
 	%CALCSIZE
@@ -97,7 +97,7 @@ calcsize(union node *n)
 
 
 
-STATIC void
+static void
 sizenodelist(struct nodelist *lp)
 {
 	while (lp) {
@@ -109,7 +109,7 @@ sizenodelist(struct nodelist *lp)
 
 
 
-STATIC union node *
+static union node *
 copynode(union node *n)
 {
 	union node *new;
@@ -119,7 +119,7 @@ copynode(union node *n)
 }
 
 
-STATIC struct nodelist *
+static struct nodelist *
 copynodelist(struct nodelist *lp)
 {
 	struct nodelist *start;
@@ -140,7 +140,7 @@ copynodelist(struct nodelist *lp)
 
 
 
-STATIC char *
+static char *
 nodesavestr(char *s)
 {
 	char   *rtn = funcstring;

@@ -130,9 +130,9 @@ char optlist[NOPTS];
 
 
 static int options(int);
-STATIC void minus_o(int, const char *, int);
-STATIC void setoption(int, int, int);
-STATIC int getopts(char *, char *, char **);
+static void minus_o(int, const char *, int);
+static void setoption(int, int, int);
+static int getopts(char *, char *, char **);
 
 
 /*
@@ -211,7 +211,7 @@ optschanged(void)
  * to the argument list; we advance it past the options.
  */
 
-STATIC int
+static int
 options(int cmdline)
 {
 	const char *p;
@@ -259,7 +259,7 @@ opto:
 	return *argptr != NULL;
 }
 
-STATIC void
+static void
 minus_o(int cmdline, const char *name, int val)
 {
 	int i;
@@ -288,7 +288,7 @@ minus_o(int cmdline, const char *name, int val)
 }
 
 
-STATIC void
+static void
 setoption(int cmdline, int flag, int val)
 {
 	int i;
@@ -451,7 +451,7 @@ getoptscmd(int argc, char **argv)
 	return getopts(argv[1], argv[2], optbase);
 }
 
-STATIC int
+static int
 getopts(char *optstr, char *optvar, char **optfirst)
 {
 	char *p, *q;

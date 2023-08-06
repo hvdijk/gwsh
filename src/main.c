@@ -85,8 +85,8 @@ RESET {
 }
 #endif
 
-STATIC void read_profile(const char *);
-STATIC char *find_dot_file(char *);
+static void read_profile(const char *);
+static char *find_dot_file(char *);
 int main(int, char **);
 
 /*
@@ -273,7 +273,7 @@ cmdloop(int top)
  * Read /etc/profile or .profile.  Return on error.
  */
 
-STATIC void
+static void
 read_profile(const char *name)
 {
 	name = expandstr(name, 0);
@@ -306,7 +306,7 @@ readcmdfile(char *name)
  */
 
 
-STATIC char *
+static char *
 find_dot_file(char *basename)
 {
 	char *fullname;

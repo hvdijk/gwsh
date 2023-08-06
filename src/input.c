@@ -80,7 +80,7 @@ locale_t parselocale;		/* the locale to use during parsing */
 #endif
 int whichprompt;		/* 1 == PS1, 2 == PS2 */
 
-STATIC void pushfile(void);
+static void pushfile(void);
 static int preadfd(void);
 static void setinputfd(int fd, int push);
 static int preadbuffer(void);
@@ -114,7 +114,7 @@ RESET {
  * Nul characters in the input are silently discarded.
  */
 
-STATIC int
+static int
 pgetc2(void)
 {
 	if (--parsefile->p.nleft >= 0)
@@ -123,7 +123,7 @@ pgetc2(void)
 		return preadbuffer();
 }
 
-STATIC int
+static int
 pgetc1(void)
 {
 	int c;
@@ -591,7 +591,7 @@ setinputmem(const char *string, size_t len)
  * adds a new entry to the stack and popfile restores the previous level.
  */
 
-STATIC void
+static void
 pushfile(void)
 {
 	struct parsefile *pf;

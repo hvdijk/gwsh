@@ -79,9 +79,9 @@ struct redirtab {
 
 MKINIT struct redirtab *redirlist;
 
-STATIC int openredirect(union node *);
-STATIC void dupredirect(union node *, int);
-STATIC int openhere(union node *);
+static int openredirect(union node *);
+static void dupredirect(union node *, int);
+static int openhere(union node *);
 
 
 /*
@@ -129,7 +129,7 @@ redirect(union node *redir, int flags)
 }
 
 
-STATIC int
+static int
 openredirect(union node *redir)
 {
 	struct stat sb;
@@ -204,7 +204,7 @@ eopen:
 }
 
 
-STATIC void
+static void
 dupredirect(union node *redir, int f)
 {
 	int fd = redir->nfile.fd;
@@ -240,7 +240,7 @@ err:
  * the pipe without forking.
  */
 
-STATIC int
+static int
 openhere(union node *redir)
 {
 	char *p;

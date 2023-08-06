@@ -94,7 +94,7 @@ int lineno;
 char linenovar[sizeof("LINENO=")+sizeof(int)*CHAR_BIT/3+1] = "LINENO";
 
 #ifdef WITH_LOCALE
-STATIC void changelocale(const char *val);
+static void changelocale(const char *val);
 #endif
 
 struct var varinit[] = {
@@ -125,15 +125,15 @@ struct var varinit[] = {
 #endif
 };
 
-STATIC struct var *vartab[VTABSIZE];
+static struct var *vartab[VTABSIZE];
 
-STATIC struct var **hashvar(const char *);
-STATIC struct var **findvar(struct var **, const char *);
+static struct var **hashvar(const char *);
+static struct var **findvar(struct var **, const char *);
 
 #ifndef WITH_LOCALE
 #define vpcmp pstrcmp
 #else
-STATIC int vpcmp(const void *, const void *);
+static int vpcmp(const void *, const void *);
 #endif
 
 /*
@@ -720,7 +720,7 @@ void unsetvar(const char *s)
  * Find the appropriate entry in the hash table from the name.
  */
 
-STATIC struct var **
+static struct var **
 hashvar(const char *p)
 {
 	return &vartab[hashval(p) % VTABSIZE];
@@ -752,7 +752,7 @@ varcmp(const char *p, const char *q)
 }
 
 #ifdef WITH_LOCALE
-STATIC int
+static int
 vpcmp(const void *a, const void *b)
 {
 	const char *pa = *(const char **)a;
@@ -761,7 +761,7 @@ vpcmp(const void *a, const void *b)
 }
 #endif
 
-STATIC struct var **
+static struct var **
 findvar(struct var **vpp, const char *name)
 {
 	for (; *vpp; vpp = &(*vpp)->next) {
@@ -775,7 +775,7 @@ findvar(struct var **vpp, const char *name)
 
 #ifdef WITH_LOCALE
 
-STATIC
+static
 void changelocale(const char *var) {
 	setlocale(LC_CTYPE, *lc_allval() ? lc_allval() : *lc_ctypeval() ? lc_ctypeval() : langval());
 	setlocale(LC_COLLATE, *lc_allval() ? lc_allval() : *lc_collateval() ? lc_collateval() : langval());
