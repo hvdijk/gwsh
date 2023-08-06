@@ -250,6 +250,13 @@ complete(EditLine *el, int ch)
 			parsecmd(0);
 	}
 
+#ifdef WITH_PARSER_LOCALE
+	/* We were called with the global locale. parsecmd() may have reset to
+	 * the parser locale without getting the chance to restore. Restore it
+	 * now. */
+	uselocale(LC_GLOBAL_LOCALE);
+#endif
+
 	if (exception == EXEOF && wordtext && !(wordflags & RT_NOCOMPLETE)) {
 		char *p;
 		int flags = EXP_FULL | EXP_TILDE | EXP_COMPLETE;

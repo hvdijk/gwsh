@@ -304,7 +304,6 @@ switchdlq:
 				fmt = "'\\''";
 				goto fmt;
 			}
-escape:
 			*r++ = '\\';
 			goto output;
 		}
@@ -329,10 +328,8 @@ oct:
 		if (c < ' ' || c > '~') {
 #endif
 #ifdef ENABLE_INTERNAL_COMPLETION
-			if (style == QS_SINGLE_QUOTED)
+			if (style > QS_DOLLAR_QUOTED)
 				goto output;
-			if (style >= QS_DOUBLE_QUOTED)
-				goto escape;
 #endif
 			fmt = "\\%03o";
 			goto fmt;
