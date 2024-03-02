@@ -237,7 +237,7 @@ evaltree(union node *n, int flags)
 	case NNOT:
 		status = evaltree(n->nnot.com,
 				  (flags & ~EV_EXIT) | EV_TESTED);
-		if (evalskip)
+		if (evalskip & ~(SKIPBREAK | SKIPCONT))
 			break;
 		status = !status;
 		goto setstatus;
