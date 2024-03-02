@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2021
+ * Copyright (c) 2018-2021, 2024
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -70,11 +70,12 @@
 #define CD_PRINT 2
 
 static int docd(const char *, int);
-static const char *updatepwd(const char *);
+static const char *updatepwd(const char *, const char *);
 static int cdopt(void);
 
-static const char *curdir = nullstr;	/* current working directory */
-static const char *physdir = nullstr;	/* physical working directory */
+#ifdef __GLIBC__
+static char *physdir = NULL; /* physical working directory */
+#endif
 
 static int
 cdopt(void)
@@ -157,7 +158,7 @@ err:
 	/* NOTREACHED */
 out:
 	if (flags & CD_PRINT)
-		out1fmt(snlfmt, curdir);
+		out1fmt(snlfmt, pwdval());
 	return 0;
 }
 
@@ -177,12 +178,13 @@ docd(const char *dest, int flags)
 
 	INTOFF;
 	if (!(flags & CD_PHYSICAL)) {
-		dir = updatepwd(dest);
+		const char *curdir = getpwd(flags);
+		dir = updatepwd(curdir, dest);
 		if (dir) {
 			dest = dir;
 
 			/* If curdir is a prefix of dest, turn it into a relative path. */
-			if (*curdir == '/') {
+			if (curdir && *curdir == '/') {
 				size_t n = strlen(curdir);
 				if (n == 1)
 					n = 0;
@@ -194,7 +196,10 @@ docd(const char *dest, int flags)
 	err = chdir(dest);
 	if (err)
 		goto out;
+	if (!dir)
+		dir = getpwd(CD_PHYSICAL);
 	setpwd(dir, 1);
+	freepwd();
 	hashcd();
 out:
 	INTON;
@@ -208,7 +213,7 @@ out:
  */
 
 static const char *
-updatepwd(const char *dir)
+updatepwd(const char *curdir, const char *dir)
 {
 	char *new;
 	char *p;
@@ -287,22 +292,33 @@ updatepwd(const char *dir)
 /*
  * Find out what the current directory is.
  */
-char *
-getpwd(void)
+const char *
+getpwd(int flags)
 {
-#ifdef __GLIBC__
-	char *dir = getcwd(0, 0);
+	const char *dir;
 
+	if (!(flags & CD_PHYSICAL)) {
+		struct stat st1, st2;
+
+		dir = pwdval();
+		if (stat(dir, &st1) == 0 && stat(".", &st2) == 0
+		    && st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino)
+			return dir;
+	}
+
+#ifdef __GLIBC__
+	freepwd();
+	dir = physdir = getcwd(0, 0);
 	if (dir)
 		return dir;
 #else
 	char buf[PATH_MAX];
 
 	if (getcwd(buf, sizeof(buf)))
-		return savestr(buf);
+		return buf;
 #endif
 
-	sh_warnx("getcwd() failed: %s", errnomsg());
+	sh_warnx("cannot determine the current directory: %s", errnomsg());
 	return NULL;
 }
 
@@ -310,48 +326,30 @@ int
 pwdcmd(int argc, char **argv)
 {
 	int flags;
-	const char *dir = curdir;
+	const char *curdir;
 
 	flags = cdopt();
 	endargs();
-	if (flags) {
-		if (physdir == nullstr)
-			setpwd(dir, 0);
-		dir = physdir;
-	}
-	out1fmt(snlfmt, dir);
-	return 0;
+	curdir = getpwd(flags);
+	if (curdir)
+		out1fmt(snlfmt, curdir);
+	freepwd();
+	return !curdir;
 }
 
 void
 setpwd(const char *val, int setold)
 {
-	const char *oldcur, *dir;
+	if (setold)
+		setvar("OLDPWD", pwdval(), VEXPORT);
+	setvar("PWD", val, VEXPORT);
+}
 
-	oldcur = dir = curdir;
-
-	if (setold) {
-		setvar("OLDPWD", oldcur, VEXPORT);
-	}
-	INTOFF;
-	if (physdir != nullstr) {
-		if (physdir != oldcur)
-			free((void *) physdir);
-		physdir = nullstr;
-	}
-	if (oldcur == val || !val) {
-		const char *s = getpwd();
-		if (!s)
-			s = nullstr;
-		physdir = s;
-		if (!val)
-			dir = s;
-	} else
-		dir = savestr(val);
-	if (oldcur != dir && oldcur != nullstr) {
-		free((void *) oldcur);
-	}
-	curdir = dir;
-	INTON;
-	setvar("PWD", dir, VEXPORT);
+void
+freepwd(void)
+{
+#ifdef __GLIBC__
+	free(physdir);
+	physdir = NULL;
+#endif
 }

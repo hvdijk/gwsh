@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018-2023
+ * Copyright (c) 2018-2024
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -152,12 +152,10 @@ MKINIT char **environ;
 INIT {
 	char **envp;
 	static char ppid[32] = "PPID";
-	const char *p;
-	struct stat st1, st2;
 
 	initvar();
 	for (envp = environ ; *envp ; envp++) {
-		p = endofname(*envp);
+		const char *p = endofname(*envp);
 		if (p != *envp && *p == '=') {
 			setvareq(*envp, VEXPORT);
 		}
@@ -169,11 +167,8 @@ INIT {
 	fmtstr(ppid + 5, sizeof(ppid) - 5, "%ld", (long) getppid());
 	setvareq(ppid, VTEXTFIXED);
 
-	p = pwdval();
-	if (*p == '\0' || *p != '/' || stat(p, &st1) || stat(".", &st2) ||
-	    st1.st_dev != st2.st_dev || st1.st_ino != st2.st_ino)
-		p = 0;
-	setpwd(p, 0);
+	setpwd(getpwd(0), 0);
+	freepwd();
 #ifdef WITH_PARSER_LOCALE
 	parselocale = duplocale(LC_GLOBAL_LOCALE);
 #endif

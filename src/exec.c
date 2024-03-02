@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2018, 2020-2022
+ * Copyright (c) 2018, 2020-2022, 2024
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -778,12 +778,12 @@ describe_command(
 			p = stackblock();
 		}
 		if (*p != '/') {
-			char *d = getpwd();
+			const char *d = getpwd(0);
 			if (d) {
 				outstr(d, out);
 				if (strchr(d, '\0')[-1] != '/')
 					outc('/', out);
-				free(d);
+				freepwd();
 			}
 		}
 		outstr(p, out);

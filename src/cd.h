@@ -3,7 +3,7 @@
  *	The Regents of the University of California.  All rights reserved.
  * Copyright (c) 1997-2005
  *	Herbert Xu <herbert@gondor.apana.org.au>.  All rights reserved.
- * Copyright (c) 2021
+ * Copyright (c) 2021, 2024
  *	Harald van Dijk <harald@gigawatt.nl>.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@ int	cdcmd(int, char **);
 int	pwdcmd(int, char **);
 void	setpwd(const char *, int);
 
-char *getpwd(void);
+const char *getpwd(int);
+void	freepwd(void);
 
 #endif
