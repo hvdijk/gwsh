@@ -148,5 +148,5 @@ NXHERE nhere			# fd<<!
 	doc	  nodeptr		# input to command (NARG node)
 
 NNOT nnot			# ! command  (actually pipeline)
-	type	int
+	type	uchar
 	com	nodeptr
