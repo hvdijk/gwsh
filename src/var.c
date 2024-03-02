@@ -276,9 +276,12 @@ intmax_t setvarint(const char *name, intmax_t val, int flags)
 struct var *setvareq(char *s, int flags)
 {
 	struct var *vp, **vpp;
+	int saveflags = flags;
+
+	if (aflag && !(flags & VUNSET))
+		flags |= VEXPORT;
 
 	vpp = hashvar(s);
-	flags |= (VEXPORT & (((unsigned) (1 - aflag)) - 1));
 	vpp = findvar(vpp, s);
 	vp = *vpp;
 	if (vp) {
@@ -300,17 +303,19 @@ struct var *setvareq(char *s, int flags)
 		if ((vp->flags & (VTEXTFIXED|VSTACK)) == 0)
 			ckfree(vp->text);
 
-		if (((flags & (VEXPORT|VREADONLY|VSTRFIXED|VUNSET)) |
-		     (vp->flags & VSTRFIXED)) == VUNSET) {
-			*vpp = vp->next;
-			ckfree(vp);
-out_free:
-			if ((flags & (VTEXTFIXED|VSTACK|VNOSAVE)) == VNOSAVE)
-				ckfree(s);
-			return 0;
-		}
-
 		flags |= vp->flags & ~(VTEXTFIXED|VSTACK|VNOSAVE|VUNSET|VUSER1);
+
+		if ((saveflags & (VEXPORT|VREADONLY|VUNSET)) == VUNSET) {
+			if (!(flags & VSTRFIXED)) {
+				*vpp = vp->next;
+				ckfree(vp);
+out_free:
+				if ((flags & (VTEXTFIXED|VSTACK|VNOSAVE)) == VNOSAVE)
+					ckfree(s);
+				return 0;
+			}
+			flags &= ~(VEXPORT|VREADONLY);
+		}
 	} else {
 		if (flags & VNOSET)
 			goto out;
