@@ -336,8 +336,10 @@ oct:
 		} /* } */
 #ifdef WITH_LOCALE
 		if (!iswprint(c) || (c != ' ' && iswblank(c))) {
-			if (c < 128)
+			if (q - p == 1) {
+				c = (unsigned char) *p;
 				goto oct;
+			}
 			fmt = c >= 0x10000 ? "\\U%08x" : "\\u%04x";
 			goto fmt;
 		}
