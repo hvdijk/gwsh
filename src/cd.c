@@ -312,7 +312,7 @@ getpwd(int flags)
 	if (dir)
 		return dir;
 #else
-	char buf[PATH_MAX];
+	static char buf[PATH_MAX];
 
 	if (getcwd(buf, sizeof(buf)))
 		return buf;
