@@ -467,7 +467,7 @@ pushstring(const char *s, size_t len, void *ap)
 	sp->ap = (struct alias *)ap;
 	if (ap) {
 		((struct alias *)ap)->flag |= ALIASINUSE;
-		sp->string = s;
+		sp->string = ((struct alias *)ap)->name;
 		parsefile->p.flags &= ~PF_LINENO;
 	}
 #ifdef WITH_LOCALE
@@ -497,7 +497,7 @@ popstring(void)
 		) {
 			checkkwd |= CHKALIAS;
 		}
-		if (sp->string != sp->ap->val) {
+		if (sp->string != sp->ap->name) {
 			ckfree(sp->string);
 		}
 		sp->ap->nextdone = aliasdone;
