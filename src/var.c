@@ -289,9 +289,6 @@ struct var *setvareq(char *s, int flags)
 			sh_error("%s: is read only", n);
 		}
 
-		if (flags & VNOSET)
-			goto out;
-
 		if (vp->func && (flags & VNOFUNC) == 0 && (vp->flags & VLATEFUNC) == 0)
 			(*vp->func)(strchrnul(s, '=') + 1);
 
@@ -312,8 +309,6 @@ out_free:
 			flags &= ~(VEXPORT|VREADONLY);
 		}
 	} else {
-		if (flags & VNOSET)
-			goto out;
 		if ((flags & (VEXPORT|VREADONLY|VSTRFIXED|VUNSET)) == VUNSET)
 			goto out_free;
 		/* not found */
@@ -335,7 +330,6 @@ out_free:
 	*s = '\0';
 	if (vp->func && flags & VLATEFUNC)
 		(*vp->func)(s + 1);
-out:
 	return vp;
 }
 
