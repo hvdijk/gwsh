@@ -1,17 +1,17 @@
 name: CI
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04, macos-11]
+        os: [ubuntu-22.04, ubuntu-24.04, macos-14]
         compiler: [gcc, clang]
         configure: [--disable-locale, --enable-locale]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Touch files
       run: git ls-files | xargs touch -r configure
     - name: Configure
@@ -19,7 +19,7 @@ jobs:
     - name: Make
       run: make
   scan:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Install Coverity Scan
       run: |
@@ -29,7 +29,7 @@ jobs:
       env:
         COVERITY_TOKEN: ${{ secrets.COVERITY_TOKEN }}
         COVERITY_PROJECT: ${{ secrets.COVERITY_PROJECT }}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Touch files
       run: git ls-files | xargs touch -r configure
     - name: Configure
