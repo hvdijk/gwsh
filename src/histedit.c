@@ -345,7 +345,8 @@ complete(EditLine *el, int ch)
 					screenwidth = ts.ts_cols;
 			}
 #endif
-			colwidth = maxwidth + 1;
+			colwidth = (maxwidth > screenwidth ? screenwidth
+			                                   : maxwidth) + 1;
 			cols = (screenwidth + 1) / colwidth;
 			if (cols > matches)
 				cols = matches;
