@@ -1,0 +1,29 @@
+Source: gwsh
+Section: shells
+Priority: optional
+Maintainer: Harald van Dijk <harald@gigawatt.nl>
+Rules-Requires-Root: no
+Build-Depends:
+ debhelper-compat (= 13),
+ libedit-dev
+Standards-Version: 4.7.2
+Homepage: https://github.com/hvdijk/gwsh
+
+Package: gwsh
+Architecture: any
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+Description: POSIX-compliant shell
+ gwsh is a POSIX-compliant shell derived from dash.
+
+Package: gwsh-interactive
+Architecture: any
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ libedit2
+Description: POSIX-compliant shell
+ gwsh is a POSIX-compliant shell derived from dash.
+ .
+ This version is built for interactive use.

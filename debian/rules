@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_clean:
+	dh_auto_clean -p gwsh --builddirectory=build/gwsh
+	dh_auto_clean -p gwsh-interactive --builddirectory=build/gwsh-interactive
+
+override_dh_auto_configure:
+	dh_auto_configure -p gwsh --builddirectory=build/gwsh
+	dh_auto_configure -p gwsh-interactive --builddirectory=build/gwsh-interactive -- --program-prefix=i --with-libedit
+
+override_dh_auto_install:
+	dh_auto_install -p gwsh --builddirectory=build/gwsh --destdir=debian/gwsh
+	dh_auto_install -p gwsh-interactive --builddirectory=build/gwsh-interactive --destdir=debian/gwsh-interactive
+
+override_dh_install:
+	dh_install -p gwsh
+	dh_install -p gwsh-interactive
+
+override_dh_gencontrol:
+	dh_gencontrol -p gwsh
+	dh_gencontrol -p gwsh-interactive

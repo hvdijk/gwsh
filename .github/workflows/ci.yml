@@ -18,6 +18,125 @@ jobs:
       run: ./configure ${{ matrix.configure }} CC=${{ matrix.compiler }}
     - name: Make
       run: make
+  create-debian-docker:
+    name: Create Debian docker image
+    strategy:
+      matrix:
+        distribution: [bookworm, trixie]
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    steps:
+    - name: Check out sources
+      uses: actions/checkout@v4
+    - name: Log in to Docker registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    - name: Set up Docker buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Build and push the Docker image
+      uses: docker/build-push-action@v6
+      env:
+        DOCKER_BUILD_SUMMARY: false
+      with:
+        context: .
+        push: true
+        file: .github/debian/${{ matrix.distribution }}.Dockerfile
+        tags: ghcr.io/${{ github.actor }}/gwsh:${{ matrix.distribution }}
+        cache-from: type=gha,scope=${{ matrix.distribution }}
+        cache-to: type=gha,scope=${{ matrix.distribution }},mode=max
+  create-debian-package:
+    name: Create Debian package
+    strategy:
+      matrix:
+        distribution: [bookworm, trixie]
+    runs-on: ubuntu-24.04
+    needs:
+    - create-debian-docker
+    container: ghcr.io/${{ github.repository }}:${{ matrix.distribution }}
+    env:
+      DEBFULLNAME: Harald van Dijk
+      DEBEMAIL: harald@gigawatt.nl
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+    steps:
+    - name: Check out sources
+      uses: actions/checkout@v4
+      with:
+        path: build
+        set-safe-directory: $GITHUB_WORKSPACE/build
+    - name: Import signing key
+      run: |
+        gpg --import <<EOF
+        $GPG_PRIVATE_KEY
+        EOF
+    - name: Build snapshot
+      run: |
+        cd build
+        version=`cat VERSION`~git`git show -s --format=%cs.%h | tr -d -`~${{ matrix.distribution }}
+        dch --create --package gwsh -v "$version" -D ${{ matrix.distribution }} "New snapshot."
+        dch -r ''
+        debuild
+        debuild -B -a arm64
+        cd ..
+        mkdir -p incoming/${{ matrix.distribution }}/
+        mv -v gwsh* incoming/${{ matrix.distribution }}/
+    - name: Upload package
+      uses: actions/upload-artifact@v4
+      with:
+        name: debian-${{ matrix.distribution }}.zip
+        path: |
+          incoming
+  create-debian-repository:
+    name: Create Debian repository
+    runs-on: ubuntu-24.04
+    needs:
+    - create-debian-package
+    container: ghcr.io/${{ github.repository }}:trixie
+    env:
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+    steps:
+    - name: Check out sources
+      uses: actions/checkout@v4
+      with:
+        path: build
+        set-safe-directory: $GITHUB_WORKSPACE/build
+    - name: Import signing key
+      run: |
+        gpg --import <<EOF
+        $GPG_PRIVATE_KEY
+        EOF
+    - name: Download artifacts
+      uses: actions/download-artifact@v5
+      with:
+        path: incoming
+        pattern: debian-*
+        merge-multiple: true
+    - name: Create repository
+      run: |
+        mv $GITHUB_WORKSPACE/build/.github/debian/conf .
+        reprepro --outdir ./repo -V processincoming bookworm
+        reprepro --outdir ./repo -V processincoming trixie
+    - name: Upload repository
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: repo/
+  deploy:
+    name: Deploy
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    needs:
+    - create-debian-repository
+    permissions:
+      id-token: write
+      pages: write
+    steps:
+    - name: Deploy to GitHub Pages
+      uses: actions/deploy-pages@v4
   scan:
     runs-on: ubuntu-24.04
     steps:

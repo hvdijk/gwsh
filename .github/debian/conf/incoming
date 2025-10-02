@@ -1,0 +1,11 @@
+Name: bookworm
+IncomingDir: incoming/bookworm
+TempDir: tmp/bookworm
+Allow: bookworm
+Cleanup:
+
+Name: trixie
+IncomingDir: incoming/trixie
+TempDir: tmp/trixie
+Allow: trixie
+Cleanup:

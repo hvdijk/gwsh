@@ -1,0 +1,15 @@
+Origin: hvdijk.github.io
+Label: hvdijk.github.io
+Codename: bookworm
+Architectures: amd64 arm64 source
+Components: main
+Description: gwsh for Debian bookworm
+SignWith: 0ADB2DC5669B67885C39098365FAE84275C146AF
+
+Origin: hvdijk.github.io
+Label: hvdijk.github.io
+Codename: trixie
+Architectures: amd64 arm64 source
+Components: main
+Description: gwsh for Debian trixie
+SignWith: 0ADB2DC5669B67885C39098365FAE84275C146AF
