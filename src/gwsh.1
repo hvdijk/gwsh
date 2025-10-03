@@ -35,8 +35,8 @@
 .\"	@(#)sh.1	8.6 (Berkeley) 5/4/95
 .\"
 .Dd September 11, 2018
-.Os
 .Dt GWSH 1
+.Os
 .Sh NAME
 .Nm gwsh
 .Nd command interpreter (shell)
@@ -2407,15 +2407,6 @@ enters vi command mode.
 Hitting
 .Aq return
 while in command mode will pass the line to the shell.
-.Sh EXIT STATUS
-Errors that are detected by the shell, such as a syntax error, will
-cause the shell to exit with a non-zero exit status.
-If the shell is not an interactive shell, the execution of the shell
-file will be aborted.
-Otherwise the shell will return the exit status of the last command
-executed, or if the
-.Ic exit
-builtin is used with a numeric argument, it will return the argument.
 .Sh ENVIRONMENT
 .Bl -tag -width MAILCHECK
 .It Ev HOME
@@ -2501,6 +2492,15 @@ The process ID of the parent process of the shell.
 .It
 .Pa /etc/profile
 .El
+.Sh EXIT STATUS
+Errors that are detected by the shell, such as a syntax error, will
+cause the shell to exit with a non-zero exit status.
+If the shell is not an interactive shell, the execution of the shell
+file will be aborted.
+Otherwise the shell will return the exit status of the last command
+executed, or if the
+.Ic exit
+builtin is used with a numeric argument, it will return the argument.
 .Sh SEE ALSO
 .Xr csh 1 ,
 .Xr echo 1 ,

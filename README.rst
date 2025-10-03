@@ -3,6 +3,12 @@ gwsh
 
 gwsh is a POSIX shell derived from dash.
 
+Documentation
+-------------
+
+- `Manual in HTML format <https://hvdijk.github.io/gwsh/doc/gwsh.html>`_.
+- `Manual in PDF format <https://hvdijk.github.io/gwsh/doc/gwsh.pdf>`_.
+
 Installation
 ------------
 

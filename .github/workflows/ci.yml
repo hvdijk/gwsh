@@ -86,14 +86,39 @@ jobs:
     - name: Upload package
       uses: actions/upload-artifact@v4
       with:
-        name: debian-${{ matrix.distribution }}.zip
+        name: debian-${{ matrix.distribution }}
         path: |
           incoming
+  build-documentation:
+    name: Build documentation
+    runs-on: ubuntu-24.04
+    needs:
+    - create-debian-docker
+    container: ghcr.io/${{ github.repository }}:bookworm
+    steps:
+    - name: Check out sources
+      uses: actions/checkout@v4
+      with:
+        path: build
+        set-safe-directory: $GITHUB_WORKSPACE/build
+    - name: Build documentation
+      run: |
+        mkdir doc
+        cd build
+        mandoc -Thtml src/gwsh.1 > ../doc/gwsh.html
+        man -Tpdf src/gwsh.1 > ../doc/gwsh.pdf
+    - name: Upload package
+      uses: actions/upload-artifact@v4
+      with:
+        name: doc
+        path: |
+          doc
   create-debian-repository:
     name: Create Debian repository
     runs-on: ubuntu-24.04
     needs:
     - create-debian-package
+    - build-documentation
     container: ghcr.io/${{ github.repository }}:trixie
     env:
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -108,17 +133,23 @@ jobs:
         gpg --import <<EOF
         $GPG_PRIVATE_KEY
         EOF
-    - name: Download artifacts
+    - name: Download packages artifacts
       uses: actions/download-artifact@v5
       with:
         path: incoming
         pattern: debian-*
         merge-multiple: true
+    - name: Download documentation artifact
+      uses: actions/download-artifact@v5
+      with:
+        name: doc
+        path: doc
     - name: Create repository
       run: |
         mv $GITHUB_WORKSPACE/build/.github/debian/conf .
         reprepro --outdir ./repo -V processincoming bookworm
         reprepro --outdir ./repo -V processincoming trixie
+        mv doc ./repo
     - name: Upload repository
       uses: actions/upload-pages-artifact@v3
       with:
