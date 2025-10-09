@@ -48,7 +48,7 @@ builtins.c builtins.h: mkbuiltins builtins.def
 	$(AM_V_GEN)$(SHELL) $(srcdir)/mkbuiltins builtins.def
 
 init.c: mkinit.awk $(gwsh_CFILES)
-	$(AM_V_GEN)awk -f $(srcdir)/mkinit.awk `echo " $(gwsh_CFILES)" | sed -e 's: : $(srcdir)/:g'` > init.c \
+	$(AM_V_GEN)(cd $(srcdir) && awk -f mkinit.awk $(gwsh_CFILES)) > init.c \
 		|| (rm -f init.c; exit 1)
 
 nodes.c nodes.h: mknodes.awk nodetypes nodes.c.pat nodes.h.pat

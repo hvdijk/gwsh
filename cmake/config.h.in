@@ -1,0 +1,125 @@
+/* Define to 1 if you want completion support. */
+#cmakedefine ENABLE_COMPLETION 1
+
+/* Define to 1 to keep extra privileges when started with effective UID/GID
+   unequal to real UID/GID. */
+#cmakedefine ENABLE_DEFAULT_PRIVILEGED 1
+
+/* Define if you want libedit's completion support. */
+#cmakedefine ENABLE_EXTERNAL_COMPLETION 1
+
+/* Define if you want gwsh's built-in completion support. */
+#cmakedefine ENABLE_INTERNAL_COMPLETION 1
+
+/* Define to 1 if you have the <alloca.h> header file. */
+#cmakedefine HAVE_ALLOCA_H 1
+
+/* Define to 1 if you have the `bsearch' function. */
+#cmakedefine HAVE_BSEARCH 1
+
+/* Define to 1 if your compiler supports the GNU C computed goto extension. */
+#cmakedefine HAVE_COMPUTED_GOTO 1
+
+/* Define to 1 if you have the `isblank' function. */
+#cmakedefine HAVE_DECL_ISBLANK 1
+
+/* Define to 1 if you have the `faccessat' function. */
+#cmakedefine HAVE_FACCESSAT 1
+
+/* Define to 1 if you have the `getpwnam' function. */
+#cmakedefine HAVE_GETPWNAM 1
+
+/* Define to 1 if you have the `getrlimit' function. */
+#cmakedefine HAVE_GETRLIMIT 1
+
+/* Define to 1 if you have the `isalpha' function. */
+#cmakedefine HAVE_ISALPHA 1
+
+/* Define to 1 if you have the `killpg' function. */
+#cmakedefine HAVE_KILLPG 1
+
+/* Define to 1 if you have the `mempcpy' function. */
+#cmakedefine HAVE_MEMPCPY 1
+
+/* Define to 1 if you have the <paths.h> header file. */
+#cmakedefine HAVE_PATHS_H 1
+
+/* Define to 1 if your compiler supports the C11 _Static_assert keyword. */
+#cmakedefine HAVE_STATIC_ASSERT 1
+
+/* Define to 1 if you have the `stpcpy' function. */
+#cmakedefine HAVE_STPCPY 1
+
+/* Define to 1 if you have the `strchrnul' function. */
+#cmakedefine HAVE_STRCHRNUL 1
+
+/* Define to 1 if you have the `strsignal' function. */
+#cmakedefine HAVE_STRSIGNAL 1
+
+/* Define to 1 if you have the `strtod' function. */
+#cmakedefine HAVE_STRTOD 1
+
+/* Define to 1 if you have the `strtoimax' function. */
+#cmakedefine HAVE_STRTOIMAX 1
+
+/* Define to 1 if you have the `strtoumax' function. */
+#cmakedefine HAVE_STRTOUMAX 1
+
+/* Define to 1 if your `struct stat' has the member `st_mtim'. */
+#cmakedefine HAVE_ST_MTIM 1
+
+/* Define to 1 if your `struct stat' has the member `st_mtimespec'. */
+#cmakedefine HAVE_ST_MTIMESPEC 1
+
+/* Define to 1 if you have the `sysconf' function. */
+#cmakedefine HAVE_SYSCONF 1
+
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#cmakedefine HAVE_SYS_IOCTL_H 1
+
+/* Define to 1 if your faccessat tells root all files are executable. */
+#cmakedefine HAVE_TRADITIONAL_FACCESSAT 1
+
+/* Define to 1 if you have the <xlocale.h> header file. */
+#cmakedefine HAVE_XLOCALE_H 1
+
+/* Define to 1 if you have the `_el_fn_complete' function. */
+#cmakedefine HAVE__EL_FN_COMPLETE 1
+
+/* Define to 1 if you have the `_el_fn_sh_complete' function. */
+#cmakedefine HAVE__EL_FN_SH_COMPLETE 1
+
+/* Define to the width of intmax_t if your <stdint.h> does not provide it. */
+#cmakedefine INTMAX_WIDTH @INTMAX_WIDTH@
+
+/* Define to printf format string for intmax_t if your <inttypes.h> does not
+   provide it. */
+#cmakedefine PRIdMAX "@PRIdMAX@"
+
+/* Define to path to gwsh. */
+#cmakedefine SELF_EXEC_PATH "@SELF_EXEC_PATH@"
+
+/* Define to 1 if you build without libedit command editing. */
+#cmakedefine SMALL 1
+
+/* Define to 1 if you want the LINENO variable. */
+#cmakedefine WITH_LINENO 1
+
+/* Define to 1 if you want locale support. */
+#cmakedefine WITH_LOCALE 1
+
+/* Define to 1 if you want parsing to ignore LC_CTYPE changes after the
+   shell starts. */
+#cmakedefine WITH_PARSER_LOCALE 1
+
+/* Define to system shell path */
+#cmakedefine _PATH_BSHELL "@_PATH_BSHELL@"
+
+/* Define to null device node path */
+#cmakedefine _PATH_DEVNULL "@_PATH_DEVNULL@"
+
+/* Define to tty device node path */
+#cmakedefine _PATH_TTY "@_PATH_TTY@"
+
+/* Define if the compiler supports GNU attribute syntax. */
+#define attribute(x) @attribute_x@

@@ -14,7 +14,6 @@ AC_PROG_CPP
 AC_USE_SYSTEM_EXTENSIONS
 AX_CFLAGS_WARN_ALL
 AC_SYS_LARGEFILE
-AC_PROG_YACC
 
 AX_C___ATTRIBUTE__
 if test "$ax_cv___attribute__" = "yes"; then

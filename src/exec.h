@@ -41,6 +41,8 @@
 
 #include "config.h"
 
+#include <sys/stat.h>
+
 /* values of cmdtype */
 #define CMDUNKNOWN	-1	/* no entry in table for command */
 #define CMDNORMAL	0	/* command is an executable program */
