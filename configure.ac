@@ -182,14 +182,14 @@ if test "$use_libedit" != "yes"; then
 else
 	export LIBS="$LIBS -ledit"
 	AC_ARG_ENABLE([completion], [AS_HELP_STRING([--enable-completion[[=internal/external]]],
-	                                            [Compile with completion support (default=external)])],
+	                                            [Compile with completion support (default=internal)])],
 	              [], [enable_completion=auto])
 	case $enable_completion in
-	internal)
+	internal|yes|auto)
 		AC_DEFINE([ENABLE_COMPLETION], [1], [Define if you build with completion support.])
 		AC_DEFINE([ENABLE_INTERNAL_COMPLETION], [1], [Define if you build with libedit's completion support.])
 		;;
-	external|yes|auto)
+	external)
 		AC_CHECK_FUNCS([_el_fn_sh_complete _el_fn_complete], [break])
 		if test "$ac_cv_func__el_fn_sh_complete:$ac_cv_func__el_fn_complete" = "no:no"; then
 			if test "$enable_completion" != "auto"; then

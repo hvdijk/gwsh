@@ -1402,7 +1402,7 @@ Optional Features:
                           Guard against faccessat(2) that tells root all files
                           are executable
   --enable-completion[=internal/external]
-                          Compile with completion support (default=external)
+                          Compile with completion support (default=internal)
   --disable-lineno        Disable LINENO support
   --disable-locale        Disable locale support
   --disable-parser-locale Disable use of fixed locale during parsing.
@@ -6143,7 +6143,7 @@ else $as_nop
 fi
 
 	case $enable_completion in
-	internal)
+	internal|yes|auto)
 
 printf "%s\n" "#define ENABLE_COMPLETION 1" >>confdefs.h
 
@@ -6151,7 +6151,7 @@ printf "%s\n" "#define ENABLE_COMPLETION 1" >>confdefs.h
 printf "%s\n" "#define ENABLE_INTERNAL_COMPLETION 1" >>confdefs.h
 
 		;;
-	external|yes|auto)
+	external)
 
   for ac_func in _el_fn_sh_complete _el_fn_complete
 do :
