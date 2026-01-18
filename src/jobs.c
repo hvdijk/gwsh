@@ -1464,7 +1464,8 @@ xtcsetpgrp(pid_t pgrp)
 
 
 static int
-getstatus(struct job *job) {
+getstatus(struct job *job)
+{
 	int status;
 	int retval;
 	int nproc = job->nprocs - 1;

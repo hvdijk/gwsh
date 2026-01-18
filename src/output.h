@@ -85,7 +85,8 @@ freestdout(void)
 	output.error = 0;
 }
 
-static inline void outc(int ch, struct output *file)
+static inline void
+outc(int ch, struct output *file)
 {
 	if (file->nextc == file->end)
 		outcslow(ch, file);

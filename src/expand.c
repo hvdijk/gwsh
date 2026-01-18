@@ -143,12 +143,14 @@ static int cvtnum(intmax_t, int);
  */
 
 static inline char *
-preglob(char *pattern) {
+preglob(char *pattern)
+{
 	return _rmescapes(pattern, 1);
 }
 
 
-static inline const char *getpwhome(const char *name)
+static inline const char *
+getpwhome(const char *name)
 {
 #ifdef HAVE_GETPWNAM
 	struct passwd *pw = getpwnam(name);
@@ -200,7 +202,7 @@ expandarg(union node *arg, struct arglist *arglist, int flags)
 #endif
 		expandmeta(exparg.list, flags);
 	} else {
-		sp = (struct strlist *)stalloc(sizeof (struct strlist));
+		sp = stalloc(sizeof (struct strlist));
 		sp->text = p;
 		*exparg.lastp = sp;
 		exparg.lastp = &sp->next;
@@ -705,7 +707,8 @@ discard:
  */
 
 static void
-memtodest(const char *p, size_t len, int quotes) {
+memtodest(const char *p, size_t len, int quotes)
+{
 	char *q;
 
 	if (unlikely(!len))
@@ -1021,7 +1024,7 @@ ifsbreakup(char *string, int maxargs, struct arglist *arglist)
 						continue;
 					}
 					*q = '\0';
-					sp = (struct strlist *)stalloc(sizeof *sp);
+					sp = stalloc(sizeof *sp);
 					sp->text = start;
 					*arglist->lastp = sp;
 					arglist->lastp = &sp->next;
@@ -1043,7 +1046,7 @@ ifsbreakup(char *string, int maxargs, struct arglist *arglist)
 		return;
 
 add:
-	sp = (struct strlist *)stalloc(sizeof *sp);
+	sp = stalloc(sizeof *sp);
 	sp->text = start;
 	*arglist->lastp = sp;
 	arglist->lastp = &sp->next;
@@ -1412,7 +1415,7 @@ addfname(char *name)
 {
 	struct strlist *sp;
 
-	sp = (struct strlist *)stalloc(sizeof *sp);
+	sp = stalloc(sizeof *sp);
 	sp->text = sstrdup(name);
 	*exparg.lastp = sp;
 	exparg.lastp = &sp->next;

@@ -51,10 +51,10 @@
  * Like malloc, but returns an error when out of space.
  */
 
-pointer
+void *
 ckmalloc(size_t nbytes)
 {
-	pointer p;
+	void *p;
 
 	p = malloc(nbytes);
 	if (p == NULL)
@@ -67,8 +67,8 @@ ckmalloc(size_t nbytes)
  * Same for realloc.
  */
 
-pointer
-ckrealloc(pointer p, size_t nbytes)
+void *
+ckrealloc(void *p, size_t nbytes)
 {
 	p = realloc(p, nbytes);
 	if (p == NULL)
@@ -114,7 +114,7 @@ char *stacknxt = stackbase.space;
 size_t stacknleft = MINSIZE;
 char *sstrend = stackbase.space + MINSIZE;
 
-pointer
+void *
 stalloc(size_t nbytes)
 {
 	char *p;
@@ -149,7 +149,7 @@ stalloc(size_t nbytes)
 
 
 void
-stunalloc(pointer p)
+stunalloc(void *p)
 {
 #ifdef DEBUG
 	if (!p || (stacknxt < (char *)p) || ((char *)p < stackp->space)) {
@@ -163,7 +163,8 @@ stunalloc(pointer p)
 
 
 
-void pushstackmark(struct stackmark *mark, size_t len)
+void
+pushstackmark(struct stackmark *mark, size_t len)
 {
 	mark->stackp = stackp;
 	mark->stacknxt = stacknxt;
@@ -171,7 +172,8 @@ void pushstackmark(struct stackmark *mark, size_t len)
 	grabstackblock(len);
 }
 
-void setstackmark(struct stackmark *mark)
+void
+setstackmark(struct stackmark *mark)
 {
 	pushstackmark(mark, stacknxt == stackp->space && stackp != &stackbase);
 }
@@ -225,7 +227,7 @@ growstackblock(void)
 		sp = stackp;
 		prevstackp = sp->prev;
 		grosslen = newlen + sizeof(struct stack_block) - MINSIZE;
-		sp = ckrealloc((pointer)sp, grosslen);
+		sp = ckrealloc(sp, grosslen);
 		sp->prev = prevstackp;
 		stackp = sp;
 		stacknxt = (char *)sp + offsetof(struct stack_block, space);

@@ -206,7 +206,8 @@ initvar(void)
  * flags of the variable.  If val is NULL, the variable is unset.
  */
 
-struct var *setvar(const char *name, const char *val, int flags)
+struct var *
+setvar(const char *name, const char *val, int flags)
 {
 	char *p, *q;
 	size_t namelen;
@@ -244,7 +245,8 @@ struct var *setvar(const char *name, const char *val, int flags)
  * ored with the flags of the variable.
  */
 
-intmax_t setvarint(const char *name, intmax_t val, int flags)
+intmax_t
+setvarint(const char *name, intmax_t val, int flags)
 {
 	int len = max_int_length(sizeof(val));
 	char buf[len];
@@ -268,7 +270,8 @@ intmax_t setvarint(const char *name, intmax_t val, int flags)
  * Called with interrupts off.
  */
 
-struct var *setvareq(char *s, int flags)
+struct var *
+setvareq(char *s, int flags)
 {
 	struct var *vp, **vpp;
 	int saveflags = flags;
@@ -375,7 +378,8 @@ lookupvar(const char *name)
 	return NULL;
 }
 
-intmax_t lookupvarint(const char *name)
+intmax_t
+lookupvarint(const char *name)
 {
 	const char *val = lookupvar(name);
 	if (!val) {
@@ -648,7 +652,8 @@ poplocalvars(int keep)
 /*
  * Create a new localvar environment.
  */
-struct localvar_list *pushlocalvars(void)
+struct localvar_list *
+pushlocalvars(void)
 {
 	struct localvar_list *ll;
 
@@ -663,7 +668,8 @@ struct localvar_list *pushlocalvars(void)
 }
 
 
-void unwindlocalvars(struct localvar_list *stop, int keep)
+void
+unwindlocalvars(struct localvar_list *stop, int keep)
 {
 	while (localvar_stack != stop)
 		poplocalvars(keep);
@@ -703,7 +709,8 @@ unsetcmd(int argc, char **argv)
  * Unset the specified variable.
  */
 
-void unsetvar(const char *s)
+void
+unsetvar(const char *s)
 {
 	setvar(s, 0, 0);
 }
@@ -769,8 +776,9 @@ findvar(struct var **vpp, const char *name)
 
 #ifdef WITH_LOCALE
 
-static
-void changelocale(const char *var) {
+static void
+changelocale(const char *var)
+{
 	setlocale(LC_CTYPE, *lc_allval() ? lc_allval() : *lc_ctypeval() ? lc_ctypeval() : langval());
 	setlocale(LC_COLLATE, *lc_allval() ? lc_allval() : *lc_collateval() ? lc_collateval() : langval());
 	setlocale(LC_NUMERIC, *lc_allval() ? lc_allval() : *lc_numericval() ? lc_numericval() : langval());

@@ -152,7 +152,8 @@ isassignment(const char *p)
 	return *q == '=';
 }
 
-static inline int parser_eof(void)
+static inline int
+parser_eof(void)
 {
 	return tokpushback > lasttoken;
 }

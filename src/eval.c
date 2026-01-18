@@ -129,7 +129,8 @@ RESET {
  * The eval commmand.
  */
 
-static int evalcmd(int argc, char **argv, int flags)
+static int
+evalcmd(int argc, char **argv, int flags)
 {
         char *p;
         char *concat;
@@ -334,7 +335,8 @@ evaltreenr(union node *n, int flags)
 	abort();
 }
 
-static int skiploop(void)
+static int
+skiploop(void)
 {
 	int skip = evalskip;
 

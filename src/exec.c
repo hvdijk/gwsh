@@ -199,7 +199,8 @@ repeat:
  * NULL.
  */
 
-int padvance(const char **path, const char **pathopt, const char *name)
+int
+padvance(const char **path, const char **pathopt, const char *name)
 {
 	const char *p;
 	char *q;

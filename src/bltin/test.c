@@ -157,12 +157,14 @@ static int newerf(const char *, const char *);
 static int olderf(const char *, const char *);
 static int equalf(const char *, const char *);
 
-static inline intmax_t getn(const char *s)
+static inline intmax_t
+getn(const char *s)
 {
 	return atomax10(s);
 }
 
-static const struct t_op *getop(const char *s)
+static const struct t_op *
+getop(const char *s)
 {
 	const struct t_op *op;
 
@@ -430,7 +432,8 @@ filstat(char *nm, enum token mode)
 	}
 }
 
-static enum token t_lex(char **tp)
+static enum token
+t_lex(char **tp)
 {
 	struct t_op const *op;
 	char *s = *tp;
@@ -451,7 +454,8 @@ static enum token t_lex(char **tp)
 	return OPERAND;
 }
 
-static int isoperand(char **tp)
+static int
+isoperand(char **tp)
 {
 	struct t_op const *op;
 	char *s;

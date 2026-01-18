@@ -103,8 +103,8 @@ exraise(int e)
  */
 
 void
-onint(void) {
-
+onint(void)
+{
 	intpending = 0;
 	sigprocmask(SIG_SETMASK, &sigset_empty, 0);
 	if (!iflag) {
@@ -230,7 +230,8 @@ errmsg(int e)
 
 #ifdef REALLY_SMALL
 void
-__inton() {
+__inton()
+{
 	if (--suppressint == 0 && intpending) {
 		onint();
 	}

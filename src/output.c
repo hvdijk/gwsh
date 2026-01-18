@@ -178,7 +178,8 @@ fmtstr(char *outbuf, size_t length, const char *fmt, ...)
 }
 
 
-int xvasprintf(char **sp, size_t size, const char *f, va_list ap)
+int
+xvasprintf(char **sp, size_t size, const char *f, va_list ap)
 {
 	char *s;
 	int len;
@@ -199,7 +200,8 @@ int xvasprintf(char **sp, size_t size, const char *f, va_list ap)
 }
 
 
-int xasprintf(char **sp, const char *f, ...)
+int
+xasprintf(char **sp, const char *f, ...)
 {
 	va_list ap;
 	int ret;

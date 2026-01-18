@@ -79,7 +79,7 @@
 
 struct heredoc {
 	struct heredoc *next;	/* next here document in list */
-	union node *here;		/* redirection node */
+	union node *here;	/* redirection node */
 	char *eofmark;		/* string indicating end of input */
 	int striptabs;		/* if set, strip leading tabs */
 };
@@ -203,7 +203,7 @@ list(int nlflag)
 			n1 = n2;
 		}
 		else {
-			n3 = (union node *)stalloc(sizeof (struct nbinary));
+			n3 = stalloc(sizeof (struct nbinary));
 			n3->type = NSEMI;
 			n3->nbinary.ch1 = n1;
 			n3->nbinary.ch2 = n2;
@@ -330,7 +330,7 @@ command(void)
 		synexpect(-1);
 		/* NOTREACHED */
 	case TIF:
-		n1 = (union node *)stalloc(sizeof (struct nif));
+		n1 = stalloc(sizeof (struct nif));
 		n1->type = NIF;
 		n1->nif.test = list(0);
 		if (readtoken() != TTHEN)
@@ -338,7 +338,7 @@ command(void)
 		n1->nif.ifpart = list(0);
 		n2 = n1;
 		while (readtoken() == TELIF) {
-			n2->nif.elsepart = (union node *)stalloc(sizeof (struct nif));
+			n2->nif.elsepart = stalloc(sizeof (struct nif));
 			n2 = n2->nif.elsepart;
 			n2->type = NIF;
 			n2->nif.test = list(0);
@@ -356,7 +356,7 @@ command(void)
 		break;
 	case TWHILE:
 	case TUNTIL:
-		n1 = (union node *)stalloc(sizeof (struct nbinary));
+		n1 = stalloc(sizeof (struct nbinary));
 		n1->type = (lasttoken == TWHILE)? NWHILE : NUNTIL;
 		n1->nbinary.ch1 = list(0);
 		if (readtoken() != TDO)
@@ -367,7 +367,7 @@ command(void)
 	case TFOR:
 		if (readtoken() != TWORD || quoteflag || ! goodname(wordtext))
 			synerror("Bad for loop variable");
-		n1 = (union node *)stalloc(sizeof (struct nfor));
+		n1 = stalloc(sizeof (struct nfor));
 		n1->type = NFOR;
 		n1->nfor.linno = savelinno;
 		n1->nfor.var = wordtext;
@@ -375,7 +375,7 @@ command(void)
 		if (readtoken() == TIN) {
 			app = &ap;
 			while (readtoken() == TWORD) {
-				n2 = (union node *)stalloc(sizeof (struct narg));
+				n2 = stalloc(sizeof (struct narg));
 				n2->type = NARG;
 				n2->narg.text = wordtext;
 				n2->narg.backquote = backquotelist;
@@ -389,7 +389,7 @@ command(void)
 			else if (lasttoken != TSEMI)
 				synexpect(-1);
 		} else {
-			n2 = (union node *)stalloc(sizeof (struct narg));
+			n2 = stalloc(sizeof (struct narg));
 			n2->type = NARG;
 			n2->narg.text = (char *)dolatstr;
 			n2->narg.backquote = NULL;
@@ -409,12 +409,12 @@ command(void)
 		t = TDONE;
 		break;
 	case TCASE:
-		n1 = (union node *)stalloc(sizeof (struct ncase));
+		n1 = stalloc(sizeof (struct ncase));
 		n1->type = NCASE;
 		n1->ncase.linno = savelinno;
 		if (readtoken() != TWORD)
 			synexpect(TWORD);
-		n1->ncase.expr = n2 = (union node *)stalloc(sizeof (struct narg));
+		n1->ncase.expr = n2 = stalloc(sizeof (struct narg));
 		n2->type = NARG;
 		n2->narg.text = wordtext;
 		n2->narg.backquote = backquotelist;
@@ -434,11 +434,11 @@ next_case:
 			if (t < TWORD)
 need_word:
 				synexpect(TWORD);
-			*cpp = cp = (union node *)stalloc(sizeof (struct nclist));
+			*cpp = cp = stalloc(sizeof (struct nclist));
 			cp->type = NCLIST;
 			app = &cp->nclist.pattern;
 			for (;;) {
-				*app = ap = (union node *)stalloc(sizeof (struct narg));
+				*app = ap = stalloc(sizeof (struct narg));
 				ap->type = NARG;
 				ap->narg.text = wordtext;
 				ap->narg.backquote = backquotelist;
@@ -482,7 +482,7 @@ need_word:
 		*cpp = NULL;
 		goto redir;
 	case TLP:
-		n1 = (union node *)stalloc(sizeof (struct nredir));
+		n1 = stalloc(sizeof (struct nredir));
 		n1->type = NSUBSHELL;
 		n1->nredir.linno = savelinno;
 		n1->nredir.n = list(0);
@@ -515,7 +515,7 @@ redir:
 	*rpp = NULL;
 	if (redir) {
 		if (n1->type != NSUBSHELL || n1->nredir.redirect) {
-			n2 = (union node *)stalloc(sizeof (struct nredir));
+			n2 = stalloc(sizeof (struct nredir));
 			n2->type = NREDIR;
 			n2->nredir.linno = savelinno;
 			n2->nredir.n = n1;
@@ -529,7 +529,8 @@ redir:
 
 
 static union node *
-simplecmd(void) {
+simplecmd(void)
+{
 	union node *args, **app;
 	union node *n = NULL;
 	union node *vars, **vpp;
@@ -549,7 +550,7 @@ simplecmd(void) {
 	for (;;) {
 		switch (readtoken()) {
 		case TWORD:
-			n = (union node *)stalloc(sizeof (struct narg));
+			n = stalloc(sizeof (struct narg));
 			n->type = NARG;
 			n->narg.text = wordtext;
 			n->narg.backquote = backquotelist;
@@ -604,7 +605,7 @@ out:
 	*app = NULL;
 	*vpp = NULL;
 	*rpp = NULL;
-	n = (union node *)stalloc(sizeof (struct ncmd));
+	n = stalloc(sizeof (struct ncmd));
 	n->type = NCMD;
 	n->ncmd.linno = savelinno;
 	n->ncmd.args = args;
@@ -618,7 +619,7 @@ makename(void)
 {
 	union node *n;
 
-	n = (union node *)stalloc(sizeof (struct narg));
+	n = stalloc(sizeof (struct narg));
 	n->type = NARG;
 	n->narg.next = NULL;
 	n->narg.text = wordtext;
@@ -626,7 +627,8 @@ makename(void)
 	return n;
 }
 
-void fixredir(union node *n, const char *text, int err)
+void
+fixredir(union node *n, const char *text, int err)
 	{
 	TRACE(("Fix redir %s %d\n", text, err));
 	if (!err)
@@ -698,7 +700,7 @@ parseheredoc(void)
 		}
 		readtoken1(0, here->eofmark, here->striptabs | RT_HEREDOC | RT_CHECKEND | (here->here->type == NHERE ? RT_SQSYNTAX : RT_DQSYNTAX) | RT_NOCOMPLETE);
 		endaliasuse();
-		n = (union node *)stalloc(sizeof (struct narg));
+		n = stalloc(sizeof (struct narg));
 		n->narg.type = NARG;
 		n->narg.next = NULL;
 		n->narg.text = wordtext;
@@ -1362,7 +1364,7 @@ readtoken1_parseredir(char *out, int c)
 	char fd = *out;
 	union node *np;
 
-	np = (union node *)stalloc(sizeof (struct nfile));
+	np = stalloc(sizeof (struct nfile));
 	if (c == '>') {
 		np->nfile.fd = 1;
 #ifdef ENABLE_INTERNAL_COMPLETION
@@ -1387,11 +1389,11 @@ readtoken1_parseredir(char *out, int c)
 		switch (pgetc_eatbnl()) {
 		case '<':
 			if (sizeof (struct nfile) != sizeof (struct nhere)) {
-				np = (union node *)stalloc(sizeof (struct nhere));
+				np = stalloc(sizeof (struct nhere));
 				np->nfile.fd = 0;
 			}
 			np->type = NHERE;
-			heredoc = (struct heredoc *)stalloc(sizeof (struct heredoc));
+			heredoc = stalloc(sizeof (struct heredoc));
 			heredoc->here = np;
 #ifdef ENABLE_INTERNAL_COMPLETION
 			wordflags |= RT_NOCOMPLETE;
@@ -1586,7 +1588,7 @@ readtoken1_parsebackq(char *out, int flags, int oldstyle)
 	nlpp = &backquotelist;
 	while (*nlpp)
 		nlpp = &(*nlpp)->next;
-	*nlpp = (struct nodelist *)stalloc(sizeof (struct nodelist));
+	*nlpp = stalloc(sizeof (struct nodelist));
 	(*nlpp)->next = NULL;
 	if (oldstyle) {
 		/* We can reasonably assume we will not have >30 levels of

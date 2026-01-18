@@ -58,7 +58,6 @@
 #endif
 #endif
 
-typedef void *pointer;
 #ifndef NULL
 #define NULL (void *)0
 #endif
@@ -91,7 +90,8 @@ extern const char nullstr[1];	/* null string */
  * (length * 8 - 1) * log10(2) + 1 + 1 + 12
  * The second 1 is for the minus sign and the 12 is a safety margin.
  */
-static inline int max_int_length(int bytes)
+static inline int
+max_int_length(int bytes)
 {
 	return (bytes * 8 - 1) * 0.30102999566398119521 + 14;
 }

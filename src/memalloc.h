@@ -39,6 +39,7 @@
 #ifndef H_MEMALLOC
 #define H_MEMALLOC 1
 
+#include "config.h"
 #include "shell.h"
 
 #include <stddef.h>
@@ -55,11 +56,11 @@ extern char *stacknxt;
 extern size_t stacknleft;
 extern char *sstrend;
 
-pointer ckmalloc(size_t);
-pointer ckrealloc(pointer, size_t);
+void *ckmalloc(size_t);
+void *ckrealloc(void *, size_t);
 char *savestr(const char *);
-pointer stalloc(size_t);
-void stunalloc(pointer);
+void *stalloc(size_t);
+void stunalloc(void *);
 void pushstackmark(struct stackmark *mark, size_t len);
 void setstackmark(struct stackmark *);
 void popstackmark(struct stackmark *);
@@ -70,12 +71,14 @@ char *stnputs(const char *, size_t, char *);
 char *stputs(const char *, char *);
 
 
-static inline void grabstackblock(size_t len)
+static inline void
+grabstackblock(size_t len)
 {
 	stalloc(len);
 }
 
-static inline char *_STPUTC(int c, char *p)
+static inline char *
+_STPUTC(int c, char *p)
 {
 	if (p == sstrend)
 		p = growstackstr();
@@ -87,7 +90,8 @@ static inline char *_STPUTC(int c, char *p)
 #define stackblocksize() stacknleft
 #define STARTSTACKSTR(p) ((p) = stackblock())
 #define STPUTC(c, p) ((p) = _STPUTC((c), (p)))
-static inline attribute((always_inline)) char *_CHECKSTRSPACE(size_t n, char *p)
+static inline attribute((always_inline)) char *
+_CHECKSTRSPACE(size_t n, char *p)
 {
 	if (n > sstrend - p)
 		p = makestrspace(n, p);
@@ -104,6 +108,6 @@ static inline attribute((always_inline)) char *_CHECKSTRSPACE(size_t n, char *p)
 #define ungrabstackstr(s, p) stunalloc((s))
 #define stackstrend() ((void *)sstrend)
 
-#define ckfree(p)	free((pointer)(p))
+#define ckfree(p)	free((void *)(p))
 
 #endif

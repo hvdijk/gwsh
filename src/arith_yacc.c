@@ -84,23 +84,28 @@ static const char prec[ARITH_BINOP_MAX - ARITH_BINOP_MIN] = {
 #define ARITH_MAX_PREC 8
 
 static void yyerror(const char *s) attribute ((noreturn));
-static void yyerror(const char *s)
+
+static void
+yyerror(const char *s)
 {
 	sh_error("arithmetic expression: %s: \"%s\"", s, arith_startbuf);
 	/* NOTREACHED */
 }
 
-static inline int arith_prec(int op)
+static inline int
+arith_prec(int op)
 {
 	return prec[op - ARITH_BINOP_MIN];
 }
 
-static inline int higher_prec(int op1, int op2)
+static inline int
+higher_prec(int op1, int op2)
 {
 	return arith_prec(op1) < arith_prec(op2);
 }
 
-static intmax_t do_binop(int op, intmax_t a, intmax_t b)
+static intmax_t
+do_binop(int op, intmax_t a, intmax_t b)
 {
 	switch (op) {
 		int neg;
@@ -150,7 +155,8 @@ static intmax_t do_binop(int op, intmax_t a, intmax_t b)
 
 static intmax_t assignment(int var, int noeval);
 
-static intmax_t primary(int token, union yystype *val, int op, int noeval)
+static intmax_t
+primary(int token, union yystype *val, int op, int noeval)
 {
 	intmax_t result;
 
@@ -187,7 +193,8 @@ again:
 	}
 }
 
-static intmax_t binop2(intmax_t a, int op, int prec, int noeval)
+static intmax_t
+binop2(intmax_t a, int op, int prec, int noeval)
 {
 	for (;;) {
 		union yystype val;
@@ -217,7 +224,8 @@ static intmax_t binop2(intmax_t a, int op, int prec, int noeval)
 	}
 }
 
-static intmax_t binop(int token, union yystype *val, int op, int noeval)
+static intmax_t
+binop(int token, union yystype *val, int op, int noeval)
 {
 	intmax_t a = primary(token, val, op, noeval);
 
@@ -228,7 +236,8 @@ static intmax_t binop(int token, union yystype *val, int op, int noeval)
 	return binop2(a, op, ARITH_MAX_PREC, noeval);
 }
 
-static intmax_t and(int token, union yystype *val, int op, int noeval)
+static intmax_t
+and(int token, union yystype *val, int op, int noeval)
 {
 	intmax_t a = binop(token, val, op, noeval);
 	intmax_t b;
@@ -245,7 +254,8 @@ static intmax_t and(int token, union yystype *val, int op, int noeval)
 	return a && b;
 }
 
-static intmax_t or(int token, union yystype *val, int op, int noeval)
+static intmax_t
+or(int token, union yystype *val, int op, int noeval)
 {
 	intmax_t a = and(token, val, op, noeval);
 	intmax_t b;
@@ -262,7 +272,8 @@ static intmax_t or(int token, union yystype *val, int op, int noeval)
 	return a || b;
 }
 
-static intmax_t cond(int token, union yystype *val, int op, int noeval)
+static intmax_t
+cond(int token, union yystype *val, int op, int noeval)
 {
 	intmax_t a = or(token, val, op, noeval);
 	intmax_t b;
@@ -284,7 +295,8 @@ static intmax_t cond(int token, union yystype *val, int op, int noeval)
 	return a ? b : c;
 }
 
-static intmax_t assignment(int var, int noeval)
+static intmax_t
+assignment(int var, int noeval)
 {
 	union yystype val = yylval;
 	int op = yylex();
@@ -305,7 +317,8 @@ static intmax_t assignment(int var, int noeval)
 			 do_binop(op - 14, lookupvarint(val.name), result), 0);
 }
 
-intmax_t arith(const char *s)
+intmax_t
+arith(const char *s)
 {
 	intmax_t result;
 

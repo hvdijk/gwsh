@@ -76,7 +76,7 @@ END {
 				copy = copy "\tcase "nodetypes[j]":\n"
 			}
 		}
-		struct = struct "struct "s"{\n"
+		struct = struct "struct "s" {\n"
 		node = node "\tstruct "s" "s";\n"
 		for (j = 0; j < nodedefs[s, "length"]; j++) {
 			m = nodedefs[s, j]

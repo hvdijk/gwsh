@@ -223,7 +223,8 @@ hashval(const char *p)
 
 
 static inline int
-varequal(const char *a, const char *b) {
+varequal(const char *a, const char *b)
+{
 	return !varcmp(a, b);
 }
 

@@ -384,14 +384,16 @@ redirectsafe(union node *redir, int flags)
 }
 
 
-void unwindredir(struct redirtab *stop, int drop)
+void
+unwindredir(struct redirtab *stop, int drop)
 {
 	while (redirlist != stop)
 		popredir(drop);
 }
 
 
-struct redirtab *pushredir(union node *redir)
+struct redirtab *
+pushredir(union node *redir)
 {
 	struct redirtab *sv;
 	struct redirtab *q;

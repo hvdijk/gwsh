@@ -59,7 +59,8 @@ void dotrap(void);
 void exitshell(void) attribute((noreturn));
 int decode_signal(const char *);
 
-static inline int have_traps(void)
+static inline int
+have_traps(void)
 {
 	return trapcnt > 0;
 }

@@ -333,7 +333,8 @@ onsig(int signo)
  * handlers while we are executing a trap handler.
  */
 
-void dotrap(void)
+void
+dotrap(void)
 {
 	char *p;
 	char *q;
@@ -403,7 +404,8 @@ out:
 	/* NOTREACHED */
 }
 
-static int decode_signum(const char *string)
+static int
+decode_signum(const char *string)
 {
 	int signo = -1;
 
@@ -416,7 +418,8 @@ static int decode_signum(const char *string)
 	return signo;
 }
 
-int decode_signal(const char *string)
+int
+decode_signal(const char *string)
 {
 	int signo;
 

@@ -58,7 +58,8 @@ char *strsignal(int);
 #endif
 
 #ifndef HAVE_STRTOD
-static inline double strtod(const char *nptr, char **endptr)
+static inline double
+strtod(const char *nptr, char **endptr)
 {
 	*endptr = (char *)nptr;
 	return 0;
@@ -79,7 +80,8 @@ void *bsearch(const void *, const void *, size_t, size_t,
 #endif
 
 #ifndef HAVE_KILLPG
-static inline int killpg(pid_t pid, int signal)
+static inline int
+killpg(pid_t pid, int signal)
 {
 #ifdef DEBUG
 	if (pid < 0)

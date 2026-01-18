@@ -64,7 +64,9 @@ static char  **gargv;
 #include "bltin.h"
 #include "system.h"
 
-static int printfield(char **sp, int skip, const char *f, ...) {
+static int
+printfield(char **sp, int skip, const char *f, ...)
+{
 	int ret;
 	va_list ap;
 	va_start(ap, f);
@@ -86,7 +88,8 @@ static int printfield(char **sp, int skip, const char *f, ...) {
 	return ret;
 }
 
-static int print_escape_str(int skip, const char *f, int width, int prec, const char *s)
+static int
+print_escape_str(int skip, const char *f, int width, int prec, const char *s)
 {
 	struct stackmark smark;
 	char *p, *q;
@@ -123,7 +126,8 @@ easy:
 	return next;
 }
 
-int printfcmd(int argc, char *argv[])
+int
+printfcmd(int argc, char *argv[])
 {
 	char *fmt;
 	char *format;

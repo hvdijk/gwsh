@@ -66,14 +66,16 @@
 #include "system.h"
 
 #ifndef HAVE_MEMPCPY
-void *mempcpy(void *dest, const void *src, size_t n)
+void *
+mempcpy(void *dest, const void *src, size_t n)
 {
 	return (char *) memcpy(dest, src, n) + n;
 }
 #endif
 
 #ifndef HAVE_STPCPY
-char *stpcpy(char *dest, const char *src)
+char *
+stpcpy(char *dest, const char *src)
 {
 	size_t len = strlen(src);
 	dest[len] = 0;
@@ -82,7 +84,8 @@ char *stpcpy(char *dest, const char *src)
 #endif
 
 #ifndef HAVE_STRCHRNUL
-char *strchrnul(const char *s, int c)
+char *
+strchrnul(const char *s, int c)
 {
 	char *p = strchr(s, c);
 	if (!p)
@@ -92,7 +95,8 @@ char *strchrnul(const char *s, int c)
 #endif
 
 #ifndef HAVE_STRSIGNAL
-char *strsignal(int sig)
+char *
+strsignal(int sig)
 {
 	static char buf[19];
 
@@ -127,77 +131,104 @@ void *bsearch(const void *key, const void *base, size_t nmemb,
 #endif
 
 #ifndef HAVE_SYSCONF
-long sysconf(int name)
+long
+sysconf(int name)
 {
 	sh_error("no sysconf for: %d", name);
 }
 #endif
 
 #ifndef HAVE_ISALPHA
-int isalnum(int c) {
+int
+isalnum(int c)
+{
 	return _isalnum(c);
 }
 
 
-int iscntrl(int c) {
+int
+iscntrl(int c)
+{
 	return _iscntrl(c);
 }
 
 
-int islower(int c) {
+int
+islower(int c)
+{
 	return _islower(c);
 }
 
 
-int isspace(int c) {
+int
+isspace(int c)
+{
 	return _isspace(c);
 }
 
 
-int isalpha(int c) {
+int
+isalpha(int c)
+{
 	return _isalpha(c);
 }
 
 
-int isdigit(int c) {
+int
+isdigit(int c)
+{
 	return _isdigit(c);
 }
 
 
-int isprint(int c) {
+int
+isprint(int c)
+{
 	return _isprint(c);
 }
 
 
-int isupper(int c) {
+int
+isupper(int c)
+{
 	return _isupper(c);
 }
 
 
 #if HAVE_DECL_ISBLANK
-int isblank(int c) {
+int
+isblank(int c)
+{
 	return _isblank(c);
 }
 #endif
 
 
-int isgraph(int c) {
+int
+isgraph(int c)
+{
 	return _isgraph(c);
 }
 
 
-int ispunct(int c) {
+int
+ispunct(int c)
+{
 	return _ispunct(c);
 }
 
 
-int isxdigit(int c) {
+int
+isxdigit(int c)
+{
 	return _isxdigit(c);
 }
 #endif
 
 #if !HAVE_DECL_ISBLANK
-int isblank(int c) {
+int
+isblank(int c)
+{
 	return c == ' ' || c == '\t';
 }
 #endif

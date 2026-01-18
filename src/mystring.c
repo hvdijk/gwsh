@@ -122,7 +122,8 @@ prefix(const char *string, const char *pfx)
 	return (char *) string;
 }
 
-void badnum(const char *s)
+void
+badnum(const char *s)
 {
 	sh_error(illnum, s);
 }
@@ -130,7 +131,8 @@ void badnum(const char *s)
 /*
  * Convert a string into an integer of type intmax_t.  Alow trailing spaces.
  */
-intmax_t atomax(const char *s, const char **end, int base)
+intmax_t
+atomax(const char *s, const char **end, int base)
 {
 	char *p;
 	intmax_t r;
@@ -159,7 +161,8 @@ intmax_t atomax(const char *s, const char **end, int base)
 	return r;
 }
 
-intmax_t atomax10(const char *s)
+intmax_t
+atomax10(const char *s)
 {
 	return atomax(s, NULL, 10);
 }

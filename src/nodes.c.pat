@@ -49,10 +49,10 @@
 #include "system.h"
 
 
-int     funcblocksize;		/* size of structures in function */
-int     funcstringsize;		/* size of strings in node */
-pointer funcblock;		/* block to allocate function from */
-char   *funcstring;		/* block to allocate strings from */
+int   funcblocksize;		/* size of structures in function */
+int   funcstringsize;		/* size of strings in node */
+void *funcblock;		/* block to allocate function from */
+char *funcstring;		/* block to allocate strings from */
 
 %SIZES
 

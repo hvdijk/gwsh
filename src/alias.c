@@ -186,7 +186,8 @@ unaliascmd(int argc, char **argv)
 }
 
 static void
-freealias(struct alias ***appp) {
+freealias(struct alias ***appp)
+{
 	struct alias **app = *appp, *ap = *app;
 
 	if (ap->flag & ALIASINUSE) {
@@ -200,13 +201,15 @@ freealias(struct alias ***appp) {
 }
 
 void
-printalias(const struct alias *ap) {
+printalias(const struct alias *ap)
+{
 	out1fmt("%s\n", shell_quote(ap->name, 0));
 }
 
 
 void
-endaliasuse(void) {
+endaliasuse(void)
+{
 	struct alias *ap = aliasdone;
 	while (ap) {
 		struct alias *nextdone = ap->nextdone;
@@ -220,7 +223,8 @@ endaliasuse(void) {
 
 
 static struct alias **
-__lookupalias(const char *name) {
+__lookupalias(const char *name)
+{
 	struct alias **app;
 
 	app = &atab[hashval(name) % ATABSIZE];

@@ -11,7 +11,9 @@
 #include "bltin.h"
 #include "system.h"
 
-int timescmd(int argc, char *argv[]) {
+int
+timescmd(int argc, char *argv[])
+{
 	struct tms buf;
 	long int clk_tck = sysconf(_SC_CLK_TCK);
 

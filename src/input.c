@@ -329,7 +329,8 @@ retry:
  * 4) Process input up to the next newline, deleting nul characters.
  */
 
-static int preadbuffer(void)
+static int
+preadbuffer(void)
 {
 	char *q;
 	int more;
@@ -630,7 +631,8 @@ popfile(void)
 }
 
 
-void unwindfiles(struct parsefile *stop)
+void
+unwindfiles(struct parsefile *stop)
 {
 	while (parsefile != stop)
 		popfile();
